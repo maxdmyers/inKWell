@@ -1,0 +1,436 @@
+/**
+
+	Rules:
+
+		1)	Do not use this stylesheet if you intend to add any classes such as:
+
+			one_third_column
+			circle_callout
+			web_footer_controller
+			... or for that matter almost any class name containing an _
+			USE MULTIPLE CLASSES INSTEAD!!!!
+
+		2)	Every full page view must have a universally unique ID and the
+			suggested method for naming it is the full path with all /'s and
+			spaces replaced by an underscore, example:
+
+			http://www.example.com/about/our_company/ would have a body with
+			id="about_our_company"
+
+		3)	Any added class names should match one for one a table, column, or
+			standardized names for data found within the schema/model.
+
+
+	Tips and Tricks:
+
+		IE -- rgba and/or gradient equivalency support:
+
+			background:transparent;
+			filter:progid:DXImageTransform.Microsoft.gradient(
+				startColorstr=#AARRGGBB,
+				endColorstr=#AARRGGBB
+			);
+			zoom: 1;
+
+		IE -- drop shadow equivalency support:
+
+			filter: progid:DXImageTransform.Microsoft.glow(
+				Color=#25202020,
+				strength=10
+			);
+
+**/
+
+/*******************************************************************************
+	Reset
+*******************************************************************************/
+
+html, body, div, span, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote,
+pre, a, abbr, acronym, address, cite, code, del, dfn, em, img, ins, kbd, q, s,
+samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol,
+ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr,
+th, td {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: 0;
+	border-width: 0;
+	vertical-align: baseline;
+	background: transparent;
+	text-decoration: none;
+	font-weight: normal;
+}
+
+a img{
+	/* Linked images are more common than not, no indicator is necessary */
+	border-width: 0px;
+}
+
+blockquote, q {
+	quotes: none;
+}
+
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+/*******************************************************************************
+	Suggested Structural Class Names (5)
+*******************************************************************************/
+
+.header    { /** A header for the page or a particular section **/             }
+
+.container { /** A literal container of sections or groups **/                 }
+
+.group     { /** Applied to any conceptually grouped sections or items **/     }
+
+.section   { /** For sectional division of a page or existing section **/      }
+
+.footer    { /** A footer for the page or a particular section **/             }
+
+/*******************************************************************************
+	Suggested Interface Class Names (2)
+*******************************************************************************/
+
+.nav       { /** On any element providing a navigation area **/                }
+
+.search    { /** On any element providing a search area or search field **/    }
+
+/*******************************************************************************
+	Suggested Importance Class Names (5)
+*******************************************************************************/
+
+.primary    { /** The first of similar elements with inequal priority **/      }
+
+.secondary  { /** The second of similar elements with inequal priority **/     }
+
+.tertiary   { /** The third of similar elements with inequal priority **/      }
+
+.quaternary { /** The fourth of similar elements with inequal priority **/     }
+
+.quinary    { /** The fifth of similar elements with inequal priority **/      }
+
+/*******************************************************************************
+	Suggested Positioning Class Names (4)
+*******************************************************************************/
+
+.first      { /** The first of similar elements with equal value/priority **/  }
+
+.last       { /** The last of similar elements with equal value/priority **/   }
+
+.odd        { /** Odd elements in a series of elements **/                     }
+
+.even       { /** Even elements in a series of elements **/                    }
+
+/*******************************************************************************
+	Suggested Highlighting Class Names (3)
+*******************************************************************************/
+
+.featured   { /** A featured element amongst non-featured elements **/         }
+
+.selected   { /** A selected element, like a nav link for the current page **/ }
+
+.required   { /** A required input element on a form **/                       }
+
+/*******************************************************************************
+	Suggested Messaging Class Names (4)
+*******************************************************************************/
+
+.notice    { /** Neutral callouts providing more information about input **/   }
+
+.error     { /** A negative response to user input (Ex. validation errors) **/ }
+
+.success   { /** A positive response to user input **/                         }
+
+.alert     { /** A response to user input requiring additional action **/      }
+
+/*******************************************************************************
+	Suggested Data Class Names (7)
+*******************************************************************************/
+
+.dialog    { /** On any element providing a conversation (suggest: dl) **/     }
+
+.article   { /** On any element providing syndicatable news-like content **/   }
+
+.profile   { /** On any element providing biographical content **/             }
+
+.product   { /** On any element providing info on an item for sale **/         }
+
+.event     { /** On any element providing time sensitive occurence info **/    }
+
+.project   { /** On any element providing information on an est. goal **/      }
+
+.brief     { /** On any element providing incomplete content **/               }
+
+.thumbnail { /** On any thumbnail image **/                                    }
+
+/*******************************************************************************
+	Suggested Basic Styling
+*******************************************************************************/
+
+html {
+	/* Forces scrollbar on at all times */
+	height: 101%;
+	font-size: 62.5%;
+}
+
+
+body {
+	/* 10px base font size, 1.0em = 10px, 1.2em = 12px, etc.. */
+	font-size: 1.0em;
+}
+
+h1, h2, h3, h4 {
+	font-weight: bold;
+	margin: 1em 0em;
+}
+
+h1 {
+	/* 24px within the body */
+	font-size: 2.4em;
+}
+
+h2 {
+	/* 18px within the body */
+	font-size:1.8em;
+}
+
+h3 {
+	/* 16px within the body */
+	font-size:1.6em;
+}
+
+h4 {
+	/* 12px within the body */
+	font-size: 1.4em;
+}
+
+h5 {
+	/* 12px within the body */
+	font-size: 1.2em;
+}
+
+ul li,
+ol li,
+p {
+	/* logical block separation for repeating elements */
+	margin-bottom: 1.0em;
+}
+
+a {
+	text-decoration: none;
+	/* this is how we know they are links without hover */
+	text-decoration: underline;
+}
+
+a:focus {
+	/* How focus is indicated should be determined later */
+	outline: none;
+}
+
+a:hover {
+	/* All links should show the pointing finger */
+	cursor: pointer;
+}
+
+del {
+	text-decoration: line-through;
+}
+
+/*******************************************************************************
+	Suggested Form styling
+*******************************************************************************/
+
+fieldset {
+	/** Remove ugly border around fieldsets **/
+	border-width: 0px;
+}
+
+label {
+	font-weight: bold;
+	margin: .5em 0;
+}
+
+input[type=text],
+input[type=password] {
+	padding: .25em;
+}
+
+select {
+	padding: .25em;
+}
+
+button {
+	padding: .25em;
+}
+
+/*******************************************************************************
+	Suggested Structural Class Styles
+*******************************************************************************/
+
+.container {
+	/** Literally contain the content if it overflows **/
+	overflow: hidden;
+}
+
+
+/** The following three entries provide clear fix to grouped items so if
+	floated they will then be cleared by the non-group related content, this
+	is not a blanket clearfix nor should it be arbitrarily applied as a class
+	to anything which requires a clearfix **/
+
+.group:after {
+	content: ".";
+	display: block;
+	height: 0;
+	clear: both;
+	visibility: hidden;
+}
+
+* html .group {
+	height: 1%;
+}
+
+*:first-child+html .group {
+	min-height: 1px;
+}
+
+/** Grouped Sections are floated together */
+
+ul.group > li, ol.group > li, .group > .section {
+	float: left;
+}
+
+/** Contained Grouped Sections take the shape of their container, this can
+	created equal length columns quite easily **/
+
+.container.group > .section {
+	padding-bottom: 5000px;
+	margin-bottom: -5000px;
+}
+
+/*******************************************************************************
+	Suggested Interface Class Styles
+*******************************************************************************/
+
+/** Navigation list elements show no bullets **/
+
+ol.nav.group li,
+ul.nav.group li {
+	margin: 0;
+}
+
+ol.nav, ul.nav {
+	list-style-type: none;
+	display: block;
+}
+
+/** Internally, each list item and anchor is blocked so width and height can
+	be set **/
+
+ol.nav > li, ol.nav > li > a, ul.nav > li, ul.nav > li > a {
+	display: block;
+	overflow: hidden;
+}
+
+/** Allows us to use background images for navigation links, however, still
+	place text within the anchor for accessibility
+
+.nav > li > a {
+	text-indent: -1000px;
+	overflow: hidden;
+}
+
+*/
+
+/******************************************************************************
+	CSS Lightbox
+
+	A lightbox is a larger version of an image that pops up, on a screen,
+	usually relative to the whole document or absolutely positions in the
+	center of the view.  This class allows you to create a lightbox nearly
+	anywhere using the following:
+	
+	<div class="lightbox">
+	</div>
+	
+	From there, each anchor which is placed will be positioned absolutely to
+	the relative lightbox within the center.  The id of the anchor can match
+	a trigger anchor with a href="#anchor-id" such that when you click the
+	trigger anchor, the targeted anchor and child image will be displayed.
+
+	Full Example:
+
+	<a href="#cool_photo">Click to view cool photo</a>
+
+	<div class="lightbox">
+		<a id="cool_photo">
+			<img src="/images/my_cool_photo.jpg" alt="Coolest Photo Ever!" />
+		</a>
+	</div>
+*******************************************************************************/
+
+div.lightbox a {
+	display: none;
+	display: expression((document.location.toString().split('#').slice(1) == this.id) ? 'block' : 'none');
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	margin-top: -25%;
+	margin-left: -25%;
+	padding: 0;
+	width: auto;
+	white-space: nowrap;
+}
+
+div.lightbox a:target {
+	display: block;
+
+}
+
+div.lightbox {
+	background: transparent;
+	border: 0;
+	margin: 0;
+	padding: 0;
+	position: relative;
+	width: 100%;
+	height: 100%;
+}
+
+div.lightbox a img {
+	margin: auto;
+	padding: 0;
+
+	background-color: rgb(255, 255, 255);
+	border: solid 40px rgb(255, 255, 255);
+
+	background-color: rgba(255, 255, 255, .90);
+	border: solid 40px rgba(255, 255, 255, .90);
+
+	/* Shadows */
+
+	-moz-box-shadow: 0px 0px 25px #000000;
+	-webkit-box-shadow: 0px 0px 25px #000000;
+	 box-shadow: 0px 0px 25px #000000;
+	 filter: progid:DXImageTransform.Microsoft.glow(
+			Color=#25202020,
+			strength=10
+	 );
+
+	/* Radius */
+
+	-moz-border-radius: 2.5%;
+	-webkit-border-radius: 2.5%;
+	 border-radius: 2.5%;
+}
+
+
+

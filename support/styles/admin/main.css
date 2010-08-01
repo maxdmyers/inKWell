@@ -1,0 +1,272 @@
+.error, .helper, .alert, .success {
+	padding: 1em;
+	margin: 1em 0;
+	border-style: solid;
+	border-width: 2px;
+	clear: both;
+	font-size: 1.3em;
+}
+
+.error {
+	background-color: #ffa6ac;
+	border-color: #df969c;
+}
+
+.helper {
+	background-color: #dbe1e2;
+	border-color: #cbd1d2;
+}
+
+.alert {
+	background-color: #fdffd4;
+	border-color: #dddfc4;
+}
+
+.success {
+	background-color: #d5ffb3;
+	border-color: #c5eea3;
+}
+
+html {
+	height: 100%;
+}
+
+body {
+	font-family: sans, verdana;
+}
+
+a {
+	color: #6f0b00;
+	text-decoration: none;
+}
+
+h2 {
+	font-size: 2.6em;
+	margin: .5em 0;
+}
+
+/**
+ * Form Styling
+ */
+
+form {}
+
+	form label {
+		display: block;
+	}
+
+	form fieldset {}
+
+		form fieldset.actions {
+			float: right;
+			padding: .5% 1%;
+		}
+
+/**
+ * Table Styling
+ */
+
+table {
+	width: 100%;
+	clear: both;
+}
+
+		/**
+		 * General Cells
+		 */
+
+		table td,
+		table th {
+			padding: .5% 1%;
+		}
+
+		table th {
+			font-weight: bold;
+			text-align: left;
+			font-size: 1.1em;
+		}
+
+		table th.last,
+		table td.last {
+			text-align: right;
+		}
+
+		table tfoot td {
+			text-align: right;
+		}
+
+		/**
+		 * Special Cells
+		 */
+
+		table th.selection,
+		table td.selection {
+			border-right: dotted 1px #b0b0b0;
+			font-size: .95em;
+			text-align: center;
+		}
+
+		table thead th.sortable {}
+
+			table thead th.sortable .directions {
+				white-space: nowrap;
+			}
+
+				table thead th.sortable .directions a{
+					white-space: nowrap;
+					font-size: 1.3em;
+					color: #df9f9f;
+				}
+
+				table thead th.sortable .directions a.selected{
+					color: #6f0b00;
+				}
+
+		/**
+		 * Table Rows
+		 */
+
+		table thead tr {
+			border-bottom: solid 1px #909090;
+		}
+
+		table tbody tr {
+			border-bottom: solid 1px #d0d0d0;
+		}
+
+		table tbody tr:hover {
+			background-color: #f2f2f2;
+		}
+
+		table tbody tr.even {
+			background-color: #f6f6f6;
+		}
+
+		table tbody tr.even:hover {
+			background-color: #f0f0f0;
+		}
+
+		table tbody tr.highlighted {
+			background-color: #fdffd1;
+		}
+
+		table tbody tr.highlighted:hover {
+			background-color: #dddfe1;
+		}
+
+		table tbody tr.selected {
+			background-color: #e1edfa;
+		}
+
+		table tbody tr.selected:hover {
+			background-color: #d1ddea;
+		}
+
+
+
+body > .header {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	right: 10px;
+	padding: 10px;
+	height: 70px;
+}
+
+body > .header h1 {
+	display: block;
+	height: 70px;
+	margin: 0;
+	padding: 0;
+	font-size: 3.2em;
+
+	/*
+	background-image: url(/sup/styles/admin/images/logo.png);
+	background-repeat: no-repeat;
+	text-indent: -500px;
+	overflow: hidden;
+	*/
+}
+
+body > .nav > li > .nav {
+	margin-left: 15px;
+}
+
+body > .primary.nav {
+	display: block;
+	position: absolute;
+	top: 100px;
+	left: 10px;
+	width: 240px;
+	min-height: 70%;
+	border-right: dotted 1px #b6b6b6;
+	border-top: dotted 1px #a0a0a0;
+	font-size: 1.2em;
+}
+
+	body > .primary.nav > li {
+		border-bottom: dotted 1px #b6b6b6;
+		margin: 0;
+		padding: 0;
+	}
+
+		body > .primary.nav a {
+			padding: .75em;
+			padding-left: 20px;
+		}
+
+	body > .primary.nav > li > .secondary.nav {
+		display: none;
+	}
+
+	body > .primary.nav > li.selected > .secondary.nav {
+		display: block;
+	}
+
+	body > .secondary.nav > li {
+		margin: 0;
+		padding: 0;
+	}
+
+
+body > .header p {
+	text-align: right;
+}
+
+body > .header h1 {
+	float: left;
+}
+
+body > .torso {
+	position: fixed;
+	top: 100px;
+	left: 250px;
+	bottom: 10px;
+	right: 10px;
+	padding: 1em 1%;
+	overflow-y: scroll;
+	border-top: dotted 1px #a0a0a0;
+}
+
+#manage .primary.section > h2 {
+	float: left;
+}
+
+#manage .primary.section > form.filter {
+	float: right;
+}
+
+		#update.access_controls form legend {
+			display: none;
+		}
+
+		#update.access_controls table th,
+		#update.access_controls table td {
+			text-align: center;
+		}
+
+		#update.access_controls table th.first,
+		#update.access_controls table td.first {
+			width: 20%;
+			text-align: left;
+		}
