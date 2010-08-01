@@ -74,7 +74,7 @@
 		 * @param string $file
 		 * @return void
 		 */
-		static public function scaffold($file = NULL) {
+		static public function __scaffold($file = NULL) {
 
 			if (!$file) {
 				$file = implode(DIRECTORY_SEPARATOR, array(
