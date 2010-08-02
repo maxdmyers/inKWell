@@ -1,4 +1,4 @@
-# inKWell (MVC and CMS)
+# inKWell (MVC Framework and CMS)
 
 ## Licensing
 
