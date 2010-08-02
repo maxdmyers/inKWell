@@ -38,6 +38,7 @@
 		// State information
 
 		static private   $requestFormat        = NULL;
+		static private   $headersSent          = FALSE;
 
 		/**
 		 * Builds a new controller by assigning it a local view and running
@@ -46,7 +47,7 @@
 		 * @param void
 		 * @return void
 		 */
-		public function __construct()
+		final public function __construct()
 		{
 			$this->view = new View();
 
@@ -147,7 +148,7 @@
 		 */
 		static protected function triggerNotFound($force_death = FALSE, $message_type = NULL, $message = NULL)
 		{
-			header("HTTP/1.0 404 Not Found");
+			@header("HTTP/1.0 404 Not Found");
 
 			if ($message_type == NULL) {
 				$message_type = self::MSG_TYPE_ERROR;
@@ -190,7 +191,7 @@
 		 */
 		static protected function triggerNotAuthorized($force_death = FALSE, $message_type = NULL, $message = NULL)
 		{
-			header('HTTP/1.0 401 Unauthorized');
+			@header('HTTP/1.0 401 Unauthorized');
 
 			if ($message_type === NULL) {
 				$message = self::MSG_TYPE_ALERT;
@@ -233,7 +234,7 @@
 		 */
 		static protected function triggerForbidden($force_death = FALSE, $message_type = NULL, $message = NULL)
 		{
-			header("HTTP/1.0 403 Forbidden");
+			@header("HTTP/1.0 403 Forbidden");
 
 			if ($message_type === NULL) {
 				$message = self::MSG_TYPE_ERROR;
@@ -285,18 +286,19 @@
 
 			}
 
-			if ($send_headers) {
+			if ($send_headers && !self::$headersSent) {
 				switch(self::$requestFormat) {
 					case 'html':
-						fHTML::sendHeader();
+						@fHTML::sendHeader();
 						break;
 					case 'json':
-						fJSON::sendHeader();
+						@fJSON::sendHeader();
 						break;
 					case 'xml':
-						fXML::sendHeader();
+						@fXML::sendHeader();
 						break;
 				}
+				self::$headersSent = TRUE;
 			}
 
 			return self::$requestFormat;

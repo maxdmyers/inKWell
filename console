@@ -1,13 +1,15 @@
-#!/usr/bin/php
+#!/usr/bin/php -q
 <?php
 
 	function ___respawn()
 	{
 		echo ob_get_clean() . "\n";
 		$error = error_get_last();
-		if ($error['type'] == E_ERROR) {
+
+		if (!isset($GLOBALS['___called_quit'])) {
 			passthru(__FILE__);
 		}
+
 	}
 
 	register_shutdown_function('___respawn');
@@ -15,8 +17,6 @@
 	$_SERVER['DOCUMENT_ROOT']  = dirname(__FILE__);
 	$_SERVER['REQUEST_URI']    = '/';
 	$_SERVER['REQUEST_METHOD'] = 'GET';
-
-	$_GET['request_format']    = 'console';
 
 	include 'includes/init.php';
 
@@ -31,7 +31,19 @@
 		$_SERVER['REQUEST_METHOD'] = 'GET';
 		$_GET                      = $params;
 		include 'includes/routing.php';
-		exit();
+	}
+
+	function post($url, $params = array()) {
+		$request_info = parse_url($url);
+		if (isset($request_info['host'])) {
+			$_SERVER['SERVER_NAME'] = $request_info['host'];
+		}
+		if (isset($request_info['path'])) {
+			$_SERVER['REQUEST_URI'] = $request_info['path'];
+		}
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_POST                      = $params;
+		include 'includes/routing.php';
 	}
 
 	fCore::enableErrorHandling('php://stdout');
@@ -68,6 +80,17 @@
 				if($___output = ob_get_clean()) {
 					echo $___output;
 					echo "\n";
+				}
+			} else {
+				switch (trim($___command)) {
+					case 'quit':
+						$___called_quit = TRUE;
+						exit();
+						break;
+					case 'clear':
+						passthru('clear');
+						$___command = '';
+						break;
 				}
 			}
 		}

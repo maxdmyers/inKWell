@@ -160,7 +160,7 @@
 		}
 
 		/**
-		 * Creates a target string to uniquely identify a controller or view.
+		 * Creates a target string to uniquely identify an entry point.
 		 *
 		 * @param string|object $class The object or class of the controller or view
 		 * @param string $method The method which will retrieve and handle it
