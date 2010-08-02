@@ -9,8 +9,9 @@
 	 */
 	class Scaffolder
 	{
-	
+
 		const DEFAULT_SCAFFOLDING_ROOT  = 'scaffolding';
+		const VARIABLE_REGEX            = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
 
 		// Configuration Informations
 
@@ -59,14 +60,24 @@
 		 */
 		static public function makeClass($class, $parent_class, $support_vars = array(), $scaffolding = FALSE)
 		{
-			ob_start();
-			extract($support_vars);
-			include implode(DIRECTORY_SEPARATOR, array(
-				self::$scaffoldingRoot,
-				'classes',
-				$parent_class . '.php'
-			));
-			return ob_get_clean();
+			$is_safe  = (
+				preg_match('#' . self::VARIABLE_REGEX . '#', $class) &&
+				preg_match('#' . self::VARIABLE_REGEX . '#', $parent_class)
+			);
+
+			if ($is_safe && extract($support_vars) == sizeof($support_vars)) {
+				ob_start();
+				include implode(DIRECTORY_SEPARATOR, array(
+					self::$scaffoldingRoot,
+					'classes',
+					$parent_class . '.php'
+				));
+				return ob_get_clean();
+			} else {
+				throw new fProgrammerException(
+					'Scaffolder detected insecure or invalid class or variable names'
+				);
+			}
 		}
 
 		/**

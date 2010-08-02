@@ -42,18 +42,15 @@
 
 			if (
 				isset($config['global']['disable_scaffolder']) &&
-				!$config['global']['disable_scaffolder']
+				!$config['global']['disable_scaffolder']       &&
+				isset($config['scaffolder']['autoloaders'])    &&
+				is_array($config['scaffolder']['autoloaders'])
 			) {
 
-				$config['autoloaders'] = array_merge($config['autoloaders'], array(
-
-					// Dynamically defined classes for scaffolding
-
-					'**Controller'          => 'ActiveRecordsController::__define',
-					'dynamic_models'        => 'ActiveRecord::__define',
-					'dynamic_sets'          => 'RecordSet::__define'
-
-				));
+				$config['autoloaders'] = array_merge(
+					$config['autoloaders'],
+					$config['scaffolder']['autoloaders']
+				);
 			}
 
 			spl_autoload_register('iw::loadClass');

@@ -123,7 +123,7 @@
 				self::$recordTranslations[$record] = NULL;
 				try {
 					$record_class = fGrammar::camelize($record, TRUE);
-					if (is_subclass_of($record_class, __CLASS__)) {
+					if (@is_subclass_of($record_class, __CLASS__)) {
 						self::$recordTranslations[$record_class] = $record;
 					}
 				} catch (fProgrammerException $e) {}
@@ -144,7 +144,7 @@
 			if (!in_array($record_table, self::$tableTranslations)) {
 				try {
 					$record_class = fORM::classize($record_table);
-					if (is_subclass_of($record_class, __CLASS__)) {
+					if (@is_subclass_of($record_class, __CLASS__)) {
 						self::$tableTranslations[$record_class] = $record_table;
 					}
 				} catch (fProgrammerException $e) {}
@@ -165,7 +165,7 @@
 			if (!in_array($record_set, self::$setTranslations)) {
 				try {
 					$record_class = fGrammar::singularize($record_set);
-					if (is_subclass_of($record_class, __CLASS__)) {
+					if (@is_subclass_of($record_class, __CLASS__)) {
 						self::$setTranslations[$record_class] = $record_set;
 					}
 				} catch (fProgrammerException $e) {}
@@ -187,7 +187,7 @@
 				try {
 					$singularized = fGrammar::singularize($entry);
 					$record_class = fGrammar::camelize($entry, TRUE);
-					if (is_subclass_of($record_class, __CLASS__)) {
+					if (@is_subclass_of($record_class, __CLASS__)) {
 						self::$entryTranslations[$record_class] = $entry;
 					}
 				} catch (fProgrammerException $e) {}
@@ -392,32 +392,14 @@
 
 			$tables = fORMSchema::retrieve()->getTables();
 			if (in_array($table = fORM::tablize($record_class), $tables)) {
-				self::defineForTable($table, $record_class);
-				return TRUE;
+
+				eval(Scaffolder::makeClass($record_class, __CLASS__, array()));
+
+				if (class_exists($record_class, FALSE)) {
+					return TRUE;
+				}
 			}
 			return FALSE;
-		}
-
-		/**
-		 * Creates a basic active record class for the provided table.  This is
-		 * useful to get the standard active record functionality.
-		 *
-		 * @param string $table The active record class
-		 * @param string $record_class The class name for the newly defined active record class
-		 * @return void
-		 */
-		static protected function defineForTable($table, $record_class)
-		{
-			$variable = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
-			$is_safe  = (
-				preg_match('#' . $variable . '#', $record_class)
-			);
-
-			if ($is_safe) {
-				eval(Scaffolder::makeClass($record_class, __CLASS__, array(
-				)));
-			}
-
 		}
 
 		/**

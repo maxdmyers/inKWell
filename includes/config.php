@@ -64,7 +64,13 @@
 		'scaffolder'                 => array(
 
 			'disabled'               => FALSE,
-			'scaffolding_root'       => '/includes/scaffolding'
+			'scaffolding_root'       => '/includes/scaffolding',
+
+			'autoloaders'            => array(
+				'**Controller'       => 'ActiveRecordsController::__define',
+				'dynamic_models'     => 'ActiveRecord::__define',
+				'dynamic_sets'       => 'RecordSet::__define'
+			)
 		),
 
 		'controller'                 => array(

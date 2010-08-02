@@ -516,29 +516,6 @@
 			$record_set   = str_replace(self::CONTROLLER_SUFFIX, '', $controller_class);
 			$record_class = ActiveRecord::classFromRecordSet($record_set);
 			if ($record_class && ActiveRecord::canMap($record_class)) {
-				self::defineForRecord($record_class, $controller_class);
-				return TRUE;
-			}
-			return FALSE;
-		}
-
-		/**
-		 * Defines a record controller with supported actions mapped to the
-		 * provided runAction() interface.
-		 *
-		 * @param string $record_class
-		 * @param string $class
-		 * @return void
-		 */
-		static protected function defineForRecord($record_class, $controller_class)
-		{
-			$variable = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
-			$is_valid  = (
-				preg_match('#' . $variable . '#', $controller_class) &&
-				preg_match('#' . $variable . '#', $record_class)
-			);
-
-			if ($is_valid) {
 
 				$supported_actions = array();
 				foreach (AuthActions::build()->call('getName') as $action) {
@@ -552,8 +529,11 @@
 					'supported_actions' => $supported_actions
 				)));
 
+				if (class_exists($controller_class, FALSE)) {
+					return TRUE;
+				}
 			}
+			return FALSE;
 		}
-
 
 	}
