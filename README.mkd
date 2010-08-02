@@ -1,0 +1,40 @@
+# inKWell (MVC and CMS)
+
+## Licensing
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License along
+with this program. If not, see <http://www.gnu.org/licenses/>.
+
+If you wish to license this software under different terms and conditions,
+please e-mail: Matthew J. Sahagian <msahagian@dotink.org>
+
+## Introduction
+
+inKWell is an MVC framework built on Flourish (http://www.flourishlib.com) and
+Moor (http://www.github.com/jeffturcotte/moor).  It is designed to be extremely
+light weight and flexible.  Unlike other frameworks nearly every aspect of it
+is designed to allow for easy overrides, including scaffolding.
+
+The base framework consists of only six classes aside from those provided by
+Flourish and Moor.  At the moment, additional classes do come bundled, however,
+these are completely optional and will inevitably be moved to an "extensions"
+system.
+
+The core classes are as follows:
+
+	1. IW (Contains only the basic framework functionality, mainly autoloading)
+	2. ActiveRecord (An advanced active record/model class built on fActiveRecord)
+	3. RecordSet (A wrapper for multiple ActiveRecords built on fRecordSet)
+	4. View (A standard view/templating engine built on fTemplating)
+	5. Controller (A simple controller with common triggers)
+	6. Scaffolder (A scaffolder which supports templating)
+
