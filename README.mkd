@@ -31,10 +31,10 @@ system.
 
 The core classes are as follows:
 
-	1. IW (Contains only the basic framework functionality, mainly autoloading)
-	2. ActiveRecord (An advanced active record/model class built on fActiveRecord)
-	3. RecordSet (A wrapper for multiple ActiveRecords built on fRecordSet)
-	4. View (A standard view/templating engine built on fTemplating)
-	5. Controller (A simple controller with common triggers)
-	6. Scaffolder (A scaffolder which supports templating)
+1. IW (Contains only the basic framework functionality, mainly autoloading)
+2. ActiveRecord (An advanced active record/model class built on fActiveRecord)
+3. RecordSet (A wrapper for multiple ActiveRecords built on fRecordSet)
+4. View (A standard view/templating engine built on fTemplating)
+5. Controller (A simple controller with common triggers)
+6. Scaffolder (A scaffolder which supports templating)
 
