@@ -25,11 +25,15 @@
 		 */
 		static public function __init($config)
 		{
-			if (isset($config['scaffolding_root'])) {
-				self::setScaffoldingRoot($_SERVER['DOCUMENT_ROOT'] . $config['scaffolding_root']);
-			} else {
-				self::setScaffoldingRoot($_SERVER['DOCUMENT_ROOT'] . self::DEFAULT_SCAFFOLDING_ROOT);
-			}
+			self::setScaffoldingRoot(implode(DIRECTORY_SEPARATOR, array(
+				$_SERVER['DOCUMENT_ROOT'],
+				trim(
+					isset($config['scaffolding_root'])
+					? $config['scaffolding_root']
+					: self::DEFAULT_SCAFFOLDING_ROOT
+					, '/\\'
+				)
+			)));
 		}
 
 		/**

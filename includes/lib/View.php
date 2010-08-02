@@ -475,11 +475,15 @@
 		 */
 		static public function __init($config)
 		{
-			if (isset($config['view_root'])) {
-				self::setViewRoot($_SERVER['DOCUMENT_ROOT'] . $config['view_root']);
-			} else {
-				self::setViewRoot($_SERVER['DOCUMENT_ROOT'] . self::DEFAULT_VIEW_ROOT);
-			}
+			self::setViewRoot(implode(DIRECTORY_SEPARATOR, array(
+				$_SERVER['DOCUMENT_ROOT'],
+				trim(
+					isset($config['view_root'])
+					? $config['view_root']
+					: self::DEFAULT_VIEW_ROOT
+					, '/\\'
+				)
+			)));
 
 			self::setCacheDirectory(iw::getWriteDirectory('cache'));
 		}

@@ -4,30 +4,30 @@
 
 		'autoloaders'                => array(
 
-			// We use flourish for tons of stuff, including init, so it comes second
+			// We use flourish for tons of stuff, including init, so it comes first
 
-			'f*'                     => $_SERVER['DOCUMENT_ROOT'] . '/includes/lib/flourish',
+			'f*'                     => 'includes/lib/flourish',
 
 			// Moor is our router, so that comes second
 
-			'Moor*'                  => $_SERVER['DOCUMENT_ROOT'] . '/includes/lib/moor',
+			'Moor*'                  => 'includes/lib/moor',
 
 			// Then we have our Controllers, Models, RecordSets
 
-			'*Controller'            => $_SERVER['DOCUMENT_ROOT'] . '/user/controllers',
-			'models'                 => $_SERVER['DOCUMENT_ROOT'] . '/user/models',
-			'sets'                   => $_SERVER['DOCUMENT_ROOT'] . '/user/models/sets',
+			'*Controller'            => 'user/controllers',
+			'models'                 => 'user/models',
+			'sets'                   => 'user/models/sets',
 
 			// And our Core Library
 
-			'library'                => $_SERVER['DOCUMENT_ROOT'] . '/includes/lib'
+			'library'                => 'includes/lib'
 		),
 
 		'global'                     => array(
 
 			// General Settings
 
-			'write_directory'        => '/writable',
+			'write_directory'        => 'writable',
 			'disable_database'       => FALSE,
 			'disable_scaffolder'     => FALSE,
 
@@ -64,7 +64,7 @@
 		'scaffolder'                 => array(
 
 			'disabled'               => FALSE,
-			'scaffolding_root'       => '/includes/scaffolding',
+			'scaffolding_root'       => 'includes/scaffolding',
 
 			'autoloaders'            => array(
 				'**Controller'       => 'ActiveRecordsController::__define',
@@ -83,12 +83,12 @@
 
 		'view'                       => array(
 
-			'view_root'              => '/user/views'
+			'view_root'              => 'user/views'
 		),
 
 		'pages_controller'           => array(
 
-			'pages_root'             => '/user/controllers/pages',
+			'pages_root'             => 'user/controllers/pages',
 
 			'sections'               => array(
 				'default'            => 'inKWell Site',

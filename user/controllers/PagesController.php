@@ -80,15 +80,18 @@
 
 			// Connect the pages root
 
-			if (isset($config['pages_root'])) {
-				$pages_root = $config['pages_root'];
-			} else {
-				$pages_root = self::DEFAULT_PAGES_ROOT;
-			}
+			$pages_root = implode(DIRECTORY_SEPARATOR, array(
+				$_SERVER['DOCUMENT_ROOT'],
+				trim(
+					isset($config['pages_root'])
+					? $config['pages_root']
+					: self::DEFAULT_PAGES_ROOT
+					, '/\\'
+				)
+			));
 
 			self::$pagePath = implode(DIRECTORY_SEPARATOR, array(
-				$_SERVER['DOCUMENT_ROOT'],
-				trim($pages_root, '/\\'),
+				$pages_root,
 				self::getBaseURL()
 			));
 		}

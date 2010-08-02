@@ -9,9 +9,9 @@
 	 */
 	class iw
 	{
-
-		const INITIALIZATION_METHOD  = '__init';
-		const DEFAULT_REQUEST_FORMAT = 'html';
+		const INITIALIZATION_METHOD   = '__init';
+		const DEFAULT_REQUEST_FORMAT  = 'html';
+		const DEFAULT_WRITE_DIRECTORY = 'wriable';
 
 		static private $config                = array();
 		static private $writeDirectory        = NULL;
@@ -32,13 +32,15 @@
 		 */
 		static public function init(array $config)
 		{
-			if (isset($config['global']['write_directory'])) {
-				self::$writeDirectory =	$_SERVER['DOCUMENT_ROOT'] . $config['global']['write_directory'];
-			} else {
-				throw new fProgrammerException (
-					'You must set the write directory in the global config'
-				);
-			}
+			self::$writeDirectory = implode(DIRECTORY_SEPARATOR, array(
+				$_SERVER['DOCUMENT_ROOT'],
+				trim(
+					isset($config['global']['write_directory'])
+					? $config['global']['write_directory']
+					: self::DEFAULT_WRITE_DIRECTORY
+					, '/\\'
+				)
+			));
 
 			if (
 				isset($config['global']['disable_scaffolder']) &&
@@ -84,8 +86,12 @@
 							continue;
 						}
 					} else {
-						$file_parts = array($target, $class . '.php');
-						$file       = implode(DIRECTORY_SEPARATOR, $file_parts);
+
+						$file       = implode(DIRECTORY_SEPARATOR, array(
+							$_SERVER['DOCUMENT_ROOT'],   // Document ROot
+							trim($target, '/\\'),        // Target directory
+							$class . '.php'              // Class name as PHP file
+						));
 
 						if (file_exists($file)) {
 							include $file;
