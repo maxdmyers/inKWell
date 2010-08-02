@@ -10,13 +10,11 @@
 
 		const DEFAULT_VIEW_ROOT     = 'views';
 
+		const PRIMARY_ELEMENT_NAME  = '__primary_element';
+
 		const MINEX_COMMENTS        = '#(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)|(//.*)#';
 		const MINEX_SPACES          = '#\s+#';
 		const MINEX_STRINGS         = '#((?<!//)["\'])(?:\\\1|.)*?\1#';
-
-		// The file representing the the view.
-
-		private        $file            = NULL;
 
 		// Data storage area and digestable element tracker
 
@@ -80,7 +78,7 @@
 		 */
 		public function load($file)
 		{
-			$this->file = $file;
+			$this->set(self::PRIMARY_ELEMENT_NAME, $file);
 			return $this;
 		}
 
@@ -90,14 +88,10 @@
 		 * @param string $element An optional name of an element to output
 		 * @return void
 		 */
-		public function render($element = NULL)
+		public function render($element = self::PRIMARY_ELEMENT_NAME)
 		{
 			try {
-				if ($element) {
-					$this->place($element);
-				} else {
-					$this->inject($this->file);
-				}
+				$this->place($element);
 			} catch (fException $e) {
 				echo 'The view cannot be rendered: ' . $e->getMessage();
 			}
@@ -117,6 +111,7 @@
 			if ($content === NULL) {
 				$content = ob_get_clean();
 			}
+
 			$this->digest_elements[] = $element;
 			return $this->set($element, $content);
 		}
@@ -131,11 +126,16 @@
 		 */
 		public function place($element, $file_type = NULL)
 		{
+			$element_value = $this->get($element);
+
 			if (in_array($element, $this->digest_elements)) {
-				echo $this->get($element);
+				echo $element_value;
+			} elseif ($element_value instanceof self) {
+				$element_value->render();
 			} else {
 				return parent::place($element, $file_type);
 			}
+
 		}
 
 		/**
@@ -184,7 +184,7 @@
 
 				$extension = pathinfo($path, PATHINFO_EXTENSION);
 
-	 			if (strpos('.', $path) !== 0) {
+	 			if (strpos($path, '/') === 0) {
 	 				$file_types[$extension][$media][] = $_SERVER['DOCUMENT_ROOT'] . $path;
 	 			} else {
 		 			$file_types[$extension][$media][] = $path;
