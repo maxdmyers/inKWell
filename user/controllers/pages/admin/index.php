@@ -1,5 +1,5 @@
 <?
-	AuthorizationController::requireLoggedIn();
+	AuthController::requireLoggedIn();
 
 	$page = new PagesController();
 

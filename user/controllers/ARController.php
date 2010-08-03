@@ -5,7 +5,7 @@
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 */
-	abstract class ActiveRecordsController extends Controller
+	abstract class ARController extends Controller
 	{
 
 		const RECORDS_PER_PAGE = 20;
@@ -13,7 +13,7 @@
 		protected $page = NULL;
 
 		/**
-		 * Prepares a new ActiveRecordsController for running actions.
+		 * Prepares a new ARController for running actions.
 		 *
 		 * @param string $record_class
 		 * @return void
@@ -21,8 +21,8 @@
 		protected function prepare()
 		{
 
-			AuthorizationController::requireLoggedIn();
-			AuthorizationController::requireACL($this->entry, PERM_SHOW);
+			self::exec('AuthController::requireLoggedIn');
+			self::exec('AuthController::requireACL', $this->entry, PERM_SHOW);
 
 			$record_class = constant(get_class($this) . '::RECORD_CLASS');
 
@@ -337,7 +337,7 @@
 
 			// Check for sorting
 
-			$sorting                    = ActiveRecord::getDefaultSorting($record_class);
+			$sorting  = ActiveRecord::getDefaultSorting($record_class);
 			$this->sort_column    = fRequest::get('sort_column', 'string?');
 			$this->sort_direction = fRequest::get('sort_direction', 'string', 'asc');
 

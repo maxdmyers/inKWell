@@ -67,7 +67,7 @@
 			'scaffolding_root'       => 'includes/scaffolding',
 
 			'autoloaders'            => array(
-				'**Controller'       => 'ActiveRecordsController::__define',
+				'**Controller'       => 'ARController::__define',
 				'dynamic_models'     => 'ActiveRecord::__define',
 				'dynamic_sets'       => 'RecordSet::__define'
 			)

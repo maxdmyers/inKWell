@@ -334,14 +334,33 @@
 				(Moor::getActiveShortMethod() == $method)
 			);
 		}
+		
+		/**
+		 * Attempts to execute a callback within the context of of Controller.
+		 *
+		 * @param string $callback The callback to execute
+		 * @param mixed Additional parameters to pass to the callback
+		 * @return mixed The return of the callback, if valid, NULL otherwise
+		 */
+		static protected function exec($callback)
+		{
+			if (is_callable($callback)) {
+				$params = array_slice(func_get_args(), 1);
+				return call_user_func_array($callback, $params);
+			}
+
+			return NULL;
+		}
 
 		/**
-		 * Attempts to delegate control to a file.  If the $required parameter
-		 * set to TRUE then this function will execute triggerNotFound() if the
-		 * file is not accessible.
+		 * Attempts to delegate control to a file within the context of
+		 * Controller.  If the $required parameter is set to TRUE then this
+		 * function will execute triggerNotFound() if the file is not
+		 * accessible.
 		 *
 		 * @param string|fFile $file The file to delegate control to
 		 * @param boolean $required TRUE if the file is required, FALSE otherwise
+		 * @return mixed The return of the included file, if accessible, NULL otherwise
 		 */
 		static protected function delegate($file, $required = FALSE)
 		{
@@ -355,8 +374,10 @@
 			}
 
 			if ($file instanceof fFile) {
-				include $file->getPath();
+				return include $file->getPath();
 			}
+
+			return NULL;
 		}
 
 	}

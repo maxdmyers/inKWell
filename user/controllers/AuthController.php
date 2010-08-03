@@ -6,7 +6,7 @@
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 */
-	abstract class AuthorizationController extends Controller
+	abstract class AuthController extends Controller
 	{
 
 		const LOGOUT_SUCCESS_MSG         = 'You have successfully logged out';
@@ -112,7 +112,7 @@
 		}
 
 		/**
-		 * Initializes the AuthedController
+		 * Initializes the AuthController
 		 *
 		 * @param void
 		 * @return void

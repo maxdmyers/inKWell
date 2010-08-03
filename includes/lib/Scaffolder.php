@@ -70,13 +70,23 @@
 			);
 
 			if ($is_safe && extract($support_vars) == sizeof($support_vars)) {
-				ob_start();
-				include implode(DIRECTORY_SEPARATOR, array(
+
+				$scaffolding_template = implode(DIRECTORY_SEPARATOR, array(
 					self::$scaffoldingRoot,
 					'classes',
 					$parent_class . '.php'
 				));
-				return ob_get_clean();
+
+				if (!is_readable($scaffolding_template)) {
+					throw new fProgrammerException(
+						'Scaffolder cannot make class %s, no template found', $class
+					);
+				} else {
+					ob_start();
+					include $scaffolding_template;
+					return ob_get_clean();
+				}
+
 			} else {
 				throw new fProgrammerException(
 					'Scaffolder detected insecure or invalid class or variable names'

@@ -7,8 +7,8 @@
 	Moor::
 
 		route('/server_information',                        'phpinfo'                          ) ->
-		route('/login',                                     'AuthorizationController::login'   ) ->
-		route('/logout',                                    'AuthorizationController::logout'  ) ->
+		route('/login',                                     'AuthController::login'            ) ->
+		route('/logout',                                    'AuthController::logout'           ) ->
 
 		// Admin CP Routing
 
