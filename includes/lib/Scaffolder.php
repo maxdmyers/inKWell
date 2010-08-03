@@ -11,6 +11,7 @@
 	{
 
 		const DEFAULT_SCAFFOLDING_ROOT  = 'scaffolding';
+		const SCAFFOLDING_MAGIC_METHOD  = '__make';
 		const VARIABLE_REGEX            = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
 
 		// Configuration Informations
@@ -50,6 +51,37 @@
 			} else {
 				throw new fProgrammerException (
 					'Scaffolding root directory %s is not readable', $directory
+				);
+			}
+		}
+
+		/**
+		 *
+		 * Examples:
+		 *
+		 */
+		static public function build($class, $target, $support_vars = array())
+		{
+			if (class_exists($class)) {
+
+				$make_method = iw::makeTarget($class, self::SCAFFOLDING_MAGIC_METHOD);
+
+				if (is_callable($make_method)) {
+					if (call_user_func($make_method, $target, $support_vars)) {
+						
+					} else {
+						throw new fProgrammerException (
+							'Scaffolding failed, %s cannot build %s', $make_method, $target
+						);
+					}
+				} else {
+					throw new fProgrammerException (
+						'Scaffolding failed, %s does not support %s', $class, self::SCAFFOLDING_MAGIC_METHOD
+					);
+				}
+			} else {
+				throw new fProgrammerException (
+					'Scaffolding failed, %s is an unknown class', $class
 				);
 			}
 		}

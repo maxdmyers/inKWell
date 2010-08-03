@@ -1,5 +1,4 @@
 <?
-
 	$page = new PagesController();
 
 	$page->view

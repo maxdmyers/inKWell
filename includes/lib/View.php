@@ -70,6 +70,14 @@
 		}
 
 		/**
+		 *
+		 */
+		public function __make($target)
+		{
+			
+		}
+
+		/**
 		 * Loads a file into the view as the primary element.  This is what will
 		 * be placed when render() is called with no particular element.
 		 *

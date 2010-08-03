@@ -387,7 +387,7 @@
 		 * @param string $record_class The Class name to dynamically define
 		 * @return boolean TRUE if an active record was dynamically defined, FALSE otherwise
 		 */
-		static public function __define($record_class)
+		static public function __make($record_class)
 		{
 
 			$tables = fORMSchema::retrieve()->getTables();

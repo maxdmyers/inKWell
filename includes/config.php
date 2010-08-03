@@ -15,8 +15,8 @@
 			// Then we have our Controllers, Models, RecordSets
 
 			'*Controller'            => 'user/controllers',
-			'models'                 => 'user/models',
-			'sets'                   => 'user/models/sets',
+			'active_records'         => 'user/models',
+			'record_sets'            => 'user/models/sets',
 
 			// And our Core Library
 
@@ -28,23 +28,12 @@
 			// General Settings
 
 			'write_directory'        => 'writable',
-			'disable_database'       => FALSE,
-			'disable_scaffolder'     => FALSE,
 
 			// Error Reporting Information
 
 			'display_errors'         => TRUE,
 			'error_level'            => E_ALL,
 			'error_email_to'         => 'webmaster@dotink.org',
-
-
-			// Database Information
-
-			'database_type'          => 'postgresql',
-			'database'               => 'inkwelldemo_dotink_org',
-			'database_user'          => 'inkwelldemo',
-			'database_password'      => 'inkwell123',
-			'database_host'          => '127.0.0.1',
 
 			// Session information
 
@@ -61,15 +50,27 @@
 			)
 		),
 
+		'database'                   => array(
+
+			'disabled'               => FALSE,
+
+			'type'                   => 'postgresql',
+			'name'                   => 'inkwelldemo_dotink_org',
+			'user'                   => 'inkwelldemo',
+			'password'               => 'inkwell123',
+			'host'                   => '127.0.0.1'
+
+		),
+
 		'scaffolder'                 => array(
 
 			'disabled'               => FALSE,
-			'scaffolding_root'       => 'includes/scaffolding',
+			'scaffolding_root'       => 'scaffolding',
 
 			'autoloaders'            => array(
-				'**Controller'       => 'ARController::__define',
-				'dynamic_models'     => 'ActiveRecord::__define',
-				'dynamic_sets'       => 'RecordSet::__define'
+				'**Controller'       => 'ARController::__make',
+				'_active_records'    => 'ActiveRecord::__make',
+				'_record_sets'       => 'RecordSet::__make'
 			)
 		),
 

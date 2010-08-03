@@ -69,8 +69,8 @@
 
 				case 'html':
 					$this->view->load('html.php')
-						-> add  ('styles',       '/support/styles/main.css')
-						-> add  ('scripts',      '/support/scripts/common.js');
+						-> add  ('styles',       '/user/styles/common.css')
+						-> add  ('scripts',      '/user/scripts/common.js');
 					break;
 
 				case 'json':

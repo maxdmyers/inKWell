@@ -28,35 +28,38 @@
 
 	// Initialize the Database
 	if (
-		isset($config['global']['disable_database']) &&
-		!$config['global']['disable_database']
+		isset($config['database']['disabled']) &&
+		!$config['database']['disabled']
 	)  {
 
 		if (
-			!isset($config['global']['database_type']) ||
-			!isset($config['global']['database'])
+			!isset($config['database']['type']) ||
+			!isset($config['database']['name'])
 		) {
 			throw new fProgrammerException (
-				'Database support requires specifying the type and database.'
+				'Database support requires specifying the type and name.'
 			);
 		}
 
-		$database_user = (isset($config['global']['database_user']))
-			? $config['global']['database_user']
+		$database_user = (isset($config['database']['user']))
+			? $config['database']['user']
 			: NULL;
 
-		$database_password = (isset($config['global']['database_password']))
-			? $config['global']['database_password']
+		$database_password = (isset($config['database']['password']))
+			? $config['database']['password']
 			: NULL;
 
-		$database_host = (isset($config['global']['database_host']))
-			? $config['global']['database_host']
+		$database_host = (isset($config['database']['host']))
+			? $config['database']['host']
 			: NULL;
 
+		if (is_array($database_host) && count($database_host)) {
+			$database_host = $database_host[array_rand($database_host)];
+		}
 
 		fORMDatabase::attach(new fDatabase(
-			$config['global']['database_type'],
-			$config['global']['database'],
+			$config['database']['type'],
+			$config['database']['name'],
 			$database_user,
 			$database_password,
 			$database_host

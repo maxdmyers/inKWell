@@ -15,7 +15,7 @@
 		 * @param string $record_set_class The Class name to dynamically define
 		 * @return boolean TRUE if a recordset was dynamically defined, FALSE otherwise
 		 */
-		static public function __define($record_set_class)
+		static public function __make($record_set_class)
 		{
 			if ($record_class = ActiveRecord::classFromRecordSet($record_set_class)) {
 

@@ -34,8 +34,8 @@
 
 				case 'html':
 					$this->view
-						-> add  ('styles',  '/support/styles/'  . $section . '/main.css')
-						-> add  ('scripts', '/support/scripts/' . $section . '/common.js')
+						-> add  ('styles',  '/user/styles/'  . $section . '/common.css')
+						-> add  ('scripts', '/user/scripts/' . $section . '/common.js')
 						-> add  ('header',  'pages/' . $section . '/header.php')
 						-> add  ('footer',  'pages/' . $section . '/footer.php')
 						-> push ('title',   self::$siteSections[$section])

@@ -40,18 +40,12 @@
 		 */
 		protected function prepare()
 		{
-			return parent::prepare(self::RECORD_CLASS);
+			return parent::prepare(__CLASS__);
 		}
 
-		/**
-		 * Renders a particular <?= $class ?> supported view.
-		 *
-		 * @param string $view The view to render if you so choose to support multiple views per format
-		 * @return void
-		 */
-		protected function render($element)
+		protected function getRecordClass()
 		{
-			return parent::render($element);
+			return self::RECORD_CLASS;
 		}
 
 <? foreach($supported_actions as $action) { ?>
@@ -62,7 +56,7 @@
 		 * @return void
 		 */
 		static public function <?= $action ?>() {
-			return parent::<?= $action ?>();
+			return parent::<?= $action ?>(__CLASS__);
 		}
 
 <? } ?>

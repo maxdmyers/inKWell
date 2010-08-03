@@ -18,21 +18,13 @@
 		 * @param string $record_class
 		 * @return void
 		 */
-		protected function prepare()
+		protected function prepare($controller_class)
 		{
+			$record_class = $this->getRecordClass();
+			$entry        = ActiveRecord::getEntry($record_class);
 
 			self::exec('AuthController::requireLoggedIn');
-			self::exec('AuthController::requireACL', $this->entry, PERM_SHOW);
-
-			$record_class = constant(get_class($this) . '::RECORD_CLASS');
-
-			$this->data   = array(
-				'record_class'     => $record_class,
-				'record'           => ActiveRecord::getRecord($record_class),
-				'record_table'     => ActiveRecord::getRecordTable($record_class),
-				'record_set'       => ActiveRecord::getRecordSet($record_class),
-				'entry'            => ActiveRecord::getEntry($record_class)
-			);
+			self::exec('AuthController::requireACL', $entry, PERM_SHOW);
 
 			if (self::checkRequestFormat('html')) {
 
@@ -42,15 +34,13 @@
 						$this->action . '.php' // file
 					)),
 					implode(DIRECTORY_SEPARATOR, array(
-					'active_records',       // default active record views
-					$this->action . '.php' // file
+					'active_records',          // default active record views
+					$this->action . '.php'     // file
 					))
 				);
 
 				$this->view->load($view_files);
 			}
-
-
 		}
 
 		/**
@@ -69,8 +59,9 @@
 
 					$this->view->load(self::requestView($view_file))
 
-						 -> add  ('scripts',           '/support/scripts/lightbox.js')
-						 -> add  ('scripts',           '/support/scripts/admin/forms.js')
+						 -> add  ('styles',            '/user/scripts/lightbox.css')
+						 -> add  ('scripts',           '/user/scripts/lightbox.js')
+						 -> add  ('scripts',           '/user/scripts/admin/forms.js')
 						 -> pack ('page_id',           $this->action)
 						 -> pack ('controller_class',  $this->controller_class)
 						 -> pack ('action',            $this->action)
@@ -84,21 +75,6 @@
 
 				case 'html::manage':
 
-					$this->view->load(self::requestView($view_file))
-
-						 -> pack ('controller_class',  $this->controller_class)
-						 -> pack ('action',            $this->action)
-						 -> pack ('entry',             $this->entry)
-						 -> pack ('active_record_set', $this->active_record_set)
-						 -> pack ('display_columns',   $this->display_columns)
-						 -> pack ('filter_columns',    $this->filter_columns)
-						 -> pack ('filter_column',     $this->filter_column)
-						 -> pack ('filter_value' ,     $this->filter_value)
-						 -> pack ('sortable_columns',  $this->sortable_columns)
-						 -> pack ('sort_column' ,      $this->sort_column)
-						 -> pack ('sort_direction',    $this->sort_direction)
-						 -> pack ('affected_records',  $this->affected_records);
-
 					return;
 			}
 
@@ -108,7 +84,7 @@
 		/**
 		 * A standard active record create method
 		 */
-		static protected function create()
+		static protected function create($controller_class)
 		{
 
 			$schema           = fORMSchema::retrieve();
@@ -209,7 +185,7 @@
 		/**
 		 * A standard active record remove method
 		 */
-		static protected function remove()
+		static protected function remove($controller_class)
 		{
 
 			$pkey             = fRequest::get('pkey', 'string?');
@@ -257,7 +233,7 @@
 		/**
 		 * A standard active record update method
 		 */
-		static protected function update()
+		static protected function update($controller_class)
 		{
 			$record_class     = $controller_class::RECORD_CLASS;
 
@@ -297,7 +273,7 @@
 		/**
 		 * A standard active record manage method
 		 */
-		static protected function manage()
+		static protected function manage($controller_class)
 		{
 
 			$valid_actions = array('', 'create', 'remove', 'update');
@@ -308,27 +284,31 @@
 				$action = 'manage';
 			}
 
-			$controller_class = get_class($this);
-			$record_class     = $this->getRecordClass();
-			$schema           = fORMSchema::retrieve();
+			$controller   = new $controller_class();
+			$record_class = $controller->getRecordClass();
+            $record       = ActiveRecord::getRecord($record_class);
+			$record_table = ActiveRecord::getRecordTable($record_class);
+			$record_set   = ActiveRecord::getRecordSet($record_class);
+			$entry        = ActiveRecord::getEntry($record_class);
+			$schema       = fORMSchema::retrieve();
 
 			// Check for filters
 
-			$filters                   = array();
-			$this->filter_column = fCRUD::getSearchValue('filter_column');
-			$this->filter_value  = fCRUD::getSearchValue('filter_value');
+			$filters       = array();
+			$filter_column = fCRUD::getSearchValue('filter_column');
+			$filter_value  = fCRUD::getSearchValue('filter_value');
 
-			if ($this->filter_column && $this->filter_value) {
+			if ($filter_column && $filter_value) {
 
-				$filter_column_info = $schema->getColumnInfo($this->record_table, $this->filter_column);
+				$filter_column_info = $schema->getColumnInfo($record_table, $filter_column);
 
 				switch ($filter_column_info['type']) {
 					case 'date':
 						// Special date stuff for interpreting *'s
 					default:
-						$translated_filter_value = str_replace('*', '%', $this->filter_value);
+						$translated_filter_value = str_replace('*', '%', $filter_value);
 						$filters = array(
-							$this->filter_column . '~' => $translated_filter_value
+							$filter_column . '~' => $translated_filter_value
 						);
 						break;
 				}
@@ -337,12 +317,12 @@
 
 			// Check for sorting
 
-			$sorting  = ActiveRecord::getDefaultSorting($record_class);
-			$this->sort_column    = fRequest::get('sort_column', 'string?');
-			$this->sort_direction = fRequest::get('sort_direction', 'string', 'asc');
+			$sorting        = ActiveRecord::getDefaultSorting($record_class);
+			$sort_column    = fRequest::get('sort_column', 'string?');
+			$sort_direction = fRequest::get('sort_direction', 'string', 'asc');
 
-			if ($this->sort_column) {
-				$sorting = array($this->sort_column => $this->sort_direction);
+			if ($sort_column) {
+				$sorting = array($sort_column => $sort_direction);
 			}
 
 			// Check for pagination
@@ -352,9 +332,15 @@
 
 			// Define the default display, filter, and sortable columns.
 
-			$column_info    = $schema->getColumnInfo($this->record_table);
-			$filter_types   = array('varchar', 'char');
-			$sortable_types = array('varchar', 'char', 'float', 'date', 'timestamp');
+			$column_info      = $schema->getColumnInfo($record_table);
+			$filter_types     = array('varchar', 'char');
+			$sortable_types   = array('varchar', 'char', 'float', 'date', 'timestamp');
+
+			// Set the display, filter, and sortable columns.
+
+			$display_columns  = array();
+			$filter_columns   = array();
+			$sortable_columns = array();
 
 			foreach ($column_info as $column => $info) {
 				// The longest if statement in the WORLD!
@@ -389,7 +375,6 @@
 
 				) {
 
-
 					if (ActiveRecord::isImageColumn($record_class, $column)) {
 						$display_columns[$column] = 'image';
 					} elseif (ActiveRecord::isFileColumn($record_class, $column)) {
@@ -408,16 +393,10 @@
 				}
 			}
 
-			// Set the display, filter, and sortable columns.
-
-			$this->display_columns  = (isset($display_columns))  ? $display_columns  : array();
-			$this->filter_columns   = (isset($filter_columns))   ? $filter_columns   : array();
-			$this->sortable_columns = (isset($sortable_columns)) ? $sortable_columns : array();
-
 			// Build the actual record set
 
-			$this->active_record_set = call_user_func(
-				iw::makeTarget($this->record_set, 'build'),
+			$active_record_set = call_user_func(
+				iw::makeTarget($record_set, 'build'),
 				$filters,
 				$sorting,
 				self::RECORDS_PER_PAGE,
@@ -426,12 +405,12 @@
 
 			// Display different messages depending on whether or not the user was attempting to filter results
 
-			if (!$this->active_record_set->count()) {
-				if (!$this->filter_column) {
+			if (!$active_record_set->count()) {
+				if (!$filter_column) {
 					fMessaging::create('helper', Moor::getActiveCallback(), sprintf(
 						'There are currently no %s records, you can create one <a href="%s">here</a>.',
 						fGrammar::humanize($record_class),
-						Moor::linkTo(iw::makeTarget($this, 'create'))
+						Moor::linkTo(iw::makeTarget($controller_class, 'create'))
 					));
 				} else {
 					fMessaging::create('alert', Moor::getActiveCallback(), sprintf(
@@ -443,25 +422,36 @@
 
 			// Set the records, affected_records and render the view
 
-			$this->affected_records = fSession::get('affected_records');
-			$this->render('manage');
-
-			// Delete no longer needed affected_records
-
+			$affected_records = fSession::get('affected_records');
 			fSession::delete('affected_records');
 
-			if ($this->isEntryPoint(__FUNCTION__)) {
+			$controller->view
+				 -> pack ('controller_class',  $controller_class)
+				 -> pack ('action',            $action)
+				 -> pack ('entry',             $entry)
+				 -> pack ('active_record_set', $active_record_set)
+				 -> pack ('display_columns',   $display_columns)
+				 -> pack ('filter_columns',    $filter_columns)
+				 -> pack ('filter_column',     $filter_column)
+				 -> pack ('filter_value' ,     $filter_value)
+				 -> pack ('sortable_columns',  $sortable_columns)
+				 -> pack ('sort_column' ,      $sort_column)
+				 -> pack ('sort_direction',    $sort_direction)
+				 -> pack ('affected_records',  $affected_records);
 
-				$page       = new PageController();
-				$page_title = fGrammar::humanize($action . $this->record_set);
+			if (self::isEntryPoint($controller_class, __FUNCTION__)) {
+
+				$page       = new PagesController();
+				$page_title = fGrammar::humanize($action . $record_set);
 
 				$page->view
-					-> add  ('primary_content',   $this->view)
-					-> add  ('scripts',           '/support/scripts/lightbox.js')
-					-> add  ('scripts',           '/support/scripts/admin/forms.js')
+					-> add  ('primary_content',   $controller->view)
+					-> add  ('scripts',           '/user/styles/lightbox.css')
+					-> add  ('scripts',           '/user/scripts/lightbox.js')
+					-> add  ('scripts',           '/user/scripts/admin/forms.js')
 					-> pack ('id',                $action)
 					-> push ('title',             $page_title)
-					-> push ('classes',           $this->entry);
+					-> push ('classes',           $entry);
 
 				$page->view->render();
 
@@ -475,6 +465,39 @@
 		 */
 		static public function __init()
 		{
+		}
+
+		/**
+		 * Dynamically defines an record controller if the provided class
+		 * is an Active Record class.  The newly created controller class
+		 * extends the default functionality found here.
+		 *
+		 * @param string $class The controller class name to dynamically define
+		 * @return boolean TRUE if a record controller was dynamically defined, FALSE otherwise
+		 */
+		static public function __make($controller_class)
+		{
+			$record_set   = str_replace(self::CONTROLLER_SUFFIX, '', $controller_class);
+			$record_class = ActiveRecord::classFromRecordSet($record_set);
+			if ($record_class && ActiveRecord::canMap($record_class)) {
+
+				$supported_actions = array();
+				foreach (AuthActions::build()->call('getName') as $action) {
+					if (method_exists(__CLASS__, $action)) {
+						$supported_actions[] = $action;
+					}
+				}
+
+				eval(Scaffolder::makeClass($controller_class, __CLASS__, array(
+					'record_class'      => $record_class,
+					'supported_actions' => $supported_actions
+				)));
+
+				if (class_exists($controller_class, FALSE)) {
+					return TRUE;
+				}
+			}
+			return FALSE;
 		}
 
 		/**
@@ -501,39 +524,6 @@
 			}
 
 			return $cmap;
-		}
-
-		/**
-		 * Dynamically defines an record controller if the provided class
-		 * is an Active Record class.  The newly created controller class
-		 * extends the default functionality found here.
-		 *
-		 * @param string $class The controller class name to dynamically define
-		 * @return boolean TRUE if a record controller was dynamically defined, FALSE otherwise
-		 */
-		static public function __define($controller_class)
-		{
-			$record_set   = str_replace(self::CONTROLLER_SUFFIX, '', $controller_class);
-			$record_class = ActiveRecord::classFromRecordSet($record_set);
-			if ($record_class && ActiveRecord::canMap($record_class)) {
-
-				$supported_actions = array();
-				foreach (AuthActions::build()->call('getName') as $action) {
-					if (method_exists(__CLASS__, $action)) {
-						$supported_actions[] = $action;
-					}
-				}
-
-				eval(Scaffolder::makeClass($controller_class, __CLASS__, array(
-					'record_class'      => $record_class,
-					'supported_actions' => $supported_actions
-				)));
-
-				if (class_exists($controller_class, FALSE)) {
-					return TRUE;
-				}
-			}
-			return FALSE;
 		}
 
 	}
