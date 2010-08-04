@@ -20,27 +20,7 @@
 		 */
 		protected function prepare($controller_class)
 		{
-			$record_class = $this->getRecordClass();
-			$entry        = ActiveRecord::getEntry($record_class);
-
 			self::exec('AuthController::requireLoggedIn');
-			self::exec('AuthController::requireACL', $entry, PERM_SHOW);
-
-			if (self::checkRequestFormat('html')) {
-
-				$view_files[] = array(
-					implode(DIRECTORY_SEPARATOR, array(
-						$this->entry,          // path
-						$this->action . '.php' // file
-					)),
-					implode(DIRECTORY_SEPARATOR, array(
-					'active_records',          // default active record views
-					$this->action . '.php'     // file
-					))
-				);
-
-				$this->view->load($view_files);
-			}
 		}
 
 		/**
@@ -292,6 +272,19 @@
 			$entry        = ActiveRecord::getEntry($record_class);
 			$schema       = fORMSchema::retrieve();
 
+			self::exec('AuthController::requireACL', $entry, PERM_SHOW);
+
+			if (self::checkRequestFormat('html')) {
+
+				$view_file = implode(DIRECTORY_SEPARATOR, array(
+					'active_records',          // default active record views
+					$action . '.php'     // file
+				));
+
+				$controller->view->load($view_file);
+			}
+
+
 			// Check for filters
 
 			$filters       = array();
@@ -425,6 +418,8 @@
 			$affected_records = fSession::get('affected_records');
 			fSession::delete('affected_records');
 
+			$title = fGrammar::humanize($action . $record_set);
+
 			$controller->view
 				 -> pack ('controller_class',  $controller_class)
 				 -> pack ('action',            $action)
@@ -437,20 +432,20 @@
 				 -> pack ('sortable_columns',  $sortable_columns)
 				 -> pack ('sort_column' ,      $sort_column)
 				 -> pack ('sort_direction',    $sort_direction)
-				 -> pack ('affected_records',  $affected_records);
+				 -> pack ('affected_records',  $affected_records)
+				 -> pack ('title',             $title);
 
 			if (self::isEntryPoint($controller_class, __FUNCTION__)) {
 
 				$page       = new PagesController();
-				$page_title = fGrammar::humanize($action . $record_set);
 
 				$page->view
-					-> add  ('primary_content',   $controller->view)
+					-> add  ('primary_section',   $controller->view)
 					-> add  ('scripts',           '/user/styles/lightbox.css')
 					-> add  ('scripts',           '/user/scripts/lightbox.js')
 					-> add  ('scripts',           '/user/scripts/admin/forms.js')
 					-> pack ('id',                $action)
-					-> push ('title',             $page_title)
+					-> push ('title',             $title)
 					-> push ('classes',           $entry);
 
 				$page->view->render();
