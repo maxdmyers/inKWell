@@ -29,7 +29,7 @@
 		// State information
 
 		static private   $requestFormat        = NULL;
-		static private   $headersSent          = FALSE;
+		static private   $typeHeadersSent          = FALSE;
 
 		/**
 		 * Builds a new controller by assigning it a local view and running
@@ -252,7 +252,7 @@
 
 			}
 
-			if ($send_headers && !self::$headersSent) {
+			if ($send_headers && !self::$typeHeadersSent) {
 				switch(self::$requestFormat) {
 					case 'html':
 						@fHTML::sendHeader();
@@ -264,7 +264,7 @@
 						@fXML::sendHeader();
 						break;
 				}
-				self::$headersSent = TRUE;
+				self::$typeHeadersSent = TRUE;
 			}
 
 			return self::$requestFormat;

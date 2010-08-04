@@ -439,7 +439,7 @@
 				 -> pack ('affected_records',  $affected_records)
 				 -> pack ('title',             $title);
 
-			if (self::isEntryPoint($controller_class, __FUNCTION__)) {
+			if (self::isEntryAction($controller_class, __FUNCTION__)) {
 
 				$page       = new PagesController();
 
