@@ -9,13 +9,10 @@
 	class Controller extends MoorAbstractController
 	{
 
-		const CONTROLLER_SUFFIX      = 'Controller';
+		const CONTROLLER_SUFFIX      = __CLASS__;
 
 		const DEFAULT_VIEW_ROOT      = 'views';
 		const DEFAULT_REQUEST_FORMAT = 'html';
-
-		const DEFAULT_SITE_SECTION   = 'default';
-		const DEFAULT_SITE_TITLE     = 'inKWell Site';
 
 		const MSG_TYPE_ERROR         = 'error';
 		const MSG_TYPE_ALERT         = 'alert';
@@ -183,7 +180,7 @@
 		 * 500 Internal Server Error header will be sent.  Otherwise headers
 		 * will be matched against any set error headers or the defaults.  If
 		 * no handler is set a hard error will be triggered.
-		 *
+		 *sd
 		 * @param string $error The error to be triggered.
 		 * @param string $message_type The type of message to display
 		 * @param string $message The message to be displayed

@@ -11,7 +11,10 @@
 	class PagesController extends Controller
 	{
 
-		const DEFAULT_PAGES_ROOT   = 'pages';
+		const DEFAULT_PAGES_ROOT     = 'pages';
+
+		const DEFAULT_SITE_SECTION   = 'default';
+		const DEFAULT_SITE_TITLE     = 'inKWell Site';
 
 		static private   $siteSections = array();
 		static private   $baseURL      = NULL;

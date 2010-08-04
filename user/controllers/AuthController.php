@@ -91,10 +91,6 @@
 
 				} else {
 
-					$message_type = self::MSG_TYPE_ALERT;
-					$target       = iw::makeTarget(__CLASS__, 'login');
-					$message      = self::NOT_AUTHORIZED_MSG;
-
 					fMessaging::create($message_type, $target, $message);
 					fURL::redirect(Moor::linkTo($target));
 				}
