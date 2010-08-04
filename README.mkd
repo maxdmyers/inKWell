@@ -1,10 +1,12 @@
 # inKWell (MVC Framework and CMS)
 
-## Preamble
+## Preamble / Notes
 
-At the moment the stock CMS (usually part of the Admin Section) is in shambles.
-Do not expect it to work right.  In the mean time however feel free to use
-inKWell as a basic framework.
+1. At the moment the stock CMS (usually part of the Admin Section) is in
+shambles.  Do not expect it to work right.
+2. Please be aware that any downloaded packages or cloning via GitHub require
+you to download and/or upate submodules for Flourish and Moor.
+
 
 ## Licensing
 

@@ -10,8 +10,6 @@
 
 		const DEFAULT_VIEW_ROOT     = 'views';
 
-		const PRIMARY_ELEMENT_NAME  = '__primary_element';
-
 		const MINEX_COMMENTS        = '#(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)|(//.*)#';
 		const MINEX_SPACES          = '#\s+#';
 		const MINEX_STRINGS         = '#((?<!//)["\'])(?:\\\1|.)*?\1#';
@@ -70,33 +68,13 @@
 		}
 
 		/**
-		 *
-		 */
-		public function __make($target)
-		{
-			
-		}
-
-		/**
-		 * Loads a file into the view as the primary element.  This is what will
-		 * be placed when render() is called with no particular element.
-		 *
-		 * @param string $file  The location of a file to add as the main view template
-		 * @return View The view object to allow for method chaining.
-		 */
-		public function load($file)
-		{
-			$this->set(self::PRIMARY_ELEMENT_NAME, $file);
-			return $this;
-		}
-
-		/**
-		 * Outputs the view or a particular view element to the screen.
+		 * Outputs the view or a particular view element to the screen, this
+		 * is a pseudonym for place wrapped to catch exceptions.
 		 *
 		 * @param string $element An optional name of an element to output
 		 * @return void
 		 */
-		public function render($element = self::PRIMARY_ELEMENT_NAME)
+		public function render($element = NULL)
 		{
 			try {
 				$this->place($element);
@@ -132,14 +110,12 @@
 		 * @param string $file_type An optional forced file_type (irrelevant for feeds)
 		 * @return void
 		 */
-		public function place($element, $file_type = NULL)
+		public function place($element = NULL, $file_type = NULL)
 		{
 			$element_value = $this->get($element);
 
 			if (in_array($element, $this->digest_elements)) {
 				echo $element_value;
-			} elseif ($element_value instanceof self) {
-				$element_value->render();
 			} else {
 				return parent::place($element, $file_type);
 			}
@@ -524,7 +500,7 @@
 				self::$cacheDirectory = new fDirectory($directory);
 			} else {
 				throw new fProgrammerException (
-					'View cache directory %s is not writable', $directory
+					'Cache directory %s is not writable', $directory
 				);
 			}
 		}
