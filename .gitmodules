@@ -1,0 +1,6 @@
+[submodule "includes/lib/flourish"]
+	path = includes/lib/flourish
+	url = git@github.com:dotink/flourish.git
+[submodule "includes/lib/moor"]
+	path = includes/lib/moor
+	url = git@github.com:dotink/moor.git

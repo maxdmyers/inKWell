@@ -6,7 +6,7 @@
 
 			// We use flourish for tons of stuff, including init, so it comes first
 
-			'f*'                     => 'includes/lib/flourish',
+			'f*'                     => 'includes/lib/flourish/classes',
 
 			// Moor is our router, so that comes second
 
