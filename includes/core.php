@@ -11,7 +11,7 @@
 	{
 		const INITIALIZATION_METHOD   = '__init';
 		const DEFAULT_REQUEST_FORMAT  = 'html';
-		const DEFAULT_WRITE_DIRECTORY = 'wriable';
+		const DEFAULT_WRITE_DIRECTORY = 'writable';
 
 		static private $config                = array();
 		static private $writeDirectory        = NULL;
