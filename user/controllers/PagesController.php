@@ -195,7 +195,7 @@
 			} else {
 				$target  = iw::makeTarget(__CLASS__, __FUNCTION__);
 				$message = fMessaging::retrieve(self::MSG_TYPE_ERROR, $target);
-				self::triggerNotFound(TRUE, self::MSG_TYPE_ERROR, $message);
+				self::triggerHardError('not_found', $message);
 			}
 		}
 
@@ -216,7 +216,7 @@
 			} else {
 				$target  = iw::makeTarget(__CLASS__, __FUNCTION__);
 				$message = fMessaging::retrieve(self::MSG_TYPE_ERROR, $target);
-				self::triggerNotAuthorized(TRUE, self::MSG_TYPE_ERROR, $message);
+				self::triggerHardError('not_authorized', $message);
 			}
 		}
 
@@ -237,7 +237,7 @@
 			} else {
 				$target  = iw::makeTarget(__CLASS__, __FUNCTION__);
 				$message = fMessaging::retrieve(self::MSG_TYPE_ERROR, $target);
-				self::triggerForbidden(TRUE, self::MSG_TYPE_ERROR, $message);
+				self::triggerHardError('forbidden', $message);
 			}
 		}
 

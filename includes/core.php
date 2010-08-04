@@ -160,16 +160,56 @@
 		}
 
 		/**
-		 * Creates a target string to uniquely identify an entry point.
+		 * Creates a target identifier from an entry and action.  If the entry
+		 * consists of the term 'link' then the action is treated as a URL.
 		 *
-		 * @param string|object $class The object or class of the controller or view
-		 * @param string $method The method which will retrieve and handle it
-		 * @return string The recpient string for use with fMessaging
+		 * @param string|object $entry The object or class representing the entry
+		 * @param string $method The method representing the action
+		 * @return string An inKWell target string
 		 */
-		 static public function makeTarget($class, $method)
-		 {
-		 	return implode('::', array($class, $method));
-		 }
+		static public function makeTarget($entry, $action)
+		{
+			return implode('::', array($entry, $action));
+		}
 
+		/**
+		 * Loads a target from a provided target identifier.  The value of
+		 * which should still be tested with is_callable to determine if it is
+		 * a callback.
+		 *
+		 * @param string $target An inKWell target string created with makeTarget()
+		 * @return callback|string A callback for execution or URL string to link to
+		 */
+		static public function loadTarget($target)
+		{
+			if (count($target_parts = explode('::', $target)) == 2) {
+
+				if ($target_parts[0] == 'link') {
+					return $target_parts[1];
+				}
+
+				$entry_regex = '/([a-zA-Z_][a-zA-Z0-9_]*)(\(\))?/';
+
+				if (preg_match($entry_regex, $target_parts[0], $matches)) {
+
+					if (class_exists($class = $matches[1])) {
+						if (isset($matches[2])) {
+							return array(new $class(), $target_parts[1]);
+						} else {
+							return array($class, $target_parts[1]);
+						}
+
+					} else {
+						throw new fProgrammerException (
+							'Entry in target is not a valid controller class.'
+						);
+					}
+				}
+			}
+
+			throw new fProgrammerException (
+				'Attempt to load target failed, entry/action is malformed.'
+			);
+		}
 
 	}

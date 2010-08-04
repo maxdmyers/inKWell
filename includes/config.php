@@ -76,10 +76,23 @@
 
 		'controller'                 => array(
 
-			'not_found_handler'      => 'PagesController::notFound',
-			'not_authorized_handler' => 'AuthorizationController::login',
-			'forbidden_handler'      => 'PagesController::forbidden'
-
+			'errors'                 => array(
+				'not_found'          => array(
+					'handler'        => 'PagesController::notFound',
+					'header'         => 'HTTP/1.0 404 Not Found',
+					'message'        => 'The requested resource could not be found'
+				),
+				'not_authorized'     => array(
+					'handler'        => 'AuthController::login',
+					'header'         => 'HTTP/1.0 401 Not Authorized',
+					'message'        => 'The requested resource requires authorization'
+				),
+				'forbidden'          => array(
+					'handler'        => 'PagesController::forbidden',
+					'header'         => 'HTTP/1.0 403 Forbidden',
+					'message'        => 'You do not have permission to view the requested resource'
+				)
+			)
 		),
 
 		'view'                       => array(
@@ -98,7 +111,7 @@
 			)
 		),
 
-		'authorization_controller'   => array(
+		'auth_controller'            => array(
 
 			'http_auth_formats'      => array('html', 'json', 'xml'),
 			'login_success_url'      => '/admin/'

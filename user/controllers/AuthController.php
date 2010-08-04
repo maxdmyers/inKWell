@@ -1,8 +1,8 @@
 <?php
 
 	/**
-	 * An authorization controller which provides login and logout methods as
-	 * well as additional methods for verifying authorization.
+	 * A basic Authorization/Authentication controller which provides login and
+	 * logout actions for other controllers or as entry points.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 */
@@ -17,8 +17,6 @@
 		static private $username         = NULL;
 		static private $password         = NULL;
 		static private $usingHTTPAuth    = FALSE;
-		static private $authHeaderSent   = FALSE;
-
 
 		// Where to redirect a user upon successful login
 
@@ -26,7 +24,8 @@
 
 		/**
 		 * Destroys a user's session and removes all authorization information
-		 * related to them.
+		 * related to them.  This can be used as an entry point, but essentially
+		 * just redirects to the login entry point after destroying the session.
 		 *
 		 * @param void
 		 * @return void
@@ -38,36 +37,70 @@
 
 			if (User::retrieveLoggedIn()) {
 				User::deAuthorize();
-				fMessaging::create('success', $target, self::LOGOUT_SUCCESS_MSG);
+				fMessaging::create(self::MSG_TYPE_SUCCESS, $target, self::LOGOUT_SUCCESS_MSG);
 			} else {
-				fMessaging::create('error',   $target, self::NOT_LOGGED_IN_MSG);
+				fMessaging::create(self::MSG_TYPE_ERROR, $target, self::NOT_LOGGED_IN_MSG);
 			}
 			fURL::redirect(Moor::LinkTo(iw::makeTarget(__CLASS__, 'login')));
 
 		}
 
 		/**
-		 * Logs a user in and if successful redirects them apporpriately.
+		 * Attempts to log a user in.  If this action is being used as an
+		 * entry point it will show a login page, if not, depending on whether
+		 * or HTTP Authentication is enabled on the current request format it
+		 * will attempt to use that, or redirect to this entry point.
 		 *
 		 * @param void
 		 * @return void
 		 */
 		static public function login()
 		{
-			// Attempt to get our username and password
 
-			if (isset($_SERVER['PHP_AUTH_USER'])) {
-				$username = $_SERVER['PHP_AUTH_USER'];
-				$password = $_SERVER['PHP_AUTH_PW'];
+			$is_entry_point = self::isEntryAction(__CLASS__, __FUNCTION__);
+			$target         = iw::makeTarget(__CLASS__, __FUNCTION__);
 
-			} elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-				$auth_string = substr($_SERVER['HTTP_AUTHORIZATION'], 6);
-				$auth_string = base64_decode($auth_string);
-				$login_info  = explode(':', $decoded_auth_string);
-				$username    = $login_info[0];
-				$password    = $login_info[1];
+			// Receive any original messages
+
+			$message_type   = self::MSG_TYPE_ERROR;
+			$message        = fMessaging::retrieve($message_type, $target);
+
+			if (!$is_entry_point) {
+
+				fAuthorization::setRequestedURL(fURL::getWithQueryString());
+
+				if (self::$usingHTTPAuth) {
+
+					header(implode(' ', array(
+						'WWW-Authenticate:',             // Header
+						'Basic',                         // Authentication Type
+						'realm="inKWell Control Panel"', // Realm
+					)));
+
+					if (isset($_SERVER['PHP_AUTH_USER'])) {
+						$username = $_SERVER['PHP_AUTH_USER'];
+						$password = $_SERVER['PHP_AUTH_PW'];
+
+					} elseif (isset($_SERVER['HTTP_AUTHORIZATION'])) {
+						$auth_string = substr($_SERVER['HTTP_AUTHORIZATION'], 6);
+						$auth_string = base64_decode($auth_string);
+						$login_info  = explode(':', $decoded_auth_string);
+						$username    = $login_info[0];
+						$password    = $login_info[1];
+					}
+
+				} else {
+
+					$message_type = self::MSG_TYPE_ALERT;
+					$target       = iw::makeTarget(__CLASS__, 'login');
+					$message      = self::NOT_AUTHORIZED_MSG;
+
+					fMessaging::create($message_type, $target, $message);
+					fURL::redirect(Moor::linkTo($target));
+				}
 
 			} elseif (fRequest::isPost()) {
+
 				$username = fRequest::get('username', 'string?');
 				$password = fRequest::get('password', 'string?');
 			}
@@ -91,15 +124,20 @@
 				}
 			}
 
-			if (self::$authHeaderSent) {
+			// Take different courses of action depending on if we're the entry
+			// point, either re-route the request or handle it.
 
-				echo 'death'; exit();
+			if (!$is_entry_point) {
+
+				$route = iw::makeTarget('PagesController', 'notAuthorized');
+
+				fMessaging::create($message_type, $route, $message);
+
+				self::exec($route);
 
 			} else {
-				if (isset($message)) {
-					$target = iw::makeTarget(__CLASS__, __FUNCTION__);
-					fMessaging::create($message_type, $target, $message);
-				}
+
+				fMessaging::create($message_type, $target, $message);
 
 				$page = new PagesController();
 
@@ -112,7 +150,11 @@
 		}
 
 		/**
-		 * Initializes the AuthController
+		 * Initializes the AuthController.  The primary tasks involved here are
+		 * as follows:
+		 *
+		 * 1) Establish a any configured login success URL
+		 * 2) Determine whether or not we should attempt to use HTTP Auth
 		 *
 		 * @param void
 		 * @return void
@@ -125,7 +167,10 @@
 				self::$loginSuccessURL = '/';
 			}
 
-			if (isset($config['http_auth_formats'])) {
+			if (
+				isset($config['http_auth_formats'])    &&
+				is_array($config['http_auth_formats'])
+			) {
 				self::$usingHTTPAuth = in_array(
 					self::getRequestFormat(),
 					$config['http_auth_formats']
@@ -144,59 +189,6 @@
 				define(AuthAction::makeDefinition($action_name), $action_value);
 			}
 			define('PERM_ALL', $every_permission);
-		}
-
-		/**
-		 * Checks if a user is logged in.  This should be included at the top
-		 * of pages which require a user to be logged in in order to view.  In
-		 * the event they are not logged in this method will determine the
-		 * appropriate action to get them logged in.
-		 *
-		 * @param void
-		 * @return void
-		 */
-		static protected function requireLoggedIn()
-		{
-			if (!User::checkLoggedIn()) {
-
-				fAuthorization::setRequestedURL(fURL::getWithQueryString());
-
-				if (self::$usingHTTPAuth) {
-
-					header(implode(' ', array(
-						'WWW-Authenticate:',             // Header
-						'Basic',                         // Authentication Type
-						'realm="inKWell Control Panel"', // Realm
-					)));
-
-					self::$authHeaderSent = TRUE;
-					self::triggerNotAuthorized();
-
-				} else {
-
-					$message_type = self::MSG_TYPE_ALERT;
-					$target       = iw::makeTarget(__CLASS__, 'login');
-					$message      = self::NOT_AUTHORIZED_MSG;
-
-					fMessaging::create($message_type, $target, $message);
-					fURL::redirect(Moor::linkTo($target));
-				}
-			}
-		}
-
-		/**
-		 * Requires that the user's access control list permits an action and
-		 * triggers forbidden if not.
-		 *
-		 * @param string $req_resource The resource to require permissions on
-		 * @param integer $req_permissions The permissions to require
-		 * @return void
-		 */
-		static protected function requireACL($req_resource, $req_permissions)
-		{
-			if (!User::checkACL($req_resource, $req_permissions)) {
-				self::triggerForbidden();
-			}
 		}
 
 	}

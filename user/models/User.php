@@ -452,8 +452,8 @@
 				throw new fValidationException(self::INVALID_LOGIN_MSG);
 			}
 
-			// Successful Login
-
+			// Successful Login:
+			//
 			// Remove All Login Attempts, Set the Date Accessed, and Establish Permissions
 
 			$user_login_attempts->call('delete');

@@ -1,5 +1,8 @@
 <?
-	AuthController::requireLoggedIn();
+
+	if (!User::checkLoggedIn()) {
+		self::triggerError('not_authorized');
+	}
 
 	$page = new PagesController();
 

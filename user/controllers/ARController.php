@@ -20,7 +20,9 @@
 		 */
 		protected function prepare($controller_class)
 		{
-			self::exec('AuthController::requireLoggedIn');
+			if (!User::checkLoggedIn()) {
+				self::triggerError('not_authorized');
+			}
 		}
 
 		/**
@@ -272,7 +274,9 @@
 			$entry        = ActiveRecord::getEntry($record_class);
 			$schema       = fORMSchema::retrieve();
 
-			self::exec('AuthController::requireACL', $entry, PERM_SHOW);
+			if (!User::checkACL($entry, PERM_SHOW)) {
+				self::triggerError('forbidden');
+			}
 
 			if (self::checkRequestFormat('html')) {
 

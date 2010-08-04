@@ -17,10 +17,6 @@
 		const DEFAULT_SITE_SECTION   = 'default';
 		const DEFAULT_SITE_TITLE     = 'inKWell Site';
 
-		const NOT_AUTHORIZED_MSG     = 'You must be logged in to view the requested resource.';
-		const NOT_FOUND_MSG          = 'The requested resource could not be found.';
-		const FORBIDDEN_MSG          = 'You do not have permission to view the requested resource.';
-
 		const MSG_TYPE_ERROR         = 'error';
 		const MSG_TYPE_ALERT         = 'alert';
 		const MSG_TYPE_SUCCESS       = 'success';
@@ -31,9 +27,7 @@
 
 		// Handlers for common errors
 
-		static private   $notFoundHandler      = NULL;
-		static private   $notAuthorizedHandler = NULL;
-		static private   $forbiddenHandler     = NULL;
+		static private   $errors               = array();
 
 		// State information
 
@@ -82,189 +76,164 @@
 		}
 
 		/**
-		 * Initializes the global controller
+		 * Initializes the global controller namely by establishing error
+		 * handlers, headers, and messages.
 		 *
 		 * @param array $config The configuration array
 		 * @return void
 		 */
 		static public function __init($config)
 		{
-			if (isset($config['not_found_handler'])) {
-				self::setNotFoundHandler($config['not_found_handler']);
-			}
+			if (isset($config['errors'])) {
+				if (!is_array($config['errors'])) {
+					throw new fProgrammerException (
+						'Error configuration requires an array.'
+					);
+				}
+				foreach ($config['errors'] as $error => $info) {
+					if (!is_array($info)) {
+						throw new fProgrammerException (
+							'Error %s must be configured as an array.'
+						);
+					}
 
-			if (isset($config['not_authorized_handler'])) {
-				self::setNotAuthorizedHandler($config['not_authorized_handler']);
-			}
+					$handler = isset($info['handler'])
+						? $handler = $info['handler']
+						: NULL;
 
-			if (isset($config['forbidden_handler'])) {
-				self::setForbiddenHandler($config['forbidden_handler']);
+					$header = isset($info['header'])
+						? $header = $info['header']
+						: 'HTTP/1.0 500 Internal Server Error';
+
+					$message = isset($info['message'])
+						? $message = $info['message']
+						: 'An unknown error occurred.';
+
+
+					self::setError($error, $handler, $header, $message);
+				}
 			}
 		}
 
 		/**
-		 * Sets the not found handler for the controller.  This can only
-		 * be set by controllers, not publically.
+		 * Attempts to execute a callback within the context of of Controller.
 		 *
-		 * @param callback|string $handler A valid callback or string representing a redirect URL
-		 * @return void
+		 * @param string $target An inKWell target to execute
+		 * @param mixed Additional parameters to pass to the callback
+		 * @return mixed The return of the callback, if valid, NULL otherwise
 		 */
-		static protected function setNotFoundHandler($handler)
+		static protected function exec($target)
 		{
-			self::$notFoundHandler = $handler;
+			$target = iw::loadTarget($target);
+			if (is_callable($target)) {
+				$params = array_slice(func_get_args(), 1);
+				return call_user_func_array($target, $params);
+			} else {
+				fURL::redirect($target);
+			}
 		}
 
 		/**
-		 * Sets the not authorized handler for the controller.  This can only
-		 * be set by controllers, not publically.
+		 * Attempts to delegate control to a file within the context of
+		 * Controller.  If the $required parameter is set to TRUE then this
+		 * function will execute triggerNotFound() if the file is not
+		 * accessible.
 		 *
-		 * @param callback|string $handler A valid callback or string representing a redirect URL
-		 * @return void
+		 * @param string|fFile $file The file to delegate control to
+		 * @param boolean $required TRUE if the file is required, FALSE otherwise
+		 * @return mixed The return of the included file, if accessible, NULL otherwise
 		 */
-		static protected function setNotAuthorizedHandler($handler)
+		static protected function delegate($file, $required = FALSE)
 		{
-			self::$notAuthorizedHandler = $handler;
-		}
-
-		/**
-		 * Sets the forbidden handler for the controller.  This can only be set
-		 * by controllers, not publically.
-		 *
-		 * @param callback|string $handler A valid callback or string representing a redirect URL
-		 * @return void
-		 */
-		static protected function setForbiddenHandler($handler)
-		{
-			self::$forbiddenHandler = $handler;
-		}
-
-		/**
-		 *  Trigger a not found response and appropriate output.
-		 *
-		 * @param boolean $force_death Whether or not to abandon handler attempts
-		 * @param string $message_type A string representation of the error type... 'error', 'alert', etc.
-		 * @param string $message A more specific message to generate
-		 * @return void
-		 */
-		static protected function triggerNotFound($force_death = FALSE, $message_type = NULL, $message = NULL)
-		{
-			@header("HTTP/1.0 404 Not Found");
-
-			if ($message_type == NULL) {
-				$message_type = self::MSG_TYPE_ERROR;
+			try {
+				$file = new fFile($file);
+			} catch (fValidationException $e) {
+				if ($required) {
+					self::triggerError('not_found');
+					return;
+				}
 			}
 
-			if ($message === NULL) {
-				$message = self::NOT_FOUND_MSG;
+			if ($file instanceof fFile) {
+				return include $file->getPath();
 			}
 
-			if (!$force_death && self::$notFoundHandler !== NULL) {
+			return NULL;
+		}
 
-				fMessaging::create($message_type, self::$notFoundHandler, $message);
+		/**
+		 * Sets error information for the Controller
+		 *
+		 * @param string $error The error to set a handler for
+		 * @param string $handler An inKWell target to execute if the error is triggered
+		 * @param string $header The HTTP header to output if the error is triggered
+		 * @param string $message A default message to display explaining the error
+		 * @return void
+		 */
+		static protected function setError($error, $handler, $header, $message)
+		{
+			self::$errors[$error]['handler'] = $handler;
+			self::$errors[$error]['header']  = $header;
+			self::$errors[$error]['message'] = $message;
+		}
 
-				if (is_callable(self::$notFoundHandler)) {
-					call_user_func(self::$notFoundHandler);
-				} else {
-					fURL::redirect(self::$notFoundHandler);
+		/**
+		 * Triggers a standard error which will attempt to use whatever error
+		 * handlers have been assigned.  If the error is unknown an HTTP/1.0
+		 * 500 Internal Server Error header will be sent.  Otherwise headers
+		 * will be matched against any set error headers or the defaults.  If
+		 * no handler is set a hard error will be triggered.
+		 *
+		 * @param string $error The error to be triggered.
+		 * @param string $message_type The type of message to display
+		 * @param string $message The message to be displayed
+		 * @return void
+		 */
+		static protected function triggerError($error, $message_type = NULL, $message = NULL)
+		{
+			$message_type = ($message_type) ? $message_type : self::MSG_TYPE_ERROR;
+
+			if (isset(self::$errors[$error])) {
+
+				$error_info = self::$errors[$error];
+				$message    = ($message) ? $message : $error_info['message'];
+
+				@header($error_info['header']);
+
+				if ($handler = $error_info['handler']) {
+					fMessaging::create($message_type, $handler, $message);
+					self::exec($handler);
+					return;
 				}
 
-				return;
+			} else {
+				$message = ($message) ? $message : 'An unknown error ocurred.';
+				@header('HTTP/1.0 500 Internal Server Error');
 			}
 
-			$error = new Controller();
-
-			$error->view
-				-> pack   ('id',              'not_found')
-				-> push   ('title',           'Not Found')
-				-> digest ('primary_section', $message);
-
-			$error->view->render();
+			self::triggerHardError($error, $message);
 		}
 
 		/**
-		 *  Trigger a not authorized response and appropriate output.
+		 * Triggers a hard error doing little more than outputting the message
+		 * on the screen, this should not be called except by extended error
+		 * handlers or by Controller::triggerError()
 		 *
- 		 * @param boolean $force_death Whether or not to abandon handler attempts
-		 * @param string $message_type A string representation of the error type... 'error', 'alert', etc.
-		 * @param string $message A more specific message to generate
-		 * @return void
+		 * @param string $error The error being sent.
+		 * @param string $message The message to output with it.
+		 * @return void The function exits the script.
 		 */
-		static protected function triggerNotAuthorized($force_death = FALSE, $message_type = NULL, $message = NULL)
+		static protected function triggerHardError($error, $message)
 		{
-			@header('HTTP/1.0 401 Unauthorized');
+			$controller = new Controller();
 
-			if ($message_type === NULL) {
-				$message = self::MSG_TYPE_ALERT;
-			}
-
-			if ($message === NULL) {
-				$message = self::NOT_AUTHORIZED_MSG;
-			}
-
-			if (!$force_death && self::$notAuthorizedHandler !== NULL) {
-
-				fMessaging::create($message_type, self::$notAuthorizedHandler, $message);
-
-				if (is_callable(self::$notAuthorizedHandler)) {
-					call_user_func(self::$notAuthorizedHandler);
-				} else {
-					fURL::redirect(self::$notAuthorizedHandler);
-				}
-
-				return;
-			}
-
-			$error = new Controller();
-
-			$error->view
-				-> pack   ('id',              'not_authorized')
-				-> push   ('title',           'Not Authorized')
+			$controller->view
+				-> pack   ('id',              $error)
+				-> push   ('title',           fGrammar::humanize($error))
 				-> digest ('primary_section', $message);
 
-			$error->view->render();
-		}
-
-		/**
-		 *  Trigger a forbidden response and appropriate output.
-		 *
- 		 * @param boolean $force_death Whether or not to abandon handler attempts
-		 * @param string $message_type A string representation of the error type... 'error', 'alert', etc.
-		 * @param string $message A more specific message to generate
-		 * @return void
-		 */
-		static protected function triggerForbidden($force_death = FALSE, $message_type = NULL, $message = NULL)
-		{
-			@header("HTTP/1.0 403 Forbidden");
-
-			if ($message_type === NULL) {
-				$message = self::MSG_TYPE_ERROR;
-			}
-
-			if ($message === NULL) {
-				$message = self::FORBIDDEN_MSG;
-			}
-
-			if (!$force_death && self::$forbiddenHandler !== NULL) {
-
-				fMessaging::create($message_type, self::$forbiddenHandler, $message);
-
-				if (is_callable(self::$forbiddenHandler)) {
-					call_user_func(self::$forbiddenHandler);
-				} else {
-					fURL::redirect(self::$forbiddenHandler);
-				}
-
-				return;
-			}
-
-			$error = new Controller();
-
-			$error->view
-				-> pack   ('id',             'forbidden')
-				-> push   ('title',          'Forbidden')
-				-> digest ('primary_section', $message);
-
-			$error->view->render();
+			$controller->view->render();
+			exit();
 		}
 
 		/**
@@ -316,68 +285,39 @@
 		}
 
 		/**
-		 * Determines whether or not a particular class and optionally the
-		 * method were the entry point for the request.
+		 * Determines whether or not a particular class is the entry class
+		 * being used by the router.
 		 *
-		 * @param string $class The class to check against for entry
-		 * @param string $method An optional method name to check against for entry
+		 * @param string $class The class to check against the router
 		 * @return void
 		 */
-		static protected function isEntryPoint($class, $method = NULL)
+		static protected function isEntry($class)
 		{
-			if (!$method) {
-				$method = Moor::getActiveShortMethod();
-			}
-
-			return (
-				(Moor::getActiveShortClass()  == $class) &&
-				(Moor::getActiveShortMethod() == $method)
-			);
-		}
-		
-		/**
-		 * Attempts to execute a callback within the context of of Controller.
-		 *
-		 * @param string $callback The callback to execute
-		 * @param mixed Additional parameters to pass to the callback
-		 * @return mixed The return of the callback, if valid, NULL otherwise
-		 */
-		static protected function exec($callback)
-		{
-			if (is_callable($callback)) {
-				$params = array_slice(func_get_args(), 1);
-				return call_user_func_array($callback, $params);
-			}
-
-			return NULL;
+			return (Moor::getActiveShortClass()  == $class);
 		}
 
 		/**
-		 * Attempts to delegate control to a file within the context of
-		 * Controller.  If the $required parameter is set to TRUE then this
-		 * function will execute triggerNotFound() if the file is not
-		 * accessible.
+		 * Determines whether or not a particular method is the action being
+		 * used by the router.
 		 *
-		 * @param string|fFile $file The file to delegate control to
-		 * @param boolean $required TRUE if the file is required, FALSE otherwise
-		 * @return mixed The return of the included file, if accessible, NULL otherwise
+		 * @param string $method The method name to check against the router
+		 * @return void
 		 */
-		static protected function delegate($file, $required = FALSE)
+		static protected function isAction($method)
 		{
-			try {
-				$file = new fFile($file);
-			} catch (fValidationException $e) {
-				if ($required) {
-					self::triggerNotFound();
-					return;
-				}
-			}
+			return (Moor::getActiveShortMethod()  == $method);
+		}
 
-			if ($file instanceof fFile) {
-				return include $file->getPath();
-			}
-
-			return NULL;
+		/**
+		 * Determines whether or not a particular class and method is the
+		 * entry and action for the router.
+		 *
+		 * @param string $class The class to check against the router
+		 * @param string $method The method name to check against the router
+		 * @return void
+		 */
+		static protected function isEntryAction($class, $method) {
+			return (self::isEntry($class) && self::isAction($method));
 		}
 
 	}
