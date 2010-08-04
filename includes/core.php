@@ -43,8 +43,8 @@
 			));
 
 			if (
-				isset($config['global']['disable_scaffolder']) &&
-				!$config['global']['disable_scaffolder']       &&
+				isset($config['scaffolder']['disabled'])       &&
+				!$config['scaffolder']['disabled']             &&
 				isset($config['scaffolder']['autoloaders'])    &&
 				is_array($config['scaffolder']['autoloaders'])
 			) {
