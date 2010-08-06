@@ -29,7 +29,7 @@
 		// State information
 
 		static private   $requestFormat        = NULL;
-		static private   $typeHeadersSent          = FALSE;
+		static private   $typeHeadersSent      = FALSE;
 
 		/**
 		 * Builds a new controller by assigning it a local view and running
@@ -56,12 +56,12 @@
 		 */
 		protected function prepare()
 		{
-			switch(self::getRequestFormat(TRUE)) {
+			switch(self::getRequestFormat()) {
 
 				case 'html':
 					$this->view->load('html.php')
-						-> add  ('styles',       '/user/styles/common.css')
-						-> add  ('scripts',      '/user/scripts/common.js');
+						-> add  ('styles',  '/user/styles/common.css')
+						-> add  ('scripts', '/user/scripts/common.js');
 					break;
 
 				case 'json':
@@ -70,6 +70,8 @@
 				case  'xml':
 					break;
 			}
+
+			$this->view->onRender('Controller::__sendContentType');
 		}
 
 		/**
@@ -100,15 +102,39 @@
 
 					$header = isset($info['header'])
 						? $header = $info['header']
-						: 'HTTP/1.0 500 Internal Server Error';
+						: NULL;
 
 					$message = isset($info['message'])
 						? $message = $info['message']
-						: 'An unknown error occurred.';
+						: NULL;
 
 
 					self::setError($error, $handler, $header, $message);
 				}
+			}
+		}
+
+		/**
+		 * Sends the content type based on the request format
+		 *
+		 * @param void
+		 * @return void
+		 */
+		static public function __sendContentType()
+		{
+			if (!self::$typeHeadersSent) {
+				switch(self::getRequestFormat()) {
+					case 'html':
+						@fHTML::sendHeader();
+						break;
+					case 'json':
+						@fJSON::sendHeader();
+						break;
+					case 'xml':
+						@fXML::sendHeader();
+						break;
+				}
+				self::$typeHeadersSent = TRUE;
 			}
 		}
 
@@ -167,7 +193,7 @@
 		 * @param string $message A default message to display explaining the error
 		 * @return void
 		 */
-		static protected function setError($error, $handler, $header, $message)
+		static protected function setError($error, $handler = NULL, $header = NULL, $message = NULL)
 		{
 			self::$errors[$error]['handler'] = $handler;
 			self::$errors[$error]['header']  = $header;
@@ -188,11 +214,17 @@
 		 */
 		static protected function triggerError($error, $message_type = NULL, $message = NULL)
 		{
-			$message_type = ($message_type) ? $message_type : self::MSG_TYPE_ERROR;
+			$message_type  = ($message_type) ? $message_type : self::MSG_TYPE_ERROR;
+
+			$error_info    = array(
+				'handler' => NULL,
+				'header'  => 'HTTP/1.0 500 Internal Server Error',
+				'message' => 'An Unknown error occurred.'
+			);
 
 			if (isset(self::$errors[$error])) {
 
-				$error_info = self::$errors[$error];
+				$error_info = array_merge($error_info, self::$errors[$error]);
 				$message    = ($message) ? $message : $error_info['message'];
 
 				@header($error_info['header']);
@@ -203,12 +235,9 @@
 					return;
 				}
 
-			} else {
-				$message = ($message) ? $message : 'An unknown error ocurred.';
-				@header('HTTP/1.0 500 Internal Server Error');
 			}
 
-			self::triggerHardError($error, $message);
+			self::triggerHardError($error, $error_info['message']);
 		}
 
 		/**
@@ -236,10 +265,9 @@
 		/**
 		 * Determines the request format for the resource
 		 *
-		 * @param boolean $send_headers An optional parameter to signal whether or not headers should be sent
 		 * @return string The request format, i.e. 'html' (default), 'xml', or 'json'
 		 */
-		static protected function getRequestFormat($send_headers = FALSE)
+		static protected function getRequestFormat()
 		{
 			if (self::$requestFormat === NULL) {
 				if ($format = fRequest::get('request_format', 'string', NULL)) {
@@ -250,21 +278,6 @@
 
 				self::$requestFormat = fSession::get('request_format');
 
-			}
-
-			if ($send_headers && !self::$typeHeadersSent) {
-				switch(self::$requestFormat) {
-					case 'html':
-						@fHTML::sendHeader();
-						break;
-					case 'json':
-						@fJSON::sendHeader();
-						break;
-					case 'xml':
-						@fXML::sendHeader();
-						break;
-				}
-				self::$typeHeadersSent = TRUE;
 			}
 
 			return self::$requestFormat;

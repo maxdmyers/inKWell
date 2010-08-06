@@ -258,6 +258,8 @@
 		static protected function manage($controller_class)
 		{
 
+			// Check for sub-actions
+
 			$valid_actions = array('', 'create', 'remove', 'update');
 
 			if (($action = fRequest::getValid('action', $valid_actions))) {
@@ -266,12 +268,14 @@
 				$action = 'manage';
 			}
 
+			// Initialize the controller and some general information
+
 			$controller   = new $controller_class();
 			$record_class = $controller->getRecordClass();
-            $record       = ActiveRecord::getRecord($record_class);
+			$entry        = ActiveRecord::getEntry($record_class);
 			$record_table = ActiveRecord::getRecordTable($record_class);
 			$record_set   = ActiveRecord::getRecordSet($record_class);
-			$entry        = ActiveRecord::getEntry($record_class);
+			$title        = fGrammar::humanize($action . $record_set);
 			$schema       = fORMSchema::retrieve();
 
 			if (!User::checkACL($entry, PERM_SHOW)) {
@@ -422,12 +426,11 @@
 			$affected_records = fSession::get('affected_records');
 			fSession::delete('affected_records');
 
-			$title = fGrammar::humanize($action . $record_set);
-
 			$controller->view
 				 -> pack ('controller_class',  $controller_class)
 				 -> pack ('action',            $action)
 				 -> pack ('entry',             $entry)
+				 -> pack ('title',             $title)
 				 -> pack ('active_record_set', $active_record_set)
 				 -> pack ('display_columns',   $display_columns)
 				 -> pack ('filter_columns',    $filter_columns)
@@ -436,8 +439,7 @@
 				 -> pack ('sortable_columns',  $sortable_columns)
 				 -> pack ('sort_column' ,      $sort_column)
 				 -> pack ('sort_direction',    $sort_direction)
-				 -> pack ('affected_records',  $affected_records)
-				 -> pack ('title',             $title);
+				 -> pack ('affected_records',  $affected_records);
 
 			if (self::isEntryAction($controller_class, __FUNCTION__)) {
 
@@ -450,13 +452,13 @@
 					-> add  ('scripts',           '/user/scripts/admin/forms.js')
 					-> pack ('id',                $action)
 					-> push ('title',             $title)
-					-> push ('classes',           $entry);
+					-> push ('classes',           $entry)
+					-> render();
 
-				$page->view->render();
-
+				return $page->view;
 			}
 
-
+			return $controller->view;
 		}
 
 		/**

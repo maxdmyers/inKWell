@@ -14,10 +14,11 @@
 		const MINEX_SPACES          = '#\s+#';
 		const MINEX_STRINGS         = '#((?<!//)["\'])(?:\\\1|.)*?\1#';
 
-		// Data storage area and digestable element tracker
+		// Data storage area, render callbacks, and food?
 
-		protected      $data            = array();
-		private        $digest_elements = array();
+		private        $data            = array();
+		private        $renderCallbacks = array();
+		private        $isFood          = FALSE;
 
 		// Directory information for templating engine
 
@@ -62,6 +63,8 @@
 			switch ($property) {
 				case 'feed':
 					return ob_start();
+				case 'food':
+					return ob_get_clean();
 				default:
 					return parent::__get($property);
 			}
@@ -77,29 +80,42 @@
 		public function render($element = NULL)
 		{
 			try {
-				$this->place($element);
+				foreach ($this->renderCallbacks as $callback_info) {
+					if (count($callback_info['arguments'])) {
+						call_user_func_array(
+							$callback_info['method'],
+							$callback_info['arguments']
+						);
+					} else {
+						call_user_func($callback_info['method']);
+					}
+				}
+				return $this->place($element);
 			} catch (fException $e) {
 				echo 'The view cannot be rendered: ' . $e->getMessage();
 			}
 		}
 
 		/**
-		 * Internally consumes content into an internal element identified
-		 * by $element.  If no content is provided it attempts to consume
-		 * the last output buffer.
+		 * Adds a callback to be triggered when the render() method is called.
+		 * Keep in mind that rendering has to be done explicitely and that
+		 * embedded views are not "rendered", but placed in other views.
 		 *
-		 * @param string $element The name of the element
-		 * @param string $content An optional string of content to consume
-		 * @return View The view object to allow for method chaining
+		 * @param callback $callback The callback to be registered
+		 * @param mixed $args Each additional parameter is an additional argument for the callback
 		 */
-		public function digest($element, $content = NULL)
+		public function onRender($callback)
 		{
-			if ($content === NULL) {
-				$content = ob_get_clean();
+			if (is_callable($callback)) {
+				$this->renderCallbacks[] = array(
+					'method'    => $callback,
+					'arguments' => array_slice(func_get_args(), 1)
+				);
+			} else {
+				throw new fProgrammerException (
+					'Callback must be public or accessible by view.'
+				);
 			}
-
-			$this->digest_elements[] = $element;
-			return $this->set($element, $content);
 		}
 
 		/**
@@ -112,10 +128,8 @@
 		 */
 		public function place($element = NULL, $file_type = NULL)
 		{
-			$element_value = $this->get($element);
-
-			if (in_array($element, $this->digest_elements)) {
-				echo $element_value;
+			if ($element == NULL && $this->isFood) {
+				echo $this->get();
 			} else {
 				return parent::place($element, $file_type);
 			}
@@ -240,6 +254,24 @@
 		}
 
 		/**
+		 * Internally consumes content into an internal element.
+		 *
+		 * @param string $element The name of the element
+		 * @param string $content An optional string of content to consume
+		 * @return View The view object to allow for method chaining
+		 */
+		public function digest($element, $content)
+		{
+			$view         = new View();
+			$view->isFood = TRUE;
+
+			$view->load($content);
+			$this->add($element, $view);
+
+			return $this;
+		}
+
+		/**
 		 * Pack's data into the view's data storage area destroying any
 		 * existing keys which may be in it's way
 		 *
@@ -299,6 +331,65 @@
 		 	return $this;
 		 }
 
+		/**
+		 * Pulls data referenced by a key from the view's data storage array.
+		 * Optionally the data can be destroyed after being pulled and will no
+		 * longer be accessible through future calls.
+		 *
+		 * @param string $key The key of the data to try an pull
+		 * @param boolean $destructive Whether or not to destroy the data
+		 * @return mixed The pulled data from the data storage array
+		 */
+		protected function pull($key, $destructive = FALSE)
+		{
+			if (isset($this->data[$key])) {
+
+				$data = $this->data[$key];
+
+				if ($destructive) {
+					unset($this->data[$key]);
+				}
+
+				return $data;
+
+			} else {
+				throw new fProgrammerException (
+					'Cannot pull view data referenced by %s', $key
+				);
+			}
+		}
+
+		/**
+		 * Peals data off the end of referenced data storage array.  Optionally
+		 * the data can be destroyed.  Please note, that if the data is not
+		 * an array this becomes functionally equivalent to pull.
+		 *
+		 * @param string $key The key of the data from which to pop a value
+		 * @param boolean $destructive Whether or not to destroy the data
+		 * @return mixed The pealed data from the end of the data storage array
+		 */
+		protected function peal($key, $destructive = FALSE)
+		{
+			if (isset($this->data[$key])) {
+				if (is_array($this->data[$key])) {
+
+					if ($destructive) {
+						return array_pop($this->data[$key]);
+					} else {
+						return end($this->data[$key]);
+					}
+
+				} else {
+
+					return $this->pull($key, $destructive);
+				}
+
+			} else {
+				throw new fProgrammerException (
+					'Cannot peal view data referenced by %s', $key
+				);
+			}
+		}
 
 		/**
 		 * Allows for 'selecting' in the view if all data identified
@@ -536,7 +627,7 @@
 		 * @param string $code The code to be minified
 		 * @return string The minified code
 		 */
-		static protected function minifyCommon($code)
+		static private function minifyCommon($code)
 		{
 			preg_match_all(self::MINEX_STRINGS, $code, $matches);
 			foreach ($matches[0] as $index => $match) {
@@ -563,7 +654,7 @@
 		 * @param string $code The CSS to minify
 		 * @return string The minified CSS
 		 */
-		static protected function minifyCSS($code)
+		static private function minifyCSS($code)
 		{
 			// Add any CSS Specific minimizations here
 			return self::minifyCommon($code);
@@ -575,7 +666,7 @@
 		 * @param string $code The Javascript to minify
 		 * @return string The minified Javascript
 		 */
-		static protected function minifyJS($code)
+		static private function minifyJS($code)
 		{
 			// Add any Javascript specific minimizations here
 			return self::minifyCommon($code);

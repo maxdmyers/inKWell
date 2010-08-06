@@ -7,7 +7,7 @@
 })(function(f){
 	return function(c,t){
 		var a=[].slice.call(arguments,2);
-		return f(function(){c.apply(this,a)},t)
+		return f(function(){ c.apply(this,a); },t);
 	}
 });
 
@@ -18,59 +18,63 @@
  */
 $(function(){
 
-	var disable-meta = $('meta[name="disable-ie-lt"]');
+	if ($.browser.msie) {
 
-	if (disable-meta.length) {
-		var version = intval(disable-meta[0].attr('content'))
-	} else {
-		return;
-	}
+		var disable_meta = $('meta[name="disable-ie-lt"]');
 
-	if ($.browser.msie && parseInt($.browser.version) < version) {
+		if (disable_meta.length) {
+			var supported_ie_version = parseInt(disable_meta.first().attr('content'));
+			var user_ie_version      = parseInt($.browser.version);
+		} else {
+			return;
+		}
 
-		var body = $('body');
-		$('body').css({'width' : 'auto', 'margin': '0px', 'left': '0px'}).empty();
+		if (user_ie_version < supported_ie_version) {
 
-		$('<div>')
-			.css({
-				'position': 'absolute',
-				'top': '0px',
-				'left': '0px',
-				'backgroundColor': 'black',
-				'opacity': '0.75',
-				'width': '100%',
-				'height': $(window).height(),
-				'zIndex': 5000
-			})
-			.appendTo('body');
+			var body = $('body');
+			$('body').css({'width' : 'auto', 'margin': '0px', 'left': '0px'}).empty();
 
-		var error_message =
-		'<div>' +
-			'<h1>Sorry!</h1>' +
-			'<h2>This page does not support Internet Explorer 6.</h2>' +
-			'<p>If you would like to read our content please ' +
-				'<a href="http://www.microsoft.com/windows/internet-explorer/default.aspx">upgrade your browser</a>.' +
-			'</p>' +
-			'<p>If you really want to make use of the full power of the web, try these ones: ' +
-				'<a href="http://www.getfirefox.com">Mozilla Firefox</a>' +
-				' or ' +
-				'<a href="http://www.google.com/chrome">Google Chrome</a>' +
-			'</p>' +
-		'</div>';
+			$('<div>')
+				.css({
+					'position': 'absolute',
+					'top': '0px',
+					'left': '0px',
+					'backgroundColor': 'black',
+					'opacity': '0.75',
+					'width': '100%',
+					'height': $(window).height() + 'px',
+					'zIndex': 5000
+				})
+				.appendTo('body');
 
-		$(error_message)
-			.css({
-				'backgroundColor': 'white',
-				'top': '50%',
-				'left': '50%',
-				'marginLeft': -210,
-				'marginTop': 100,
-				'width': 410,
-				'padding': 10,
-				'height': 200,
-				'position': 'absolute',
-				'zIndex': 6000
-			})
-			.appendTo('body');
+			var error_message =
+			'<div>' +
+				'<h1>Sorry!</h1>' +
+				'<h2>We do not support Internet Explorer ' + user_ie_version + '.</h2>' +
+				'<p>If you would like to read our content please ' +
+					'<a href="http://www.microsoft.com/windows/internet-explorer/default.aspx">upgrade your browser</a>.' +
+				'</p>' +
+				'<p>If you really want to make use of the full power of the web, try these ones: ' +
+					'<a href="http://www.getfirefox.com">Mozilla Firefox</a>' +
+					' or ' +
+					'<a href="http://www.google.com/chrome">Google Chrome</a>' +
+				'</p>' +
+			'</div>';
+
+			$(error_message)
+				.css({
+					'backgroundColor': 'white',
+					'top': '25%',
+					'left': '50%',
+					'marginLeft': -210,
+					'marginTop': 100,
+					'width': 410,
+					'padding': 10,
+					'height': 200,
+					'position': 'absolute',
+					'zIndex': 6000
+				})
+				.appendTo('body');
+		}
 	}
 });

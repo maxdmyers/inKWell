@@ -1,0 +1,124 @@
+body {
+	font-family: sans, verdana;
+}
+
+h1,h2,h3,h4 {
+	color: #900000;
+	font-weight: normal;
+}
+
+p {
+	font-size: 1.2em;
+}
+
+a {
+	color: #900000;
+	text-decoration: none;
+}
+
+body > .header {
+	border-bottom: dotted 1px #909090;
+	padding: 1em 0;
+}
+
+	body > .header span.logo {
+		display: block;
+		width: 380px;
+		height: 80px;
+		background-image: url(/user/styles/default/images/logo.png);
+		text-indent: -500px;
+		overflow: hidden;
+		margin: 0;
+		padding: 0;
+	}
+	
+	body > .header span.tagline {
+		font-size: 3.0em;
+		font-family: Georgia;
+	}
+
+body > .primary.nav {
+	clear: both;
+	float: left;
+	width: 250px;
+}
+
+	body > .primary.nav > li {
+		margin: 0;
+		border-bottom: dotted 1px #c0c0c0;
+	}
+
+	body > .primary.nav a {
+		display: block;
+		padding: 1em 0;
+		font-size: 1.4em;
+		text-align: center;
+	}
+
+	body > .primary.nav li.download {
+		margin: 5em auto;
+		width: 200px;
+		background-color: #efefef;
+		background: -moz-linear-gradient(top, #efefef, #d6d6d6);
+		text-align: center;
+		border: solid 1px #e0e0e0;
+		-moz-border-radius: 1em;
+	}
+
+		body > .primary.nav li.download a {
+			font-weight: bold;
+		}
+
+		body > .primary.nav li.download span {
+			display: block;
+			height: 30px;
+			text-indent: -500px;
+			overflow: hidden;
+			background-image: url(/user/styles/default/images/download.png);
+			background-repeat: no-repeat;
+			background-position: bottom center;
+		}
+
+body > .torso {
+	float: left;
+	padding: 1em 10px;
+	border-left: dotted 1px #909090;
+	width: 70%;
+}
+
+	body > .torso ul {
+		margin-left: 1em;
+		font-size: 1.2em;
+		list-style-type: circle;
+		color: #404040;
+	}
+
+	body > .torso > .section.primary {
+		float: left;
+		width: 73%;
+		padding: 0 1%;
+	}
+
+	body > .torso > .section.secondary {
+		float: left;
+		width: 23%;
+		padding: 1em 1%;
+		background-color: #efefef;
+		-moz-border-radius: 1em;
+	}
+
+body > .footer {
+	clear: both;
+	padding: 1em 10px;
+}
+
+#home .learn_more {
+	background: -moz-linear-gradient(top, #f6f6f6, #ffffff);
+	-moz-border-radius-topleft: 10px;
+	-moz-border-radius-topright: 10px;
+}
+
+#home .learn_more .section {
+	width: 30%;
+	padding: 1.5%;
+}

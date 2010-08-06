@@ -2,10 +2,9 @@
 
 ## Preamble
 
-1. At the moment the stock CMS (usually part of the Admin Section) is in
-   shambles. Do not expect it to work right.
-2. Please be aware that any downloaded packages or cloning via GitHub require
-   you to download and/or upate submodules for Flourish and Moor.
+At the moment the stock CMS (usually part of the Admin Section) is in shambles.
+Do not expect it to work right.  In the mean time however feel free to use
+inKWell as a basic framework.
 
 ## Licensing
 
@@ -44,4 +43,34 @@ The core classes are as follows:
 4. View (A standard view/templating engine built on fTemplating)
 5. Controller (A simple controller with common triggers)
 6. Scaffolder (A scaffolder which supports templating)
+
+### View
+
+#### Creating Views
+
+##### feed
+##### food
+##### set()
+##### add()
+##### get(
+##### pack()
+##### push()
+##### digest()
+
+#### Working Inside Views
+
+##### pull()
+##### peal()
+##### place()
+##### compress()
+##### combine()
+##### rcombine()
+##### selectOn()
+##### highlightOn()
+##### positionIn()
+
+#### Behaviors and Hooks
+
+##### render()
+##### onRender()
 

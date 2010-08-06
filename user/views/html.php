@@ -3,14 +3,14 @@
 	<head>
 		<meta name="disable-ie-lt" content="7" />
 		<title><?= $this->rcombine('title') ?></title>
-		<?	$this->compress('styles');  ?>
-		<?	$this->compress('scripts'); ?>
+		<? $this->compress('styles');  ?>
+		<? $this->compress('scripts'); ?>
 
 		<!--[if IE]>
-			<script type="text/javascript" src="/sup/scripts/ie-fix.js"></script>
+			<script type="text/javascript" src="/user/scripts/ie-fix.js"></script>
 		<![endif]-->
 	</head>
-	<body id="<?= $this->data['id'] ?>" class="<?= $this->combine('classes', ' ') ?>">
+	<body id="<?= $this->pull('id') ?>" class="<?= $this->combine('classes', ' ') ?>">
 		<? $this->place('header'); ?>
 		<div class="torso">
 			<? $this->place('primary_section')   ?>

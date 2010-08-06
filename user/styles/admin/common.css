@@ -173,19 +173,19 @@ body > .header {
 	height: 70px;
 }
 
-body > .header h1 {
-	display: block;
-	height: 70px;
-	margin: 0;
-	padding: 0;
-	font-size: 3.2em;
+body > .header p {
+	text-align: right;
+}
 
-	/*
-	background-image: url(/sup/styles/admin/images/logo.png);
-	background-repeat: no-repeat;
+body > .header h1 {
+	float: left;
+	width: 380px;
+	height: 80px;
+	background-image: url(/user/styles/admin/images/logo.png);
 	text-indent: -500px;
 	overflow: hidden;
-	*/
+	margin: 0;
+	padding: 0;
 }
 
 body > .nav > li > .nav {
@@ -227,20 +227,6 @@ body > .primary.nav {
 		margin: 0;
 		padding: 0;
 	}
-
-
-body > .header p {
-	text-align: right;
-}
-
-body > .header h1 {
-	float: left;
-	width: 380px;
-	height: 80px;
-	background-image: url(/user/styles/admin/images/logo.png);
-	text-indent: -500px;
-	overflow: hidden;
-}
 
 body > .torso {
 	position: fixed;

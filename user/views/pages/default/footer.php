@@ -1,5 +1,3 @@
 <div class="footer group">
-	<script type="text/javascript">
-
-	</script>
+	<?= 'Memory Usage:' . (memory_get_usage() / 1024 / 1024); ?>
 </div>
