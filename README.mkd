@@ -30,12 +30,17 @@ Moor (http://www.github.com/jeffturcotte/moor).  It is designed to be extremely
 light weight and flexible.  Unlike other frameworks nearly every aspect of it
 is designed to allow for easy overrides, including scaffolding.
 
-The base framework consists of only six classes aside from those provided by
-Flourish and Moor.  At the moment, additional classes do come bundled, however,
-these are completely optional and will inevitably be moved to an "extensions"
-system.
+The core framework follows a "KISS" philosophy.  We begin by keeping core
+concepts and API to a minimum, providing only six classes in that comprise
+the base framework, while everything else is an extension.
 
-The core classes are as follows:
+Nearly all aspects of integration start with a configuration file and a
+single method on all your classes: __init().  The complexity of what you write
+is completely up to you.  Because our core libraries, including Flourish offer
+a nice set of hooks, __init() is all you need to provide full integration with
+everything else.
+
+The core classes are as follows (and will be explained later):
 
 1. IW (Contains only the basic framework functionality, mainly autoloading)
 2. ActiveRecord (An advanced active record/model class built on fActiveRecord)
@@ -44,33 +49,70 @@ The core classes are as follows:
 5. Controller (A simple controller with common triggers)
 6. Scaffolder (A scaffolder which supports templating)
 
-### View
+## Configuration
 
-#### Creating Views
+inKWell uses a modular configuration system where files are mapped one to one
+to a configuration key.  With the exception of those configuration files used
+to initialize inkwell itself, all configuration files are named after the
+underscorized version of your class names.
 
-##### feed
-##### food
-##### set()
-##### add()
-##### get(
-##### pack()
-##### push()
-##### digest()
+When your classes are autoloaded, the inKWell autoloader will take their
+particular configuration section and pass them to the static __init() method
+found on your class.  You are then responsible for setting up your class,
+registering any hooks you'd like, etc, based on the configuration information.
 
-#### Working Inside Views
+Let's take a look at an example from inkwell itself.  Below is the configuration
+file for our Controller class ('includes/config/classes/controller.php' by
+default):
 
-##### pull()
-##### peal()
-##### place()
-##### compress()
-##### combine()
-##### rcombine()
-##### selectOn()
-##### highlightOn()
-##### positionIn()
+	return array(
 
-#### Behaviors and Hooks
+		// The standard controller class allows for errors to be custom
+		// configured based on keys.  Controller::triggerError('not_found')
+		// for example would use the information provided by the 'not_found'
+		// key below.
+		//
+		// Custom error configurations are expected to be arrays containing
+		// the following key => value pairs:
+		//
+		//      'handler'  : A custom callback to handle the error
+		//      'header'   : A header to be sent when triggered
+		//      'messsage' : A default error message
+		//
+		// Errors which are not configured will fallback to using
+		// Controller::triggerHardError() with default 500 internal server
+		// error headers and a generic message
 
-##### render()
-##### onRender()
+		'errors'             => array(
+			'not_found'      => array(
+				'handler'    => 'PagesController::notFound',
+				'header'     => 'HTTP/1.0 404 Not Found',
+				'message'    => 'The requested resource could not be found'
+			),
+			'not_authorized' => array(
+				'handler'    => 'AuthController::login',
+				'header'     => 'HTTP/1.0 401 Not Authorized',
+				'message'    => 'The requested resource requires authorization'
+			),
+			'forbidden'      => array(
+				'handler'    => 'PagesController::forbidden',
+				'header'     => 'HTTP/1.0 403 Forbidden',
+				'message'    => 'You do not have permission to view the requested resource'
+			)
+		)
+	);
 
+As you can see from the above example, our core configuration file contains
+normal, executable php code.  Using nicely nested arrays and some commenting
+there is no need for additional parsers of third party object/data formats as
+is found in some other frameworks.  When controller is called, this
+configuration information is passed into it's __init() function which registers
+the error events based on the information.  How we chose to register them,
+what methods we use, etc, are completely up to us.
+
+Some things are currently not configurable in the controller but could be, for
+example, the default request format type which is currently html.  If we so
+chose, we could easily add a 'default_request_format' key to our array, and
+modify our __init() to set that directly or even use an externally accessible
+API like Controller::setDefaultRequestFormat()...  however we decide to do it,
+it remains 100% up to us, the developer.

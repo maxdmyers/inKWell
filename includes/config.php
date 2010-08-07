@@ -1,0 +1,24 @@
+<?php
+
+/*******************************************************************************
+
+If you are seeing this message it is likely because you have not written out
+your live configuration.  inKWell's configuration system is completely modular.
+As such, the information you're looking for is probably somewhere neatly
+organized in '/includes/config' or something similar.
+
+We suggest running a live built config for all development, and only once a
+site is ready to go live writing the config.  The configuration can be written
+from console using iw::writeConfig() -- until that time your system will
+rebuild the config on every reload.  It is of course possible to continually
+rewrite the config every time you change something, but that would seem
+fairly pointless now wouldn't it?
+
+Example of what to do when you're done:
+
+	[/var/www/inkwellsite.com]# iw::writeConfig(iw::buildConfig());
+
+If you are using custom directory structures you might want to take a look
+at the documentation for the iw::writeConfig() and iw::buildConfig() methods.
+
+*******************************************************************************/

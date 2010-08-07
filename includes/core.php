@@ -104,7 +104,7 @@
 			if (!$config_file) { $config_file = self::DEFAULT_CONFIG_FILE; }
 
 			if (is_readable($config_file)) {
-				$config = unserialize(file_get_contents($config_file));
+				$config = @unserialize(file_get_contents($config_file));
 			} else {
 				$config = FALSE;
 			}
@@ -116,8 +116,8 @@
 			self::$writeDirectory = implode(DIRECTORY_SEPARATOR, array(
 				$_SERVER['DOCUMENT_ROOT'],
 				trim(
-					isset($config['global']['write_directory'])
-					? $config['global']['write_directory']
+					isset($config['inkwell']['write_directory'])
+					? $config['inkwell']['write_directory']
 					: self::DEFAULT_WRITE_DIRECTORY
 					, '/\\'
 				)

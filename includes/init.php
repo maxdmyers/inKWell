@@ -8,19 +8,19 @@
 
 	// Initialize Error Reporting
 
-	if (isset($config['global']['error_level'])) {
-		error_reporting($config['global']['error_level']);
+	if (isset($config['inkwell']['error_level'])) {
+		error_reporting($config['inkwell']['error_level']);
 	}
 
 	if (
-		isset($config['global']['display_errors']) &&
-		$config['global']['display_errors']
+		isset($config['inkwell']['display_errors']) &&
+		$config['inkwell']['display_errors']
 	) {
 		fCore::enableErrorHandling('html');
 		fCore::enableExceptionHandling('html');
-	} elseif (isset($config['global']['error_email_to'])) {
-		fCore::enableErrorHandling($config['global']['error_email_to']);
-		fCore::enableExceptionHandling($config['global']['error_email_to']);
+	} elseif (isset($config['inkwell']['error_email_to'])) {
+		fCore::enableErrorHandling($config['inkwell']['error_email_to']);
+		fCore::enableExceptionHandling($config['inkwell']['error_email_to']);
 	}
 
 	// Initialize the Database
@@ -82,13 +82,13 @@
 		)))
 	);
 
-	$session_length = (isset($config['global']['session_length']))
-		? $config['global']['session_length']
+	$session_length = (isset($config['inkwell']['session_length']))
+		? $config['inkwell']['session_length']
 		: '30 minutes';
 
 	if (
-		isset($config['global']['persistent_session']) &&
-		$config['global']['persistent_sessions']
+		isset($config['inkwell']['persistent_session']) &&
+		$config['inkwell']['persistent_sessions']
 	) {
 		fSession::enablePersistence();
 		fSession::setLength($session_length, $session_length);
