@@ -9,11 +9,13 @@
 	 */
 	class iw
 	{
+
+		const DEFAULT_CONFIG_DIR       = 'config';
+		const DEFAULT_CONFIG_FILE      = 'config.php';
+
 		const INITIALIZATION_METHOD    = '__init';
 		const DEFAULT_REQUEST_FORMAT   = 'html';
 		const DEFAULT_WRITE_DIRECTORY  = 'writable';
-		const DEFAULT_CONFIG_DIR       = 'config';
-		const DEFAULT_CONFIG_FILE      = 'config.php';
 
 		static private $config         = array();
 		static private $writeDirectory = NULL;
@@ -27,27 +29,25 @@
 		}
 
 		/**
-		 * Builds a configuration file from a series of separate configuration
-		 * elements loaded from a directory.  Each configuration element is
-		 * a separate file named after its key in the final $config which is
-		 * valid PHP and returns (from include) it's local configuration
-		 * options.
+		 * Builds a configuration from a series of separate configuration
+		 * files loaded from a root directory.  Each configuration file is
+		 * named after its key in the final $config and is a valid PHP script
+		 * which returns (from include) it's local configuration options.
 		 *
 		 * @param string $directory The directory containing the configuration elements
-		 * @param string $file The file in which to output the final configuration
 		 * @param boolean $queit Whether or not to output information
 		 * @param array The configuration array which was built
 		 */
-		static public function buildConfig($directory = NULL, $file = NULL, $quiet = FALSE)
+		static public function buildConfig($directory = NULL, $quiet = FALSE)
 		{
 			$config = array();
 
 			if (!$directory) { $directory = self::DEFAULT_CONFIG_DIR;  }
-			if (!$file)      { $file      = self::DEFAULT_CONFIG_FILE; }
 
 			if (is_dir($directory) && is_readable($directory)) {
 
-				$cwd = getcwd();
+				$current_working_directory = getcwd();
+
 				chdir($directory);
 
 				foreach (glob("*.php") as $config_file) {
@@ -58,15 +58,38 @@
 					$config[$config_element] = include($config_file);
 				}
 
-				if (!$quiet) {
-					echo "Writing configuration...";
+				foreach (glob("*", GLOB_ONLYDIR) as $sub_directory) {
+					$config = array_merge(
+						$config,
+						self::buildConfig($sub_directory, $quiet)
+					);
 				}
 
-				chdir($cwd);
-				file_put_contents($file, serialize($config));
+				chdir($current_working_directory);
 			}
 
 			return $config;
+		}
+
+		/**
+		 * Writes a full configuration array out to a particular file.
+		 *
+		 * @param array $config The configuration array
+		 * @param string $file The file to write to
+		 * @return mixed Number of bytes written to file or FALSE on failure
+		 */
+		static public function writeConfig(array $config, $file = NULL)
+		{
+			if (!$file) { $file = self::DEFAULT_CONFIG_FILE; }
+
+			echo "Writing configuration file...";
+
+			if ($result = file_put_contents($file, serialize($config))) {
+				echo "Success!";
+			} else {
+				echo "Failure.";
+			}
+			return $result;
 		}
 
 		/**

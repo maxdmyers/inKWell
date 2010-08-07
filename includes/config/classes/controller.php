@@ -2,6 +2,22 @@
 
 	return array(
 
+		// The standard controller class allows for errors to be custom
+		// configured based on keys.  Controller::triggerError('not_found')
+		// for example would use the information provided by the 'not_found'
+		// key below.
+		//
+		// Custom error configurations are expected to be arrays containing
+		// the following key => value pairs:
+		//
+		//      'handler'  : A custom callback to handle the error
+		//      'header'   : A header to be sent when triggered
+		//      'messsage' : A default error message
+		//
+		// Errors which are not configured will fallback to using
+		// Controller::triggerHardError() with default 500 internal server
+		// error headers and a generic message
+
 		'errors'                 => array(
 			'not_found'          => array(
 				'handler'        => 'PagesController::notFound',
