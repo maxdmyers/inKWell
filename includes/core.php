@@ -9,12 +9,14 @@
 	 */
 	class iw
 	{
-		const INITIALIZATION_METHOD   = '__init';
-		const DEFAULT_REQUEST_FORMAT  = 'html';
-		const DEFAULT_WRITE_DIRECTORY = 'writable';
+		const INITIALIZATION_METHOD    = '__init';
+		const DEFAULT_REQUEST_FORMAT   = 'html';
+		const DEFAULT_WRITE_DIRECTORY  = 'writable';
+		const DEFAULT_CONFIG_DIR       = 'config';
+		const DEFAULT_CONFIG_FILE      = 'config.php';
 
-		static private $config                = array();
-		static private $writeDirectory        = NULL;
+		static private $config         = array();
+		static private $writeDirectory = NULL;
 
 		/**
 		 * Constructing an iw object is not allowed, this is purely for
@@ -25,13 +27,69 @@
 		}
 
 		/**
+		 * Builds a configuration file from a series of separate configuration
+		 * elements loaded from a directory.  Each configuration element is
+		 * a separate file named after its key in the final $config which is
+		 * valid PHP and returns (from include) it's local configuration
+		 * options.
+		 *
+		 * @param string $directory The directory containing the configuration elements
+		 * @param string $file The file in which to output the final configuration
+		 * @param boolean $queit Whether or not to output information
+		 * @param array The configuration array which was built
+		 */
+		static public function buildConfig($directory = NULL, $file = NULL, $quiet = FALSE)
+		{
+			$config = array();
+
+			if (!$directory) { $directory = self::DEFAULT_CONFIG_DIR;  }
+			if (!$file)      { $file      = self::DEFAULT_CONFIG_FILE; }
+
+			if (is_dir($directory) && is_readable($directory)) {
+
+				$cwd = getcwd();
+				chdir($directory);
+
+				foreach (glob("*.php") as $config_file) {
+					$config_element = pathinfo($config_file, PATHINFO_FILENAME);
+					if (!$quiet) {
+						echo "Loading config data for $config_element...\n";
+					}
+					$config[$config_element] = include($config_file);
+				}
+
+				if (!$quiet) {
+					echo "Writing configuration...";
+				}
+
+				chdir($cwd);
+				file_put_contents($file, serialize($config));
+			}
+
+			return $config;
+		}
+
+		/**
 		 * Initializes the inKWell system with a configuration
 		 *
-		 * @param array $config The array of configuration information
+		 * @param array $config_file The location of the config file
 		 * @return void
 		 */
-		static public function init(array $config)
+		static public function init($config_file = NULL)
 		{
+
+			if (!$config_file) { $config_file = self::DEFAULT_CONFIG_FILE; }
+
+			if (is_readable($config_file)) {
+				$config = unserialize(file_get_contents($config_file));
+			} else {
+				$config = FALSE;
+			}
+
+			if (!$config) {
+				$config = @self::buildConfig(NULL, $config_file, TRUE);
+			}
+
 			self::$writeDirectory = implode(DIRECTORY_SEPARATOR, array(
 				$_SERVER['DOCUMENT_ROOT'],
 				trim(
@@ -41,6 +99,16 @@
 					, '/\\'
 				)
 			));
+
+			if (
+				!isset($config['autoloaders'])    ||
+				!is_array($config['autoloaders'])
+			) {
+				$config['autoloaders'] = array(
+					'f*'    => 'includes/lib/flourish/classes',
+					'Moor*' => 'includes/lib/moor'
+				);
+			}
 
 			if (
 				isset($config['scaffolder']['disabled'])       &&
@@ -58,6 +126,17 @@
 			spl_autoload_register('iw::loadClass');
 
 			self::$config = $config;
+		}
+
+		/**
+		 * Gets the full inKWell configuration array loaded by iw::init()
+		 *
+		 * @param void
+		 * @param array The configuration array which was loaded by iw::init()
+		 */
+		static public function getConfig()
+		{
+			return self::$config;
 		}
 
 		/**

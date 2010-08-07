@@ -20,16 +20,16 @@
 
 		// Instiated controllers have a localized view
 
-		protected        $view                 = NULL;
+		protected        $view                  = NULL;
 
 		// Handlers for common errors
 
-		static private   $errors               = array();
+		static private   $errors                = array();
 
 		// State information
 
-		static private   $requestFormat        = NULL;
-		static private   $typeHeadersSent      = FALSE;
+		static private   $requestFormat         = NULL;
+		static private   $typeHeadersRegistered = FALSE;
 
 		/**
 		 * Builds a new controller by assigning it a local view and running
@@ -71,7 +71,23 @@
 					break;
 			}
 
-			$this->view->onRender('Controller::__sendContentType');
+			if (!self::$typeHeadersRegistered) {
+				switch(self::getRequestFormat()) {
+					case 'html':
+						$content_type_callback = 'fHTML::sendHeader';
+						break;
+					case 'json':
+						$content_type_callback = 'fJSON::sendHeader';
+						break;
+					case 'xml':
+						$content_type_callback = 'fXML::sendHeader';
+						break;
+				}
+
+				$this->view->onRender($content_type_callback);
+
+				self::$typeHeadersRegistered = TRUE;
+			}
 		}
 
 		/**
@@ -111,30 +127,6 @@
 
 					self::setError($error, $handler, $header, $message);
 				}
-			}
-		}
-
-		/**
-		 * Sends the content type based on the request format
-		 *
-		 * @param void
-		 * @return void
-		 */
-		static public function __sendContentType()
-		{
-			if (!self::$typeHeadersSent) {
-				switch(self::getRequestFormat()) {
-					case 'html':
-						@fHTML::sendHeader();
-						break;
-					case 'json':
-						@fJSON::sendHeader();
-						break;
-					case 'xml':
-						@fXML::sendHeader();
-						break;
-				}
-				self::$typeHeadersSent = TRUE;
 			}
 		}
 

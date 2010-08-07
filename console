@@ -4,12 +4,11 @@
 	function ___respawn()
 	{
 		echo ob_get_clean() . "\n";
-		$error = error_get_last();
 
 		if (!isset($GLOBALS['___called_quit'])) {
+			echo "Resetting...\n";
 			passthru(__FILE__);
 		}
-
 	}
 
 	register_shutdown_function('___respawn');
@@ -18,7 +17,11 @@
 	$_SERVER['REQUEST_URI']    = '/';
 	$_SERVER['REQUEST_METHOD'] = 'GET';
 
-	include 'includes/init.php';
+	chdir($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'includes');
+
+	include 'init.php';
+
+	Moor::setCacheKey('console_cache');
 
 	function get($url, $params = array()) {
 		$request_info = parse_url($url);
@@ -30,7 +33,7 @@
 		}
 		$_SERVER['REQUEST_METHOD'] = 'GET';
 		$_GET                      = $params;
-		include 'includes/routing.php';
+		include 'routing.php';
 	}
 
 	function post($url, $params = array()) {
@@ -43,11 +46,11 @@
 		}
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$_POST                      = $params;
-		include 'includes/routing.php';
+		include 'routing.php';
 	}
 
-	fCore::enableErrorHandling('php://stdout');
-	fCore::enableExceptionHandling('php://stdout');
+	// fCore::enableErrorHandling('html');
+	fCore::enableExceptionHandling('html');
 
 	$___stdin   = fopen('php://stdin', 'r');
 	$___depth   = 0;
@@ -71,18 +74,28 @@
 
 			if ($___depth == 0 && ($___echar == '}' || $___echar == ';')) {
 				ob_start();
+				fCore::startErrorCapture();
 				try {
 					eval($___command);
-				} catch (Exception $___e) {
-					echo fHTML::decode($___e);
+				} catch (fException $___e) {
+					echo 'inKWell Exception:  ' . $___e->getMessage();
 				}
+				if(is_array($errors = fCore::stopErrorCapture())) {
+					foreach ($errors as $error) {
+						echo $error['type'] . ':  ' . $error['string'];
+					}
+				}
+
 				$___command = '';
-				if($___output = ob_get_clean()) {
+				$___output  = ob_get_clean();
+
+				if($___output) {
 					echo $___output;
 					echo "\n";
 				}
 			} else {
 				switch (trim($___command)) {
+					case 'exit':
 					case 'quit':
 						$___called_quit = TRUE;
 						exit();

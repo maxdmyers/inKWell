@@ -1,22 +1,22 @@
 <div class="primary section">
-	<h2><?= $this->data['title'] ?></h2>
+	<h2><?= $this->pull('title') ?></h2>
 
 	<? foreach ($message_types = array('alert', 'helper', 'error', 'success') as $message_type) {
-		fMessaging::show($message_type, iw::makeTarget($this->data['controller_class'], $this->data['action']));
+		fMessaging::show($message_type, iw::makeTarget($this->pull('controller_class'), $this->pull('action')));
 	} ?>
 
-	<? if ($this->data['active_record_set']->count() || $this->data['filter_column']) { ?>
+	<? if ($this->pull('active_record_set')->count() || $this->pull('filter_column')) { ?>
 
-		<? if (count($this->data['filter_columns'])) { ?>
+		<? if (count($this->pull('filter_columns'))) { ?>
 			<form action="" method="post" class="filter">
 				<fieldset>
 					<select name="filter_column">
 						<option value="">Select Filter Column</option>
-						<? foreach ($this->data['filter_columns'] as $filter) {
-							fHTML::printOption(fGrammar::humanize($filter), $filter, $this->data['filter_column']);
+						<? foreach ($this->pull('filter_columns') as $filter) {
+							fHTML::printOption(fGrammar::humanize($filter), $filter, $this->pull('filter_column'));
 						} ?>
 					</select>
-					<input name="filter_value"type="text" size="15" value="<?= fHTML::encode($this->data['filter_value']) ?>"/>
+					<input name="filter_value"type="text" size="15" value="<?= fHTML::encode($this->pull('filter_value')) ?>"/>
 					<button type="submit">
 						Go!
 					</button>
@@ -31,13 +31,13 @@
 			<table class="record_set">
 				<thead>
 					<tr>
-						<? if ($can_damage = User::checkACL($this->data['entry'], array(PERM_REMOVE, PERM_UPDATE))) { ?>
+						<? if ($can_damage = User::checkACL($this->pull('entry'), array(PERM_REMOVE, PERM_UPDATE))) { ?>
 							<th class="selection">Selected</th>
 						<? } ?>
-						<? foreach (array_keys($this->data['display_columns']) as $display_column) { ?>
+						<? foreach (array_keys($this->pull('display_columns')) as $display_column) { ?>
 							<th class="sortable">
 								<?= fGrammar::humanize($display_column) ?>
-								<? if (in_array($display_column, $this->data['sortable_columns'])) { ?>
+								<? if (in_array($display_column, $this->pull('sortable_columns'))) { ?>
 									<span class="directions">
 										<a	class="<?= $this->selectOn(array('sort_column' => $display_column, 'sort_direction' => 'asc')) ?>"
 											href="?sort_column=<?= $display_column ?>&amp;sort_direction=asc">
@@ -60,24 +60,24 @@
 				<tfoot>
 					<tr>
 						<? if ($can_damage) { ?>
-							<td colspan="<?= sizeof($this->data['display_columns']) + 1 ?>"><em>With Selected:</em></td>
+							<td colspan="<?= sizeof($this->pull('display_columns')) + 1 ?>"><em>With Selected:</em></td>
 							<td>
-								<button name="action" value="remove" <?= (!User::checkACL($this->data['entry'], PERM_REMOVE)) ? 'disabled="disabled"' : '' ?>>Remove</button>
+								<button name="action" value="remove" <?= (!User::checkACL($this->pull('entry'), PERM_REMOVE)) ? 'disabled="disabled"' : '' ?>>Remove</button>
 							</td>
 						<? } else { ?>
-							<td colspan="<?= sizeof($this->data['display_columns']) ?>">
+							<td colspan="<?= sizeof($this->pull('display_columns')) ?>">
 								<em>You do not have the required permissions to remove and/or update these records.</em>
 							</td>
 						<? } ?>
 					</tr>
 				</tfoot>
 				<tbody>
-					<? foreach($this->data['active_record_set'] as $record) { ?>
+					<? foreach($this->pull('active_record_set') as $record) { ?>
 						<tr class="<?= $this->positionIn('active_record_set', $record) ?> <?= $this->highlightOn(array('affected_records' => $record->makeSlug(FALSE))) ?>">
 							<? if ($can_damage) { ?>
-								<td class="selection"><input type="checkbox" name="<?= $this->data['entry'] ?>[]" value="<?= $record->makeSlug(FALSE) ?>" /></td>
+								<td class="selection"><input type="checkbox" name="<?= $this->pull('entry') ?>[]" value="<?= $record->makeSlug(FALSE) ?>" /></td>
 							<? } ?>
-							<? foreach ($this->data['display_columns'] as $display_column => $type) {
+							<? foreach ($this->pull('display_columns') as $display_column => $type) {
 								$method = 'prepare' . fGrammar::camelize($display_column, TRUE);
 								switch ($type) {
 									case 'date':
@@ -119,8 +119,8 @@
 							} ?>
 							<? if ($can_damage) { ?>
 								<td class="last">
-									<? if (User::checkACL($this->data['entry'], PERM_UPDATE)) { ?>
-										<a href="<?= Moor::linkTo($this->data['controller_class'] . '::update :pkey', $record->makeSlug(FALSE)) ?>">Update</a>
+									<? if (User::checkACL($this->pull('entry'), PERM_UPDATE)) { ?>
+										<a href="<?= Moor::linkTo($this->pull('controller_class') . '::update :pkey', $record->makeSlug(FALSE)) ?>">Update</a>
 									<? } ?>
 								</td>
 							<? } ?>

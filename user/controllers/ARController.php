@@ -20,6 +20,7 @@
 		 */
 		protected function prepare($controller_class)
 		{
+			if (class_exists('AuthController'));
 			if (!User::checkLoggedIn()) {
 				self::triggerError('not_authorized');
 			}
@@ -443,7 +444,7 @@
 
 			if (self::isEntryAction($controller_class, __FUNCTION__)) {
 
-				$page       = new PagesController();
+				$page = new PagesController();
 
 				$page->view
 					-> add  ('primary_section',   $controller->view)

@@ -167,9 +167,7 @@
 		{
 			// Custom ORM Mapping
 
-			// Register the Active Record
-
-			self::register();
+			parent::__init($config, __CLASS__);
 
 			// Extended Information
 
@@ -204,14 +202,6 @@
 					($matches[4][0]) ? $matches[5][0] : self::MAX_LOGIN_ATTEMPTS_TIME_MEASURE
 				));
 			}
-		}
-
-		/**
-		 * Registers the User model.
-		 */
-		static public function register()
-		{
-			parent::register(__CLASS__);
 		}
 
 		/**

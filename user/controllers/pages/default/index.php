@@ -1,5 +1,5 @@
 <?
-	$page            = new PagesController();
+	$page = new PagesController();
 
 	$page->view
 		-> add    ('primary_section',   'pages/default/index.php')

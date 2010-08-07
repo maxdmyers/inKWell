@@ -1,9 +1,10 @@
 <?php
 
 	require_once 'core.php';
-	require_once 'config.php';
 
-	iw::init($config);
+	iw::init();
+
+	$config = iw::getConfig();
 
 	// Initialize Error Reporting
 
@@ -12,7 +13,7 @@
 	}
 
 	if (
-		isset($config['global']['display_errors']) && 
+		isset($config['global']['display_errors']) &&
 		$config['global']['display_errors']
 	) {
 		fCore::enableErrorHandling('html');
@@ -20,13 +21,10 @@
 	} elseif (isset($config['global']['error_email_to'])) {
 		fCore::enableErrorHandling($config['global']['error_email_to']);
 		fCore::enableExceptionHandling($config['global']['error_email_to']);
-	} else {
-		throw new fProgrammerException (
-			'Please configure display errors or set an error e-mail.'
-		);
 	}
 
 	// Initialize the Database
+
 	if (
 		isset($config['database']['disabled']) &&
 		!$config['database']['disabled']
@@ -107,10 +105,10 @@
 		);
 	}
 	if (
-		isset($config['global']['date_formats'])    &&
-	    is_array($config['global']['date_formats'])
+		isset($config['date_formats'])    &&
+	    is_array($config['date_formats'])
 	) {
-		foreach ($config['global']['date_formats'] as $name => $format) {
+		foreach ($config['date_formats'] as $name => $format) {
 			fTimestamp::defineFormat($name, $format);
 		}
 	}

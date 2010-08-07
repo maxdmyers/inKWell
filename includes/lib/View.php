@@ -342,7 +342,7 @@
 		 */
 		protected function pull($key, $destructive = FALSE)
 		{
-			if (isset($this->data[$key])) {
+			if (array_key_exists($key, $this->data)) {
 
 				$data = $this->data[$key];
 
@@ -370,7 +370,7 @@
 		 */
 		protected function peal($key, $destructive = FALSE)
 		{
-			if (isset($this->data[$key])) {
+			if (array_key_exists($key, $this->data)) {
 				if (is_array($this->data[$key])) {
 
 					if ($destructive) {
@@ -404,7 +404,7 @@
 		{
 			foreach ($matches as $key => $active_value) {
 				$match = FALSE;
-				if (isset($this->data[$key])) {
+				if (array_key_exists($key, $this->data)) {
 					if (is_array($this->data[$key])) {
 						$match = in_array($active_value, $this->data[$key]);
 					} else {
@@ -431,7 +431,7 @@
 		{
 			foreach ($matches as $key => $active_value) {
 				$match = FALSE;
-				if (isset($this->data[$key])) {
+				if (array_key_exists($key, $this->data)) {
 					if (is_array($this->data[$key])) {
 						$match = in_array($active_value, $this->data[$key]);
 					} else {
@@ -458,7 +458,7 @@
 		{
 			foreach ($matches as $key => $active_value) {
 				$match = FALSE;
-				if (isset($this->data[$key])) {
+				if (array_key_exists($key, $this->data)) {
 					if (is_array($this->data[$key])) {
 						$match = in_array($active_value, $this->data[$key]);
 					} else {
@@ -483,20 +483,29 @@
 		 */
 		protected function positionIn($key, $current_value)
 		{
-			foreach ($this->data[$key] as $index => $member) {
-				if ($current_value === $member) {
-					if ($index == 0) {
-						$position_info[] = 'first';
+			$position_info = array();
+
+			if (array_key_exists($key, $this->data)) {
+				if (
+					$this->data[$key] instanceof Traversable ||
+					is_array($this->data[$key])
+				) {
+					foreach ($this->data[$key] as $index => $member) {
+						if ($current_value === $member) {
+							if ($index == 0) {
+								$position_info[] = 'first';
+							}
+							if (($index % 2) == 0) {
+								$position_info[] = 'even';
+							} else {
+								$position_info[] = 'odd';
+							}
+							if ($index == (sizeof($this->data[$key]) - 1)) {
+								$position_info[] = 'last';
+							}
+							break;
+						}
 					}
-					if (($index % 2) == 0) {
-						$position_info[] = 'even';
-					} else {
-						$position_info[] = 'odd';
-					}
-					if ($index == (sizeof($this->data[$key]) - 1)) {
-						$position_info[] = 'last';
-					}
-					break;
 				}
 			}
 
@@ -512,7 +521,7 @@
 		 * @return string The string of combined elements, or an empty string if the element was not an array
 		 */
 		protected function combine($key, $separator = ' :: ') {
-			if (isset($this->data[$key])) {
+			if (array_key_exists($key, $this->data)) {
 				if (is_array($this->data[$key])) {
 					return implode($separator, $this->data[$key]);
 				} else {
@@ -531,7 +540,7 @@
 		 * @return string The string of combined elements, or an empty string if the element was not an array
 		 */
 		protected function rcombine($key, $separator = ' :: ') {
-			if (isset($this->data[$key])) {
+			if (array_key_exists($key, $this->data)) {
 				if (is_array($this->data[$key])) {
 					return implode($separator, array_reverse($this->data[$key]));
 				} else {

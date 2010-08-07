@@ -25,11 +25,11 @@
 		}
 
 		/**
-		 * Populates a record using fRequest get.  The format of the name
+		 * Populates a record using fRequest::get().  The format of the name
 		 * value should be such of $record[$column].
 		 *
 		 * @param void
-		 * @rretur ActiveRecord The active record for method chaining
+		 * @return ActiveRecord The active record for method chaining
 		 */
 		 public function populate()
 		 {
@@ -106,9 +106,107 @@
 		 * @param array $config The configuration array
 		 * @return void
 		 */
-		 static public function __init($config)
+		 static public function __init($config, $record_class = NULL)
 		 {
+		 	if ($record_class && is_subclass_of($record_class, __CLASS__)) {
+
+				// Do not allow Active Records to be initialized twice
+
+				if (isset($info[$record_class])) {
+					return;
+				}
+
+				// Default Values
+
+				$record            = self::getRecord($record_class);
+				$record_table      = self::getRecordTable($record_class);
+				$record_set        = self::getRecordSet($record_class);
+				$entry             = self::getEntry($record_class);
+
+				$schema            = fORMSchema::retrieve();
+				$column_info       = $schema->getColumnInfo($record_table);
+
+				$columns           = array_keys($column_info);
+				$keys              = $schema->getKeys($record_table);
+				$pkey_columns      = $keys['primary'];
+				$pkey_methods      = array();
+				$fkey_info         = $keys['foreign'];
+
+				$image_columns     = array();
+				$file_columns      = array();
+				$password_columns  = array();
+				$read_only_columns = array();
+				$ai_columns        = array();
+
+				$default_sorting   = array();
+				$is_relationship   = FALSE;
+				$allow_mapping     = TRUE;
+
+				foreach ($pkey_columns as $pkey_column) {
+					$pkey_methods[] = 'get' . fGrammar::camelize($pkey_column, TRUE);
+				}
+
+				if (!count(array_diff($columns, $pkey_columns))) {
+					$is_relationship = TRUE;
+				}
+
+				if (strpos($record_table, '.') !== FALSE || $is_relationship) {
+					$allow_mapping = FALSE;
+				}
+
+				foreach ($schema->getColumnInfo($record_table) as $column => $info) {
+					if ($info['auto_increment']) {
+						$read_only_columns[] = $column;
+						$ai_columns[]        = $column;
+					}
+				}
+
+				self::setInfo($record_class, array(
+
+					'record'            => $record,
+					'record_table'      => $record_table,
+					'record_set'        => $record_set,
+					'entry'             => $entry,
+
+					'columns'           => $columns,
+					'pkey_columns'      => $pkey_columns,
+					'pkey_methods'      => $pkey_methods,
+					'fkey_info'         => $fkey_info,
+
+					'image_columns'     => $image_columns,
+					'file_columns'      => $file_columns,
+					'password_columns'  => $password_columns,
+					'read_only_columns' => $read_only_columns,
+					'ai_columns'        => $ai_columns,
+
+					'default_sorting'   => $default_sorting,
+					'is_relationship'   => $is_relationship,
+					'allow_mapping'     => $allow_mapping
+				));
+		 	}
 		 }
+
+		/**
+		 * Dynamically defines an ActiveRecord if the provided class is the
+		 * classized version of a table in the attached schema.
+		 *
+		 * @param string $record_class The Class name to dynamically define
+		 * @return boolean TRUE if an active record was dynamically defined, FALSE otherwise
+		 */
+		static public function __make($record_class)
+		{
+
+			$tables = fORMSchema::retrieve()->getTables();
+			if (in_array($table = fORM::tablize($record_class), $tables)) {
+
+				eval(Scaffolder::makeClass($record_class, __CLASS__, array()));
+
+				if (class_exists($record_class, FALSE)) {
+					return TRUE;
+				}
+			}
+			return FALSE;
+		}
 
 		/**
 		 * Converts a record name into a class name, for example: user to
@@ -381,28 +479,6 @@
 		}
 
 		/**
-		 * Dynamically defines an ActiveRecord if the provided class is the
-		 * classized version of a table in the attached schema.
-		 *
-		 * @param string $record_class The Class name to dynamically define
-		 * @return boolean TRUE if an active record was dynamically defined, FALSE otherwise
-		 */
-		static public function __make($record_class)
-		{
-
-			$tables = fORMSchema::retrieve()->getTables();
-			if (in_array($table = fORM::tablize($record_class), $tables)) {
-
-				eval(Scaffolder::makeClass($record_class, __CLASS__, array()));
-
-				if (class_exists($record_class, FALSE)) {
-					return TRUE;
-				}
-			}
-			return FALSE;
-		}
-
-		/**
 		 * Creates a record from a provided class, slug, and identifier.  The
 		 * identifier is optional, but if is provided acts as an additional
 		 * check against the validity of the record.
@@ -455,84 +531,6 @@
 
 				return $record;
 			}
-		}
-
-		/**
-		 * Initializes the class for use with ActiveRecord static methods.
-		 *
-		 * @param string $record_class The Active Record class name
-		 * @return void
-		 */
-		static protected function register($record_class)
-		{
-			// Default Values
-
-			$schema            = fORMSchema::retrieve();
-
-			$record            = self::getRecord($record_class);
-			$record_table      = self::getRecordTable($record_class);
-			$record_set        = self::getRecordSet($record_class);
-			$entry             = self::getEntry($record_class);
-
-			$columns           = array_keys($schema->getColumnInfo($record_table));
-			$keys              = $schema->getKeys($record_table);
-			$pkey_columns      = $keys['primary'];
-			$pkey_methods      = array();
-			$fkey_info         = $keys['foreign'];
-
-			$image_columns     = array();
-			$file_columns      = array();
-			$password_columns  = array();
-			$read_only_columns = array();
-			$ai_columns        = array();
-
-			$default_sorting   = array();
-			$is_relationship   = FALSE;
-
-			foreach ($pkey_columns as $pkey_column) {
-				$pkey_methods[] = 'get' . fGrammar::camelize($pkey_column, TRUE);
-			}
-
-			if (!count(array_diff($columns, $pkey_columns))) {
-				$is_relationship = TRUE;
-			}
-
-			if (strpos($record_table, '.') === FALSE && !$is_relationship) {
-				$allow_mapping = TRUE;
-			} else {
-				$allow_mapping = FALSE;
-			}
-
-			foreach ($schema->getColumnInfo($record_table) as $column => $info) {
-				if ($info['auto_increment']) {
-					$read_only_columns[] = $column;
-					$ai_columns[]        = $column;
-				}
-			}
-
-			self::setInfo($record_class, array(
-
-				'record'            => $record,
-				'record_table'      => $record_table,
-				'record_set'        => $record_set,
-				'entry'             => $entry,
-
-				'columns'           => $columns,
-				'pkey_columns'      => $pkey_columns,
-				'pkey_methods'      => $pkey_methods,
-				'fkey_info'         => $fkey_info,
-
-				'image_columns'     => $image_columns,
-				'file_columns'      => $file_columns,
-				'password_columns'  => $password_columns,
-				'read_only_columns' => $read_only_columns,
-				'ai_columns'        => $ai_columns,
-
-				'default_sorting'   => $default_sorting,
-				'is_relationship'   => $is_relationship,
-				'allow_mapping'     => $allow_mapping
-			));
-
 		}
 
 		/**

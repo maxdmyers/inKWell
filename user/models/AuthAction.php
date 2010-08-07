@@ -16,15 +16,7 @@
 		 */
 		static public function __init($config)
 		{
-			self::register();
-		}
-
-		/**
-		 * Registers the AuthAction model.
-		 */
-		static public function register()
-		{
-			parent::register(__CLASS__);
+			parent::__init($config, __CLASS__);
 		}
 
 		/**
