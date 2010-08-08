@@ -5,14 +5,19 @@
 		'disabled'            => FALSE,
 		'scaffolding_root'    => 'scaffolding',
 
-		// Additional autoloaders can be configured to scaffold classes
-		// on the fly.  These will be appended to the standard auto loader
-		// array if scaffolding is enabled.  Please be aware that scaffolder
-		// autoloaders share keys with the standard autoloaders
+		// The scaffolder output_map is an associative array of classes to
+		// output directories.  If the scaffolder is enabled, the classes will
+		// Also be appeneded to the inKWell autoloader for on-the-fly
+		// scaffolding.
+		//
+		// All classes are expected to have a method equal to the current
+		// Scaffolder::DYNAMIC_SCAFFOLD_METHOD in addition to the
+		// iw::MATCH_CLASS_METHOD.
 
-		'autoloaders'         => array(
-			'**Controller'    => 'ARController::__make',
-			'_active_records' => 'ActiveRecord::__make',
-			'_record_sets'    => 'RecordSet::__make'
+		'output_map'          => array(
+			'ARController'    => 'user/controllers',
+			'ActiveRecord'    => 'user/models',
+			'RecordSet'       => 'user/models/sets'
 		)
+
 	);

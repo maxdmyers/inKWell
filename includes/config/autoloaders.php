@@ -33,13 +33,14 @@
 
 		'Moor*'          => 'includes/lib/moor',
 
+		// Our Core Library
+
+		'library'        => 'includes/lib',
+
 		// Then we have our Controllers, Models, RecordSets
 
-		'*Controller'    => 'user/controllers',
-		'active_records' => 'user/models',
-		'record_sets'    => 'user/models/sets',
+		'Controller'     => 'user/controllers',
+		'ActiveRecord'   => 'user/models',
+		'RecordSet'      => 'user/models/sets'
 
-		// And our Core Library
-
-		'library'        => 'includes/lib'
 	);

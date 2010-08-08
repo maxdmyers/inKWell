@@ -90,6 +90,18 @@
 			}
 		}
 
+
+		/**
+		 * Matches whether or not a given class name is a potential
+		 * Controller
+		 *
+		 * @param string $class The name of the class to check
+		 * @return boolean TRUE if it matches, FALSE otherwise
+		 */
+		static public function __match($class) {
+			return preg_match('/(.*)Controller/', $class);
+		}
+
 		/**
 		 * Initializes the global controller namely by establishing error
 		 * handlers, headers, and messages.
@@ -139,7 +151,6 @@
 		 */
 		static protected function exec($target)
 		{
-			$target = iw::loadTarget($target);
 			if (is_callable($target)) {
 				$params = array_slice(func_get_args(), 1);
 				return call_user_func_array($target, $params);

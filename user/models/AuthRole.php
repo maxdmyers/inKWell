@@ -132,24 +132,13 @@
 		}
 
 		/**
-		 * Sets information for the AuthRole model.
-		 *
-		 * @param mixed $values An associative array of information to set.
-		 * @return void
-		 */
-		static public function setInfo($values)
-		{
-			return parent::setInfo(__CLASS__, $values);
-		}
-
-		/**
 		 * Gets the record name for the AuthRole class
 		 *
 		 * @return string The custom or default record translation
 		 */
-		static public function getRecord()
+		static public function getRecordName()
 		{
-			return parent::getRecord(__CLASS__);
+			return parent::getRecordName(__CLASS__);
 		}
 
 		/**
@@ -183,96 +172,13 @@
 		}
 
 		/**
-		 * Gets the the default sorting for the AuthRole class
+		 * Gets the order for the AuthRole class
 		 *
 		 * @return array The default sort array
 		 */
-		static public function getDefaultSorting()
+		static public function getOrder()
 		{
-			return parent::getDefaultSorting(__CLASS__);
-		}
-
-		/**
-		 * Determines whether or not a column name represents a foreign key
-		 * column
-		 *
-		 * @param string $column The column to check
-		 * @return boolean TRUE if it is a foreign key column, FALSE otherwise
-		 */
-		static public function isFKeyColumn($column)
-		{
-			return parent::isFKeyColumn(__CLASS__, $column);
-		}
-
-		/**
-		 * Determines whether or not a column name represents an image upload
-		 * column
-		 *
-		 * @param string $column The column to check
-		 * @return boolean TRUE if it is an image upload column, FALSE otherwise
-		 */
-		static public function isImageColumn($column)
-		{
-			return parent::isImageColumn(__CLASS__, $column);
-		}
-
-		/**
-		 * Determines whether or not a column name represents a file upload
-		 * column
-		 *
-		 * @param string $column The column to check
-		 * @return boolean TRUE if it is a file upload column, FALSE otherwise
-		 */
-		static public function isFileColumn($column)
-		{
-			return parent::isFileColumn(__CLASS__, $column);
-		}
-
-		/**
-		 * Determines whether or not a column name represents a password
-		 * column
-		 *
-		 * @param string $column The column to check
-		 * @return boolean TRUE if it is a password column, FALSE otherwise
-		 */
-		static public function isPasswordColumn($column)
-		{
-			return parent::isPasswordColumn(__CLASS__, $column);
-		}
-
-		/**
-		 * Determines whether or not a column name represents a read-only
-		 * column
-		 *
-		 * @param string $column The column to check
-		 * @return boolean TRUE if it is a read-only column, FALSE otherwise
-		 */
-		static public function isReadOnlyColumn($column)
-		{
-			return parent::isReadOnlyColumn(__CLASS__, $column);
-		}
-
-		/**
-		 * Determines whether or not a column name represents an auto-increment
-		 * column
-		 *
-		 * @param string $column The column to check
-		 * @return boolean TRUE if it is an auto-increment column, FALSE otherwise
-		 */
-		static public function isAIColumn($column)
-		{
-			return parent::isAIColumn(__CLASS__, $column);
-		}
-
-		/**
-		 * Determines whether or not the record is allowed to be mapped to
-		 * dynamically from entry points or controllers.
-		 *
-		 * @return boolean TRUE if the record class can be mapped, FALSE otherwise.
-		 */
-		static public function canMap()
-		{
-			return parent::canMap(__CLASS__);
+			return parent::getOrder(__CLASS__);
 		}
 
 		/**

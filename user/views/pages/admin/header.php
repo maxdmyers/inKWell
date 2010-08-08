@@ -11,7 +11,7 @@
 		<a href="/admin/">Home</a>
 	</li>
 	<? if (User::checkLoggedIn()) { ?>
-		<? foreach(ARController::getMap() as $entry => $controller) { ?>
+		<? foreach(array('users' => 'UsersController') as $entry => $controller) { ?>
 			<? if (User::checkACL($entry, PERM_SHOW)) { ?>
 				<li class="<?= $this->selectOn(array('page_classes' => $entry)) ?>">
 					<a href="<?= Moor::linkTo($controller . '::manage') ?>"><?= ucwords(fGrammar::humanize($entry)) ?></a>

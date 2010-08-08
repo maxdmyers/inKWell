@@ -1,22 +1,23 @@
 <?php
 
-	if (self::$config['scaffolder']['disabled']) { return; }
-
 	/**
-	 * Description
+	 * The inKWell scaffolder
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 */
-	class Scaffolder
+	class Scaffolder extends iw
 	{
 
-		const DEFAULT_SCAFFOLDING_ROOT  = 'scaffolding';
-		const SCAFFOLDING_MAGIC_METHOD  = '__make';
-		const VARIABLE_REGEX            = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
+		const DEFAULT_SCAFFOLDING_ROOT = 'scaffolding';
+		const DYNAMIC_SCAFFOLD_METHOD  = '__make';
+		const FINAL_SCAFFOLD_METHOD    = '__scaffold';
+
+		const VARIABLE_REGEX           = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
 
 		// Configuration Informations
 
 		static private $scaffoldingRoot = NULL;
+		static private $config          = array();
 
 		/**
 		 * Initializses the Scaffolder class
@@ -24,8 +25,14 @@
 		 * @param array $config The configuration array
 		 * @return void
 		 */
-		static public function __init($config)
+		static public function __init(array $config = array())
 		{
+			self::$config = $config;
+
+			if (isset($config['disabled']) && $config['disabled']) {
+				return FALSE;
+			}
+
 			self::setScaffoldingRoot(implode(DIRECTORY_SEPARATOR, array(
 				$_SERVER['DOCUMENT_ROOT'],
 				trim(
@@ -35,6 +42,47 @@
 					, '/\\'
 				)
 			)));
+
+			if (isset($config['output_map'])) {
+				if (!is_array($config['output_map'])) {
+					throw new fProgrammerException (
+						'Scaffolder output_map must be configured as an array.'
+					);
+				}
+				spl_autoload_register(iw::makeTarget(__CLASS__, 'loadClass'));
+			}
+
+			return TRUE;
+		}
+
+		/**
+		 * Attempts to load a class via Scaffolder
+		 *
+		 * @param string $class The class to be loaded
+		 * @param array $output_map The output map array of $class => $target members
+		 * @return mixed Whether or not the class was successfully loaded and initialized
+		 */
+		static public function loadClass($class, array $output_map = array())
+		{
+			if (!count($output_map)) {
+				$output_map = self::$config['output_map'];
+			}
+
+			foreach ($output_map as $loader => $target) {
+
+				$test = iw::makeTarget($loader, self::MATCH_CLASS_METHOD);
+				$make = iw::makeTarget($loader, self::DYNAMIC_SCAFFOLD_METHOD);
+
+				if (is_callable($test) && is_callable($make)) {
+					if (call_user_func($test, $class)) {
+						if (call_user_func($make, $class)) {
+							return self::initializeClass($class);
+						}
+					}
+				}
+			}
+
+			return FALSE;
 		}
 
 		/**
@@ -64,11 +112,11 @@
 		{
 			if (class_exists($class)) {
 
-				$make_method = iw::makeTarget($class, self::SCAFFOLDING_MAGIC_METHOD);
+				$make_method = iw::makeTarget($class, self::SCAFFOLDING_METHOD);
 
 				if (is_callable($make_method)) {
 					if (call_user_func($make_method, $target, $support_vars)) {
-						
+
 					} else {
 						throw new fProgrammerException (
 							'Scaffolding failed, %s cannot build %s', $make_method, $target
@@ -76,7 +124,7 @@
 					}
 				} else {
 					throw new fProgrammerException (
-						'Scaffolding failed, %s does not support %s', $class, self::SCAFFOLDING_MAGIC_METHOD
+						'Scaffolding failed, %s does not support %s', $class, self::SCAFFOLDING_METHOD
 					);
 				}
 			} else {

@@ -2,9 +2,7 @@
 
 	require_once 'core.php';
 
-	iw::init();
-
-	$config = iw::getConfig();
+	$config = iw::init();
 
 	// Initialize Error Reporting
 
@@ -62,15 +60,6 @@
 			$database_password,
 			$database_host
 		));
-
-		foreach (fORMSchema::retrieve()->getTables() as $full_table) {
-			if (stripos($full_table, '.') !== FALSE) {
-				list($schema, $table) = explode('.', $full_table);
-				if ($schema == 'inkwell') {
-					fORM::mapClassToTable(fORM::classize($table), $full_table);
-				}
-			}
-		}
 	}
 
 	// Initialize the Session
@@ -104,12 +93,19 @@
 			$config['constants']['default_timezone']
 		);
 	}
+
 	if (
-		isset($config['date_formats'])    &&
-	    is_array($config['date_formats'])
+		isset($config['inkwell']['date_formats'])    &&
+	    is_array($config['inkwell']['date_formats'])
 	) {
-		foreach ($config['date_formats'] as $name => $format) {
+		foreach ($config['inkwell']['date_formats'] as $name => $format) {
 			fTimestamp::defineFormat($name, $format);
 		}
+	}
+
+	// Load the Scaffolder if we have a configuration for it
+
+	if (isset($config['scaffolder'])) {
+		iw::loadClass('Scaffolder');
 	}
 

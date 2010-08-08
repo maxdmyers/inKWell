@@ -319,7 +319,7 @@
 
 			// Check for sorting
 
-			$sorting        = ActiveRecord::getDefaultSorting($record_class);
+			$sorting        = ActiveRecord::getOrder($record_class);
 			$sort_column    = fRequest::get('sort_column', 'string?');
 			$sort_direction = fRequest::get('sort_direction', 'string', 'asc');
 
@@ -345,16 +345,21 @@
 			$sortable_columns = array();
 
 			foreach ($column_info as $column => $info) {
+
+				// Get custom info
+
+				ActiveRecord::inspectColumn($record_class, $column, $info);
+
 				// The longest if statement in the WORLD!
 				if (
 					// Don't show password columns
-					!ActiveRecord::isPasswordColumn($record_class, $column) &&
+					$info['format'] !== 'password'                          &&
 					// Don't show foreign key columns
-					!ActiveRecord::isFKeyColumn($record_class, $column)     &&
+					!$info['is_fkey']                                       &&
 					// Don't show full text columns
 					$info['type'] !== 'text'                                &&
 					// Don't show auto-increment columns
-					!$info['auto_increment']                                &&
+					!$info['serial']                                        &&
 					// Show all varchar, float, and char fields
 					(
 						$info['type'] == 'varchar'                          ||
@@ -377,21 +382,16 @@
 
 				) {
 
-					if (ActiveRecord::isImageColumn($record_class, $column)) {
-						$display_columns[$column] = 'image';
-					} elseif (ActiveRecord::isFileColumn($record_class, $column)) {
-						$display_columns[$column] = 'file';
-					} else {
-						$display_columns[$column] = $info['type'];
+					$display_columns[$column] = $info['format'];
 
-						if(in_array($info['type'], $filter_types)) {
-							$filter_columns[] = $column;
-						}
-
-						if (in_array($info['type'], $sortable_types)) {
-							$sortable_columns[] = $column;
-						}
+					if(in_array($info['type'], $filter_types)) {
+						$filter_columns[] = $column;
 					}
+
+					if (in_array($info['type'], $sortable_types)) {
+						$sortable_columns[] = $column;
+					}
+
 				}
 			}
 
@@ -481,7 +481,7 @@
 		{
 			$record_set   = str_replace(self::CONTROLLER_SUFFIX, '', $controller_class);
 			$record_class = ActiveRecord::classFromRecordSet($record_set);
-			if ($record_class && ActiveRecord::canMap($record_class)) {
+			if ($record_class) {
 
 				$supported_actions = array();
 				foreach (AuthActions::build()->call('getName') as $action) {

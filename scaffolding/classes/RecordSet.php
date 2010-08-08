@@ -32,7 +32,7 @@
 		{
 			if (!sizeof($ordering)) {
 				try {
-					$ordering = <?= $active_record ?>::getDefaultSorting();
+					$ordering = <?= $active_record ?>::getOrder();
 				} catch (fProgrammerException $e) {}
 			}
 			return parent::build('<?= $active_record ?>', $wheres, $ordering, $limit, $page);

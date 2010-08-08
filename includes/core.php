@@ -10,15 +10,18 @@
 	class iw
 	{
 
-		const DEFAULT_CONFIG_DIR       = 'config';
-		const DEFAULT_CONFIG_FILE      = 'config.php';
+		const DEFAULT_CONFIG_DIR        = 'config';
+		const DEFAULT_CONFIG_FILE       = 'config.php';
 
-		const INITIALIZATION_METHOD    = '__init';
-		const DEFAULT_REQUEST_FORMAT   = 'html';
-		const DEFAULT_WRITE_DIRECTORY  = 'writable';
+		const INITIALIZATION_METHOD     = '__init';
+		const MATCH_CLASS_METHOD        = '__match';
 
-		static private $config         = array();
-		static private $writeDirectory = NULL;
+		const DEFAULT_REQUEST_FORMAT    = 'html';
+		const DEFAULT_WRITE_DIRECTORY   = 'writable';
+
+		static private $config          = array();
+		static private $writeDirectory  = NULL;
+		static private $static_al_tests = array();
 
 		/**
 		 * Constructing an iw object is not allowed, this is purely for
@@ -123,32 +126,16 @@
 				)
 			));
 
-			if (
-				!isset($config['autoloaders'])    ||
-				!is_array($config['autoloaders'])
-			) {
-				$config['autoloaders'] = array(
-					'f*'    => 'includes/lib/flourish/classes',
-					'Moor*' => 'includes/lib/moor'
-				);
+			if (isset($config['autoloaders'])) {
+				if(!is_array($config['autoloaders'])) {
+					throw new fProgrammerException (
+						'Autoloaders must be configured as an array.'
+					);
+				}
+				spl_autoload_register('iw::loadClass');
 			}
 
-			if (
-				isset($config['scaffolder']['disabled'])       &&
-				!$config['scaffolder']['disabled']             &&
-				isset($config['scaffolder']['autoloaders'])    &&
-				is_array($config['scaffolder']['autoloaders'])
-			) {
-
-				$config['autoloaders'] = array_merge(
-					$config['autoloaders'],
-					$config['scaffolder']['autoloaders']
-				);
-			}
-
-			spl_autoload_register('iw::loadClass');
-
-			self::$config = $config;
+			return (self::$config = $config);
 		}
 
 		/**
@@ -164,68 +151,76 @@
 
 		/**
 		 * The inKWell conditional autoloader which allows for auto loading
-		 * via directories and callbacks on matched conditions.
+		 * based on dynamic class name matches.
 		 *
 		 * @param string $class The class to be loaded
-		 * @return void
+		 * @param array $loaders An array of test => target autoloaders
+		 * @return mixed Whether or not the class was successfully loaded and initialized
 		 */
-		static public function loadClass($class)
+		static public function loadClass($class, array $loaders = array())
 		{
-			foreach (self::$config['autoloaders'] as $test => $target) {
+			if (!count($loaders)) {
+				$loaders = self::$config['autoloaders'];
+			}
 
-				if (is_callable($test)) {
-					$match = call_user_func($test, $class);
-				} elseif($test == ($regex = str_replace('*', '(.*?)', $test))) {
-					$match = TRUE;
-				} else {
-					$match = preg_match('#' . $regex . '#', $class);
+			foreach ($loaders as $test => $target) {
+
+				$match = $test;
+
+				if (!in_array($test, self::$static_al_tests)) {
+
+					if ($test == $class) {
+
+						// TODO: This needs to be thought about.  The default
+						// TODO: autoloaders are putting, library, as a static
+						// TODO: key, since it it doesn't contain a * the
+						// TODO: it recursively autoloads on the class_exists
+						// TODO: This prevents the recursive autoload from
+						// TODO: going any further than the key itself to try
+						// TODO: and load it... would one of the loaders below
+						// TODO: hypothetically be responsible for matching and
+						// TODO: targetting a class used as a key above?
+
+						return;
+
+					} elseif (strpos($test, '*') !== FALSE) {
+
+						$regex = str_replace('*', '(.*?)', $test);
+						$match = preg_match('/' . $regex . '/', $class);
+
+					} elseif (class_exists($test)) {
+
+						$test  = self::makeTarget(
+							$test,
+							self::MATCH_CLASS_METHOD
+						);
+
+						if (is_callable($test)) {
+							$match = call_user_func($test, $class);
+						}
+					}
+
+					if ($test == $match) {
+						self::$static_al_tests[] = $test;
+					}
 				}
 
 				if ($match) {
 
-					if (is_callable($target)) {
-						if (!call_user_func($target, $class)) {
-							continue;
-						}
-					} else {
+					$file = implode(DIRECTORY_SEPARATOR, array(
+						$_SERVER['DOCUMENT_ROOT'],   // Document Root
+						trim($target, '/\\'),        // Target directory
+						$class . '.php'              // Class name as PHP file
+					));
 
-						$file       = implode(DIRECTORY_SEPARATOR, array(
-							$_SERVER['DOCUMENT_ROOT'],   // Document ROot
-							trim($target, '/\\'),        // Target directory
-							$class . '.php'              // Class name as PHP file
-						));
-
-						if (file_exists($file)) {
-							include $file;
-						} else {
-							continue;
-						}
+					if (file_exists($file)) {
+						include $file;
+						return self::initializeClass($class);
 					}
-
-					$init_callback = array($class, self::INITIALIZATION_METHOD);
-
-					// If there's no __init we're done
-					if (!is_callable($init_callback)) {
-						return;
-					}
-
-					$method  = end($init_callback);
-					$rmethod = new ReflectionMethod($class, $method);
-
-					// If __init is not custom, we're done
-					if ($rmethod->getDeclaringClass()->getName() != $class) {
-						return;
-					}
-
-					// Determine class configuration and call __init with it
-					$config_index = fGrammar::underscorize($class);
-					$class_config = (isset(self::$config[$config_index]))
-						? self::$config[$config_index]
-						: array();
-
-					return call_user_func($init_callback, $class_config);
 				}
 			}
+
+			return FALSE;
 		}
 
 		/**
@@ -249,15 +244,16 @@
 			}
 
 			if(!is_writable($write_directory)) {
-		 		$message = 'Directory %s is not writable';
 				try {
-					fDirectory::create($write_directory, 0770);
+					fDirectory::create($write_directory, 0775);
 				} catch (fException $e) {
 					throw new fEnvironmentException(
-						$message . ' and we were unable to create it.', $write_directory
+						'Directory %s is not writable or createable.',
+						$write_directory
 					);
 		 		}
 			}
+
 			return new fDirectory($write_directory);
 		}
 
@@ -265,53 +261,50 @@
 		 * Creates a target identifier from an entry and action.  If the entry
 		 * consists of the term 'link' then the action is treated as a URL.
 		 *
-		 * @param string|object $entry The object or class representing the entry
+		 * @param string $entry The class representing the entry
 		 * @param string $method The method representing the action
 		 * @return string An inKWell target string
 		 */
 		static public function makeTarget($entry, $action)
 		{
+			if ($entry == 'link') {
+				return $action;
+			}
+
 			return implode('::', array($entry, $action));
 		}
 
 		/**
-		 * Loads a target from a provided target identifier.  The value of
-		 * which should still be tested with is_callable to determine if it is
-		 * a callback.
+		 * Initializes a class by calling it's __init() method if it has one
+		 * and returning its return value.
 		 *
-		 * @param string $target An inKWell target string created with makeTarget()
-		 * @return callback|string A callback for execution or URL string to link to
+		 * @param string $class The class to initialize
+		 * @return mixed The return value of the __init function, usually boolean
 		 */
-		static public function loadTarget($target)
+		static protected function initializeClass($class)
 		{
-			if (count($target_parts = explode('::', $target)) == 2) {
+			$init_callback = array($class, self::INITIALIZATION_METHOD);
 
-				if ($target_parts[0] == 'link') {
-					return $target_parts[1];
-				}
-
-				$entry_regex = '/([a-zA-Z_][a-zA-Z0-9_]*)(\(\))?/';
-
-				if (preg_match($entry_regex, $target_parts[0], $matches)) {
-
-					if (class_exists($class = $matches[1])) {
-						if (isset($matches[2])) {
-							return array(new $class(), $target_parts[1]);
-						} else {
-							return array($class, $target_parts[1]);
-						}
-
-					} else {
-						throw new fProgrammerException (
-							'Entry in target is not a valid controller class.'
-						);
-					}
-				}
+			// If there's no __init we're done
+			if (!is_callable($init_callback)) {
+				return TRUE;
 			}
 
-			throw new fProgrammerException (
-				'Attempt to load target failed, entry/action is malformed.'
-			);
+			$method  = end($init_callback);
+			$rmethod = new ReflectionMethod($class, $method);
+
+			// If __init is not custom, we're done
+			if ($rmethod->getDeclaringClass()->getName() != $class) {
+				return TRUE;
+			}
+
+			// Determine class configuration and call __init with it
+			$config_index = fGrammar::underscorize($class);
+			$class_config = (isset(self::$config[$config_index]))
+				? self::$config[$config_index]
+				: array();
+
+			return call_user_func($init_callback, $class_config);
 		}
 
 	}
