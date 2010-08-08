@@ -278,7 +278,7 @@
 
 				foreach ($schema->getKeys($table, 'primary') as $column) {
 
-					$method = fGrammar::camelize($column, TRUE);
+					$method = 'get' . fGrammar::camelize($column, TRUE);
 					self::$info[$record_class]['pkey_columns'][] = $column;
 					self::$info[$record_class]['pkey_methods'][] = $method;
 				}
