@@ -1,2 +1,0 @@
-SQLite-Backed;;pdo_sqlite|sqlite;;;database/config.sqlite.php
-SQLite-Backed with Table Mapping;;pdo_sqlite|sqlite;;;database/config.sqlite-mapped_tables.php

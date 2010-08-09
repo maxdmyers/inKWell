@@ -1,2 +1,0 @@
-Native;;;;-d disable_functions="json_encode,json_decode";
-JSON;;json;;;

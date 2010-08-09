@@ -1,2 +1,0 @@
-Native;;;;-d disable_functions="bcadd,bccomp,bcdiv,bcmod,bcmul,bcpow,bcpowmod,bcscale,bcsqrt,bcsub";
-BCMath;;bcmath;;;
