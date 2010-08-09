@@ -6,23 +6,6 @@
 
 	Moor::
 
-		route('/server_information',                        'phpinfo'                          ) ->
-		route('/login',                                     'AuthController::login'            ) ->
-		route('/logout',                                    'AuthController::logout'           ) ->
-
-		// Admin CP Routing
-
-		route('/admin/acl/:resource_key/@action',           'ACLController::@action(lc)'       ) ->
-
-		route('/admin/@entry/',                             '@entry(uc)Controller::manage'     ) ->
-		route('/admin/:related_entry/:pkey/@entry/',        '@entry(uc)Controller::manage'     ) ->
-
-		route('/admin/@entry/@action',                      '@entry(uc)Controller::@action(lc)') ->
-		route('/admin/@entry/:pkey/@action',                '@entry(uc)Controller::@action(lc)') ->
-		route('/admin/:related_entry/:pkey/@entry/@action', '@entry(uc)Controller::@action(lc)') ->
-
-		// General Page Routing
-
-		route('/*',                                         'PagesController::load'            ) ->
+		route('/server_information', 'phpinfo') ->
 
 	run();

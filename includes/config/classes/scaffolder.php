@@ -15,7 +15,6 @@
 		// iw::MATCH_CLASS_METHOD.
 
 		'output_map'          => array(
-			'ARController'    => 'user/controllers',
 			'ActiveRecord'    => 'user/models',
 			'RecordSet'       => 'user/models/sets'
 		)
