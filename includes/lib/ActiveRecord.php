@@ -83,13 +83,18 @@
 
 			$record_class = get_class($this);
 			$pkey_methods = self::getInfo($record_class, 'pkey_methods');
-			$identifier   = fURL::makeFriendly($this->__toString());
 
 			foreach ($pkey_methods as $pkey_method) {
 				$pkey_data[] = fURL::makeFriendly($this->$pkey_method());
 			}
 
-			return implode('-', $pkey_data) . (($identify) ? '/' . $identifier : '');
+			$slug = implode('-', $pkey_data);
+
+			if ($identify) {
+				$slug .= '/' . fURL::makeFriendly($this->__toString());
+			}
+
+			return $slug;
 		}
 
 		/**
@@ -124,179 +129,184 @@
 		 * @param array $config The configuration array
 		 * @return void
 		 */
-		 static public function __init($config, $record_class = NULL)
-		 {
-		 	if (!$record_class) {
+		static public function __init($config, $record_class = NULL)
+		{
+			if (!$record_class) {
 
-		 		self::$imageUploadDirectory = iw::getWriteDirectory('images');
-		 		self::$fileUploadDirectory  = iw::getWriteDirectory('files');
+				self::$imageUploadDirectory = iw::getWriteDirectory('images');
+				self::$fileUploadDirectory  = iw::getWriteDirectory('files');
+				return;
 
-		 	} elseif (is_subclass_of($record_class, __CLASS__)) {
-
-				// Do not allow Active Records to be initialized twice
-
-				if (isset($info[$record_class])) {
-					return;
-				}
-
-				// Default and Configuable Values
-
-				if (isset($config['name'])) {
-					self::$nameTranslations[$record_class]  = $config['name'];
-				}
-
-				if (isset($config['table'])) {
-					self::$tableTranslations[$record_class] = $config['table'];
-					fORM::mapClassToTable($record_class, $config['table']);
-				}
-
-				if (isset($config['entry'])) {
-					self::$entryTranslations[$record_class] = $config['entry'];
-				}
-
-				if (isset($config['order'])) {
-					if (!is_array($config['order'])) {
-						throw new fProgrammerException (
-							'Order configuration is expected to be an array.'
-						);
-					}
-					self::$info[$record_class]['order'] = $config['order'];
-				}
-
-				$column_configurations = array(
-					'image_columns',
-					'file_columns',
-					'password_columns',
-					'order_columns',
-					'money_columns',
-					'fixed_columns'
-				);
-
-				foreach($column_configurations as $column_configuration) {
-
-					if (isset($config[$column_configuration])) {
-
-						// Make sure the user has configured an array
-
-						if (!is_array($config[$column_configuration])) {
-							throw new fProgrammerException (
-								'%s must be configured as an array.',
-								fGrammar::humanize($column_configuration)
-							);
-						}
-
-						// If so, add each column respectively and run any
-						// special configuration depending on the
-						// $column_configuration
-
-						foreach ($config[$column_configuration] as $column) {
-
-							self::$info[$column_configuration][] = $column;
-
-							switch ($column_configuration) {
-
-								// Special handling of image columns
-
-								case 'image_columns':
-									fORMFile::configureImageUploadColumn(
-										$record_class,
-										$column,
-										iw::getWriteDirectory(
-											implode(DIRECTORY_SEPARATOR, array(
-												self::$imageUploadDirectory,
-												fGrammar::pluralize($column)
-											))
-										)
-									);
-									break;
-
-								// Special handling of file columns
-
-								case 'file_columns':
-									fORMFile::configureFileUploadColumn(
-										$record_class,
-										$column,
-										iw::getWriteDirectory(
-											implode(DIRECTORY_SEPARATOR, array(
-												self::$fileUploadDirectory,
-												fGrammar::pluralize($column)
-											))
-										)
-									);
-									break;
-
-								// Special handling for order columns
-
-								case 'order_columns':
-									fORMOrdering::configureOrderingColumn(
-										$record_class,
-										$column
-									);
-									break;
-
-								// Special handling for money columns
-
-								case 'money_columns':
-									fORMMoney::configureMoneyColumn(
-										$record_class,
-										$column
-									);
-									break;
-							}
-						}
-					} else {
-						self::$info[$column_configuration] = array();
-					}
-				}
-
-				// Set all non-configurable information
-
-				$schema      = fORMSchema::retrieve();
-				$table       = fORM::tablize($record_class);
-
-				self::$info[$record_class]['columns']        = array();
-				self::$info[$record_class]['pkey_columns']   = array();
-				self::$info[$record_class]['pkey_methods']   = array();
-				self::$info[$record_class]['fkey_columns']   = array();
-				self::$info[$record_class]['serial_columns'] = array();
-				self::$info[$record_class]['fixed_columns']  = array();
-
-				foreach ($schema->getColumnInfo($table) as $column => $info) {
-
-					self::$info[$record_class]['columns'][] = $column;
-
-					fORM::registerInspectCallback(
-						$record_class,
-						$column,
-						iw::makeTarget(__CLASS__, 'inspectColumn')
-					);
-
-					if ($info['auto_increment']) {
-						self::$info[$record_class]['serial_columns'][] = $column;
-					}
-				}
-
-				foreach ($schema->getKeys($table, 'primary') as $column) {
-
-					$method = 'get' . fGrammar::camelize($column, TRUE);
-					self::$info[$record_class]['pkey_columns'][] = $column;
-					self::$info[$record_class]['pkey_methods'][] = $method;
-				}
-
-				foreach ($schema->getKeys($table, 'foreign') as $fkey_info) {
-
-					$column = $fkey_info['column'];
-					self::$info[$record_class]['fkey_columns'][] = $column;
-				}
-
-				self::$info[$record_class]['is_relationship'] = count(
-					array_diff(
-						self::$info[$record_class]['columns'],
-						self::$info[$record_class]['pkey_columns']
-					)
-				);
+			} elseif (!is_subclass_of($record_class, __CLASS__)) {
+				return;
 			}
-		 }
+
+			// Do not allow Active Records to be initialized twice
+
+			if (isset($info[$record_class])) {
+				return;
+			}
+
+			// Default and Configuable Values
+
+			if (isset($config['name'])) {
+				self::$nameTranslations[$record_class]  = $config['name'];
+			}
+
+			if (isset($config['table'])) {
+				self::$tableTranslations[$record_class] = $config['table'];
+				fORM::mapClassToTable($record_class, $config['table']);
+			}
+
+			if (isset($config['entry'])) {
+				self::$entryTranslations[$record_class] = $config['entry'];
+			}
+
+			if (isset($config['order'])) {
+				if (!is_array($config['order'])) {
+					throw new fProgrammerException (
+						'Order configuration is expected to be an array.'
+					);
+				}
+				self::$info[$record_class]['order'] = $config['order'];
+			} else {
+				self::$info[$record_class]['order'] = array();
+			}
+
+			$column_configs = array(
+				'image_columns',
+				'file_columns',
+				'password_columns',
+				'order_columns',
+				'money_columns',
+				'fixed_columns'
+			);
+
+			foreach($column_configs as $column_config) {
+
+				self::$info[$record_class][$column_config] = array();
+
+				if (!isset($config[$column_config])) {
+					continue;
+				}
+
+				// Make sure the user has configured an array
+
+				if (!is_array($config[$column_config])) {
+					throw new fProgrammerException (
+						'%s must be configured as an array.',
+						fGrammar::humanize($column_config)
+					);
+				}
+
+				// If so, add each column respectively and run any
+				// special configuration depending on the
+				// $column_config
+
+				foreach ($config[$column_config] as $column) {
+
+					self::$info[$record_class][$column_config][] = $column;
+
+					switch ($column_config) {
+
+						// Special handling of image columns
+
+						case 'image_columns':
+							fORMFile::configureImageUploadColumn(
+								$record_class,
+								$column,
+								iw::getWriteDirectory(
+									implode(DIRECTORY_SEPARATOR, array(
+										self::$imageUploadDirectory,
+										fGrammar::pluralize($column)
+									))
+								)
+							);
+							break;
+
+						// Special handling of file columns
+
+						case 'file_columns':
+							fORMFile::configureFileUploadColumn(
+								$record_class,
+								$column,
+								iw::getWriteDirectory(
+									implode(DIRECTORY_SEPARATOR, array(
+										self::$fileUploadDirectory,
+										fGrammar::pluralize($column)
+									))
+								)
+							);
+							break;
+
+						// Special handling for order columns
+
+						case 'order_columns':
+							fORMOrdering::configureOrderingColumn(
+								$record_class,
+								$column
+							);
+							break;
+
+						// Special handling for money columns
+
+						case 'money_columns':
+							fORMMoney::configureMoneyColumn(
+								$record_class,
+								$column
+							);
+							break;
+					}
+				}
+			}
+
+			// Set all non-configurable information
+
+			$schema = fORMSchema::retrieve();
+			$table  = fORM::tablize($record_class);
+
+			self::$info[$record_class]['columns']        = array();
+			self::$info[$record_class]['pkey_columns']   = array();
+			self::$info[$record_class]['pkey_methods']   = array();
+			self::$info[$record_class]['fkey_columns']   = array();
+			self::$info[$record_class]['serial_columns'] = array();
+			self::$info[$record_class]['fixed_columns']  = array();
+
+			foreach ($schema->getColumnInfo($table) as $column => $info) {
+
+				self::$info[$record_class]['columns'][] = $column;
+
+				fORM::registerInspectCallback(
+					$record_class,
+					$column,
+					iw::makeTarget(__CLASS__, 'inspectColumn')
+				);
+
+				if ($info['auto_increment']) {
+					self::$info[$record_class]['serial_columns'][] = $column;
+				}
+			}
+
+			foreach ($schema->getKeys($table, 'primary') as $column) {
+
+				$method = 'get' . fGrammar::camelize($column, TRUE);
+				self::$info[$record_class]['pkey_columns'][] = $column;
+				self::$info[$record_class]['pkey_methods'][] = $method;
+			}
+
+			foreach ($schema->getKeys($table, 'foreign') as $fkey_info) {
+
+				$column = $fkey_info['column'];
+				self::$info[$record_class]['fkey_columns'][] = $column;
+			}
+
+			self::$info[$record_class]['is_relationship'] = count(
+				array_diff(
+					self::$info[$record_class]['columns'],
+					self::$info[$record_class]['pkey_columns']
+				)
+			);
+		}
 
 		/**
 		 * Dynamically defines an ActiveRecord if the provided class is the
@@ -346,14 +356,16 @@
 				$info    = $schema->getColumnInfo($record_class, $column);
 			}
 
-			$foreign_keys    = self::getInfo($record_class, 'fkey_columns');
-			$info['is_fkey'] = in_array($column, $foreign_keys);
+			$info['is_fkey'] = in_array(
+				$column,
+				self::getInfo($record_class, 'fkey_columns')
+			);
 
 			// Determine a format for the column
 
-			$image_columns   = self::getInfo($record_class, 'image_columns');
-			$file_columns    = self::getInfo($record_class, 'file_columns');
-			$pass_columns    = self::getInfo($record_class, 'password_columns');
+			$image_columns = self::getInfo($record_class, 'image_columns');
+			$file_columns  = self::getInfo($record_class, 'file_columns');
+			$pass_columns  = self::getInfo($record_class, 'password_columns');
 
 			if (in_array($column, $image_columns)) {
 				$info['format'] = 'image';
@@ -585,7 +597,8 @@
 
 				if (sizeof($pkey_data) < sizeof($pkey_columns)) {
 					throw new fProgrammerException(
-						'Cannot parse slug for class %s, slug is malformed', $record_class
+						'Cannot parse slug for class %s, slug is malformed',
+						$record_class
 					);
 				}
 
@@ -607,8 +620,8 @@
 				$record = new $record_class($pkey);
 
 				if ($identifier !== NULL) {
-					$match_identifier = fURL::makeFriendly($record->__toString());
-					if ($identifier != $match_identifier) {
+					$match_id = fURL::makeFriendly($record->__toString());
+					if ($identifier != $match_id) {
 						throw new fValidationException(
 							'The record identifier does not match.'
 						);
@@ -637,7 +650,8 @@
 					return self::$info[$record_class];
 				}
 			}
-			return array();
+
+			return NULL;
 		}
 
 	}

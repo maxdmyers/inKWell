@@ -20,7 +20,8 @@
 		 */
 		protected function prepare($controller_class)
 		{
-			if (class_exists('AuthController'));
+			iw::loadClass('AuthController');
+
 			if (!User::checkLoggedIn()) {
 				self::triggerError('not_authorized');
 			}

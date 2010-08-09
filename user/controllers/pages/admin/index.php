@@ -1,5 +1,7 @@
 <?
 
+	iw::loadClass('AuthController');
+
 	if (!User::checkLoggedIn()) {
 		self::triggerError('not_authorized');
 	}

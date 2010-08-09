@@ -1,6 +1,15 @@
 #!/usr/bin/php -q
 <?php
 
+	/**
+	 * Register as a shutdown function to ensure that any fatal errors or
+	 * uncaught exceptions do not terminate the shell.  This function
+	 * will cause it to respawn itself on shutdown.  The only downside is
+	 * that all previous variables and information are lost.
+	 *
+	 * @param void
+	 * @return void
+	 */
 	function ___respawn()
 	{
 		echo ob_get_clean() . "\n";
@@ -11,18 +20,16 @@
 		}
 	}
 
-	register_shutdown_function('___respawn');
-
-	$_SERVER['DOCUMENT_ROOT']  = dirname(__FILE__);
-	$_SERVER['REQUEST_URI']    = '/';
-	$_SERVER['REQUEST_METHOD'] = 'GET';
-
-	chdir($_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . 'includes');
-
-	include 'init.php';
-
-	Moor::setCacheKey('console_cache');
-
+	/**
+	 * Set a fake GET request as if you were hitting the URL from a browser.
+	 * This is useful if you are getting white pages of death to determine
+	 * segfaults or something which might not be flushed properly via
+	 * the server.
+	 *
+	 * @param $url The full URL, i.e. http://inkwell.dotink.org/
+	 * @param $params An array of GET parameters (param => value)
+	 * @return void
+	 */
 	function get($url, $params = array()) {
 		$request_info = parse_url($url);
 		if (isset($request_info['host'])) {
@@ -36,6 +43,13 @@
 		include 'routing.php';
 	}
 
+	/**
+	 * Set a fake POST request as if you were hitting the URL from a browser.
+	 *
+	 * @param $url The full URL, i.e. http://inkwell.dotink.org/
+	 * @param $params An array of GET parameters (param => value)
+	 * @return void
+	 */
 	function post($url, $params = array()) {
 		$request_info = parse_url($url);
 		if (isset($request_info['host'])) {
@@ -49,8 +63,29 @@
 		include 'routing.php';
 	}
 
-	// fCore::enableErrorHandling('html');
+	// Register the respawn shutdown function
+
+	register_shutdown_function('___respawn');
+
+	// Establish fake server parameters
+
+	$_SERVER['DOCUMENT_ROOT']  = dirname(__FILE__);
+	$_SERVER['REQUEST_URI']    = '/';
+	$_SERVER['REQUEST_METHOD'] = 'GET';
+	$_SERVER['REMOTE_ADDR']    = '127.0.0.1';
+
+	// Change to our includes directory and run init
+
+	chdir('includes');
+	require 'init.php';
+
+	// Set some basics regardless of configuration
+
+	Moor::setCacheKey('console_cache');
+	fCore::enableErrorHandling('html');
 	fCore::enableExceptionHandling('html');
+
+	// Output prompt and process commands as they come
 
 	$___stdin   = fopen('php://stdin', 'r');
 	$___depth   = 0;

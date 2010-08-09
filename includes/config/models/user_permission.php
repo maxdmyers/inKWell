@@ -1,5 +1,5 @@
 <?php
 
 	return array(
-		'table' => 'inkwell.user_permissions',
+		'table' => 'auth.user_permissions',
 	);

@@ -40,6 +40,11 @@ a {
 	text-decoration: none;
 }
 
+h1,h2,h3,h4 {
+	color: #a40000;
+	font-weight: normal;
+}
+
 h2 {
 	font-size: 2.6em;
 	margin: .5em 0;
@@ -167,9 +172,9 @@ table {
 body > .header {
 	position: absolute;
 	top: 10px;
-	left: 10px;
+	left: 0px;
 	right: 10px;
-	padding: 10px;
+	padding-right: 10px;
 	height: 70px;
 }
 
@@ -196,10 +201,8 @@ body > .primary.nav {
 	display: block;
 	position: absolute;
 	top: 100px;
-	left: 10px;
-	width: 240px;
-	min-height: 70%;
-	border-right: dotted 1px #b6b6b6;
+	left: 0px;
+	width: 250px;
 	border-top: dotted 1px #a0a0a0;
 	font-size: 1.2em;
 }
@@ -232,11 +235,21 @@ body > .torso {
 	position: fixed;
 	top: 100px;
 	left: 250px;
-	bottom: 10px;
+	bottom: 60px;
 	right: 10px;
 	padding: 1em 1%;
 	overflow-y: scroll;
+	border-left: dotted 1px #b6b6b6;
 	border-top: dotted 1px #a0a0a0;
+}
+
+body > .footer {
+	position: fixed;
+	bottom: 0px;
+	width: 100%;
+	height: 30px;
+	border-top: dotted 1px #909090;
+	padding: 10px 10px;
 }
 
 #manage .primary.section > h2 {

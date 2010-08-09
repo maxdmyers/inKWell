@@ -3,13 +3,27 @@ body {
 }
 
 h1,h2,h3,h4 {
-	color: #900000;
+	color: #a40000;
 	font-weight: normal;
 }
+
 
 p {
 	font-size: 1.2em;
 	line-height: 1.6em;
+}
+
+code {
+	font-size: 1.6em;
+	color: #123456;
+}
+
+pre.code {
+	font-size: 1.6em;
+	background-color: #efefef;
+	padding: 1em;
+	border: solid 1px #d0d0d0;
+	margin-bottom: 1em;
 }
 
 li {
@@ -17,7 +31,7 @@ li {
 }
 
 a {
-	color: #900000;
+	color: #a40000;
 	text-decoration: none;
 }
 
@@ -36,28 +50,49 @@ body > .header {
 		margin: 0;
 		padding: 0;
 	}
-	
+
 	body > .header span.tagline {
 		font-size: 3.0em;
 		font-family: Georgia;
+	}
+
+body > .nav {}
+
+	body > .nav > li {}
+
+	body > .nav > li > .nav {
+		margin-left: 15px;
 	}
 
 body > .primary.nav {
 	clear: both;
 	float: left;
 	width: 250px;
+	font-size: 1.2em;
 }
 
-	body > .primary.nav > li {
-		margin: 0;
-		border-bottom: dotted 1px #c0c0c0;
+	body > .primary.nav a {
+		padding: .75em;
+		padding-left: 20px;
 	}
 
-	body > .primary.nav a {
+	body > .primary.nav > li {
+		border-bottom: dotted 1px #b6b6b6;
+		margin: 0;
+		padding: 0;
+	}
+
+	body > .primary.nav > li > .secondary.nav {
+		display: none;
+	}
+
+	body > .primary.nav > li.selected > .secondary.nav {
 		display: block;
-		padding: 1em 0;
-		font-size: 1.4em;
-		text-align: center;
+	}
+
+	body > .secondary.nav > li {
+		margin: 0;
+		padding: 0;
 	}
 
 	body > .primary.nav li.download {
@@ -89,13 +124,18 @@ body > .torso {
 	padding: 1em 10px;
 	border-left: dotted 1px #909090;
 	width: 70%;
+	margin-bottom: 80px;
 }
 
-	body > .torso ul {
+	body > .torso ul,
+	body > .torso ol {
 		margin-left: 1em;
 		font-size: 1.2em;
-		list-style-type: circle;
 		color: #404040;
+	}
+
+	body > .torso ul {
+		list-style-type: circle;
 	}
 
 	body > .torso > .section.primary {
@@ -113,8 +153,14 @@ body > .torso {
 	}
 
 body > .footer {
-	clear: both;
-	padding: 1em 10px;
+	position: fixed;
+	background-color: #efefef;
+	-moz-box-shadow: 0 0 20px 1px #909090;
+	bottom: 0px;
+	width: 100%;
+	height: 30px;
+	border-top: dotted 1px #909090;
+	padding: 10px 10px;
 }
 
 #home .learn_more {

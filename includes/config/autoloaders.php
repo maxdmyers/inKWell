@@ -3,44 +3,50 @@
 	// The inKWell autoloader works via a series of match parameters and
 	// targets.
 	//
-	// Match parameters can be either a string or static method
-	// callback represented as a string.  If the string contains a * they
-	// are used as wildcard.  In the event it is a callback the class which
-	// is attempting to be autoloaded will be passed and the callback is
-	// expected to return TRUE or FALSE based on it's custom match logic.
-	// If it returns true the target will be attempted.
+	// Match parameters can be standard strings, strings with wildcards, or
+	// class names.  If the string contains a * they are used as wildcards, so
+	// for example the following would make any class beginning with
+	// 'user' load from the 'includes/lib/user' directory:
 	//
-	// Targets, likewise are strings which can either be directories or
-	// callbacks.  If the file is not found in a directory or the directory
-	// does not appear to exist, the class will not be loaded via that target.
-	// If the target is a callback, the the class which is attempting to be
-	// autoloaded as will be passed to it.  The callback should determine
-	// whether or not it can load that class, and if it can/does return TRUE,
-	// FALSE otherwise.
+	//      'user*'  =>   'includes/lib/user'
+	//
+	// In the event a string does not contain any wildcards the autoloader
+	// will try to determine whether or not it is a class.  If it is a class
+	// it will run the magic method defined by iw::MATCH_CLASS_METHOD.  This
+	// method is completely customizable, but is expected to to return TRUE or
+	// FALSE based on it's custom match logic.  If the method returns TRUE
+	// the autoloader will attempt to load the class from the target.
+	//
+	// Finally, if the match parameter contains no wilcards, is not a class or
+	// does not have a match method set on the class, it will be treated as
+	// a static match parameter, and try to load from the target directory
+	// regardless.
+	//
+	// In ALL cases, if the class cannot be loaded from a target directory
+	// the autoloader will move on to the next match => target pair.
 	//
 	// Since it is possible to recurse on autoloads, it is possible to make
-	// any match or target callback on a class which has not yet been loaded,
-	// however would be loaded if the array of autoloaders were to be called
-	// again.
+	// any match a class which has not yet been loaded, however, would be
+	// loaded if the array of autoloaders were to be called again.
 
 	return array(
 
 		// We use flourish for tons of stuff, including init, so it comes first
 
-		'f*'             => 'includes/lib/flourish/classes',
+		'f*'           => 'includes/lib/flourish/classes',
 
 		// Moor is our router, so that comes second
 
-		'Moor*'          => 'includes/lib/moor',
+		'Moor*'        => 'includes/lib/moor',
 
 		// Our Core Library
 
-		'library'        => 'includes/lib',
+		'library'      => 'includes/lib',
 
 		// Then we have our Controllers, Models, RecordSets
 
-		'Controller'     => 'user/controllers',
-		'ActiveRecord'   => 'user/models',
-		'RecordSet'      => 'user/models/sets'
+		'Controller'   => 'user/controllers',
+		'ActiveRecord' => 'user/models',
+		'RecordSet'    => 'user/models/sets'
 
 	);

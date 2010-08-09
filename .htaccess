@@ -7,6 +7,18 @@ php_flag  short_open_tag         1
 php_value upload_max_filesize    "15M"
 php_value post_max_size          "16M"
 
+## Forbid reading of certain files
+
+<Files *.htaccess>
+order allow,deny
+deny from all
+</Files>
+
+<Files sess_*>
+order allow,deny
+deny from all
+</Files>
+
 ## Enable Rewrite
 
 RewriteEngine On

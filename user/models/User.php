@@ -296,7 +296,7 @@
 
 				$user = $users->fetchRecord();
 
-				$user_login_attempts = UserLoginAttempts::build(array(
+				$user_login_attempts = LoginAttempts::build(array(
 					'user_id='        => $user->getId(),
 					'remote_address=' => $_SERVER['REMOTE_ADDR']
 				), array(
@@ -323,7 +323,7 @@
 
 					// Add the Login Attempt
 
-					$user_login_attempt = new UserLoginAttempt();
+					$user_login_attempt = new LoginAttempt();
 					$user_login_attempt->setUserId($user->getId());
 					$user_login_attempt->setRemoteAddress($_SERVER['REMOTE_ADDR']);
 					$user_login_attempt->store();
