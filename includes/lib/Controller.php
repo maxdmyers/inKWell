@@ -9,7 +9,7 @@
 	class Controller extends MoorAbstractController
 	{
 
-		const CONTROLLER_SUFFIX      = __CLASS__;
+		const SUFFIX                 = __CLASS__;
 
 		const DEFAULT_VIEW_ROOT      = 'views';
 		const DEFAULT_REQUEST_FORMAT = 'html';
@@ -56,23 +56,23 @@
 		 */
 		protected function prepare()
 		{
-			switch(self::getRequestFormat()) {
+			switch($format = self::getRequestFormat()) {
 
 				case 'html':
-					$this->view->load('html.php')
-						-> add  ('styles',  '/user/styles/common.css')
-						-> add  ('scripts', '/user/scripts/common.js');
+					$this->view->load('html.php');
 					break;
 
 				case 'json':
+					$this->view->load('json.php');
 					break;
 
-				case  'xml':
+				case 'xml':
+					$this->view->load('xml.php');
 					break;
 			}
 
 			if (!self::$typeHeadersRegistered) {
-				switch(self::getRequestFormat()) {
+				switch($format) {
 					case 'html':
 						$content_type_callback = 'fHTML::sendHeader';
 						break;
