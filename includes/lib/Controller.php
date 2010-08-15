@@ -266,6 +266,20 @@
 		}
 
 		/**
+		 * Determines whether or not the request was made via AJAX
+		 *
+		 * @param void
+		 * @return boolean TRUE if the request was made via AJAX, FALSE otherwise
+		 */
+		static protected function isRequestAjax()
+		{
+			return (
+				isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
+				($_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest')
+			);
+		}
+
+		/**
 		 * Determines the request format for the resource
 		 *
 		 * @return string The request format, i.e. 'html' (default), 'xml', or 'json'
@@ -274,7 +288,11 @@
 		{
 			if (self::$requestFormat === NULL) {
 				if ($format = fRequest::get('request_format', 'string', NULL)) {
-					fSession::set('request_format', $format);
+					if (!self::isRequestAjax()) {
+						fSession::set('request_format', $format);
+					} else {
+						return self::$requestFormat = $format;
+					}
 				} elseif (!fSession::get('request_format', NULL)) {
 					fSession::set('request_format', self::DEFAULT_REQUEST_FORMAT);
 				}
