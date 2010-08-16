@@ -1,15 +1,15 @@
 
 	/**
-	 * The <?= $class ?>
+	 * The <%= $class %>
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 */
-	class <?= $class ?> extends <?= $parent_class ?>
+	class <%= $class %> extends <%= $parent_class %>
 
 	{
 
 		/**
-		 * Prepares a new <?= $class ?> for running actions.
+		 * Prepares a new <%= $class %> for running actions.
 		 *
 		 * @param string void
 		 * @return void
@@ -24,7 +24,7 @@
 		}
 
 		/**
-		 * Initializes all static class information for the <?= $class ?>
+		 * Initializes all static class information for the <%= $class %> class
 		 *
 		 * @param array $config The configuration array
 		 * @return boolean TRUE if initialization succeeds, FALSE otherwise

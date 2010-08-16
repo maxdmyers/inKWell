@@ -1,15 +1,15 @@
 	/**
-	 * The <?= $class ?> is a recordset representing a collection of
-	 * <?= $active_record ?> objects / records.
+	 * The <%= $class %> is a recordset representing a collection of
+	 * <%= $active_record %> objects / records.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 */
-	class <?= $class ?> extends <?= $parent_class ?>
+	class <%= $class %> extends <%= $parent_class %>
 
 	{
 
 		/**
-		 * Initializes the <?= $class ?> Record Set
+		 * Initializes the <%= $class %> Record Set
 		 *
 		 * @param array $config The configuration array
 		 * @return void
@@ -32,10 +32,10 @@
 		{
 			if (!sizeof($ordering)) {
 				try {
-					$ordering = <?= $active_record ?>::getOrder();
+					$ordering = <%= $active_record %>::getOrder();
 				} catch (fProgrammerException $e) {}
 			}
-			return parent::build('<?= $active_record ?>', $wheres, $ordering, $limit, $page);
+			return parent::build('<%= $active_record %>', $wheres, $ordering, $limit, $page);
 		}
 
 		/**
@@ -43,10 +43,10 @@
 		 */
 		static public function buildFromSQL($sql, $no_limit_sql)
 		{
-			return parent::build('<?= $active_record ?>', $sql, $no_limit_sql);
+			return parent::build('<%= $active_record %>', $sql, $no_limit_sql);
 		}
 
-<? if (!$scaffolding) { ?>
+<% if (!$scaffolding) { %>
 		/**
 		 * Allows for a dynamically created record set to be scaffolded.
 		 *
@@ -63,11 +63,11 @@
 				));
 			}
 
-			Scaffolder::writeClass($file, __CLASS__, '<?= $parent_class ?>', array(
-				'active_record'     => '<?= $active_record ?>'
+			Scaffolder::writeClass($file, __CLASS__, '<%= $parent_class %>', array(
+				'active_record'     => '<%= $active_record %>'
 			));
 		}
-<? } ?>
+<% } %>
 
 		// Custom Object Methods
 

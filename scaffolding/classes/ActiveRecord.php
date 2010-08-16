@@ -1,17 +1,17 @@
 	/**
-	 * The <?= $class ?> is an active record and model representing a single
-	 * <?= fGrammar::humanize($class) ?> record.
+	 * The <%= $class %> is an active record and model representing a single
+	 * <%= fGrammar::humanize($class) %> record.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 */
-	class <?= $class ?> extends <?= $parent_class ?>
+	class <%= $class %> extends <%= $parent_class %>
 
 	{
 
 		// Custom Object Methods
 
 		/**
-		 * Initializes all static class information for the <?= $class ?> model
+		 * Initializes all static class information for the <%= $class %> model
 		 *
 		 * @param array $config The configuration array
 		 * @return void
@@ -22,7 +22,7 @@
 		}
 
 		/**
-		 * Gets the record name for the <?= $class ?> class
+		 * Gets the record name for the <%= $class %> class
 		 *
 		 * @return string The custom or default record translation
 		 */
@@ -32,7 +32,7 @@
 		}
 
 		/**
-		 * Gets the record table name for the <?= $class ?> class
+		 * Gets the record table name for the <%= $class %> class
 		 *
 		 * @return string The custom or default record table translation
 		 */
@@ -42,7 +42,7 @@
 		}
 
 		/**
-		 * Gets the record set name for the <?= $class ?> class
+		 * Gets the record set name for the <%= $class %> class
 		 *
 		 * @return string The custom or default record set translation
 		 */
@@ -52,7 +52,7 @@
 		}
 
 		/**
-		 * Gets the entry name for the <?= $class ?> class
+		 * Gets the entry name for the <%= $class %> class
 		 *
 		 * @return string The custom or default entry translation
 		 */
@@ -62,7 +62,7 @@
 		}
 
 		/**
-		 * Gets the order for the <?= $class ?> class
+		 * Gets the order for the <%= $class %> class
 		 *
 		 * @return array The default sort array
 		 */
@@ -83,7 +83,7 @@
 		}
 
 		/**
-		 * Creates a new <?= $class ?> from a slug and identifier.  The
+		 * Creates a new <%= $class %> from a slug and identifier.  The
 		 * identifier is optional, but if is provided acts as an additional
 		 * check against the validity of the record.
 		 *
@@ -96,7 +96,7 @@
 			return parent::createFromSlug(__CLASS__, $slug, $identifier);
 		}
 
-<? if (!$scaffolding) { ?>
+<% if (!$scaffolding) { %>
 		/**
 		 * Allows for a dynamically created active record to be scaffolded.
 		 *
@@ -113,10 +113,10 @@
 				));
 			}
 
-			Scaffolder::writeClass($file, __CLASS__, '<?= $parent_class ?>');
+			Scaffolder::writeClass($file, __CLASS__, '<%= $parent_class %>');
 
 		}
-<? } ?>
+<% } %>
 
 		// Custom Class Methods
 
