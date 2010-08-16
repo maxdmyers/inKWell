@@ -1,47 +1,46 @@
-## PHP Options
+################################################################################
+## PHP Options                                                                ##
+################################################################################
 
-php_flag  register_globals       0
-php_flag  magic_quotes_gpc       0
-php_flag  short_open_tag         1
-#php_flag  xdebug.profiler_enable 1
-php_value upload_max_filesize    "15M"
-php_value post_max_size          "16M"
+	php_flag  register_globals       0
+	php_flag  magic_quotes_gpc       0
+	php_flag  short_open_tag         1
+	php_flag  xdebug.profiler_enable 1
+	php_value upload_max_filesize    "15M"
+	php_value post_max_size          "16M"
 
-## Forbid reading of certain files
+################################################################################
+## Forbid reading of certain files                                            ##
+################################################################################
 
-<Files *.htaccess>
-order allow,deny
-deny from all
-</Files>
+	<Files *.htaccess>
+		order allow,deny
+		deny from all
+	</Files>
 
-<Files sess_*>
-order allow,deny
-deny from all
-</Files>
+	<Files sess_*>
+		order allow,deny
+		deny from all
+	</Files>
 
-## Enable Rewrite
+################################################################################
+## Enable Rewrite                                                             ##
+################################################################################
 
-RewriteEngine On
-RewriteBase   /
+	<IfModule mod_rewrite.c>
+		RewriteEngine On
+		RewriteBase   /
 
-## Custom rewrite rules here
-
-## Make for nice .php-less urls
-
-RewriteCond	%{ENV:REDIRECT_STATUS}						^$
-RewriteCond	%{REQUEST_FILENAME}							!/$
-RewriteCond	%{REQUEST_FILENAME}							!\.php
-RewriteCond	%{REQUEST_FILENAME}							!-d
-RewriteCond	%{REQUEST_FILENAME}							!-f
-RewriteCond	%{REQUEST_FILENAME}.php						-f
-RewriteRule	^(.*)$										$1.php					[L,QSA]
-
-## Route non-existant requests to single script
-
-RewriteCond	%{DOCUMENT_ROOT}/%{REQUEST_URI}				!-f
-RewriteRule	^.*$										includes/routing.php	[NS,QSA]
+		RewriteCond	%{DOCUMENT_ROOT}/%{REQUEST_URI} !-f
+		RewriteRule	^.*$ includes/routing.php [NS,QSA]
+	</IfModule>
 
 
-## GZip plaintext being sent to the user
+################################################################################
+## GZip plaintext being sent to the user                                      ##
+################################################################################
 
-AddOutputFilterByType DEFLATE text/html application/javascript text/css
+	<IfModule mod_deflate.c>
+		SetOutputFilter DEFLATE
+		AddOutputFilterByType DEFLATE text/html application/javascript text/css
+	</IfModule>

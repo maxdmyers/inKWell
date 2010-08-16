@@ -1,6 +1,6 @@
 <?php
 
-	return array(
+	return iw::createConfig('Global', array(
 
 		// This is the writable directory where everything from sessions
 		// to file uploads will be stored.  The default .htaccess file
@@ -46,4 +46,4 @@
 			'console_time'      => 'g:ia',
 			'console_timestamp' => 'M jS, Y @ g:ia'
 		)
-	);
+	));

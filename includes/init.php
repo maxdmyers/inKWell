@@ -21,6 +21,30 @@
 		fCore::enableExceptionHandling($config['inkwell']['error_email_to']);
 	}
 
+	// Initialize the Session
+
+	fSession::setPath(
+		iw::getWriteDirectory(implode(DIRECTORY_SEPARATOR, array(
+			'tmp',
+			'sessions'
+		)))
+	);
+
+	$session_length = (isset($config['inkwell']['session_length']))
+		? $config['inkwell']['session_length']
+		: '30 minutes';
+
+	if (
+		isset($config['inkwell']['persistent_session']) &&
+		$config['inkwell']['persistent_sessions']
+	) {
+		fSession::enablePersistence();
+		fSession::setLength($session_length, $session_length);
+	} else {
+		fSession::setLength($session_length);
+	}
+	fSession::open();
+
 	// Initialize the Database
 
 	if (
@@ -50,7 +74,20 @@
 			: NULL;
 
 		if (is_array($database_host) && count($database_host)) {
-			$database_host = $database_host[array_rand($database_host)];
+
+			$target = iw::makeTarget('iw', 'database_host');
+
+			if (!($stored_host = fSession::get($target, NULL))) {
+
+				$host_index    = array_rand($database_host);
+				$database_host = $database_host[$host_index];
+
+				fSession::set($target, $database_host);
+
+			} else {
+
+				$database_host = $stored_host;
+			}
 		}
 
 		fORMDatabase::attach(new fDatabase(
@@ -61,30 +98,6 @@
 			$database_host
 		));
 	}
-
-	// Initialize the Session
-
-	fSession::setPath(
-		iw::getWriteDirectory(implode(DIRECTORY_SEPARATOR, array(
-			'tmp',
-			'sessions'
-		)))
-	);
-
-	$session_length = (isset($config['inkwell']['session_length']))
-		? $config['inkwell']['session_length']
-		: '30 minutes';
-
-	if (
-		isset($config['inkwell']['persistent_session']) &&
-		$config['inkwell']['persistent_sessions']
-	) {
-		fSession::enablePersistence();
-		fSession::setLength($session_length, $session_length);
-	} else {
-		fSession::setLength($session_length);
-	}
-	fSession::open();
 
 	// Initialize Date and Time Information
 

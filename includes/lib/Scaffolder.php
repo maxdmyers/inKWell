@@ -112,24 +112,29 @@
 		{
 			if (class_exists($class)) {
 
-				$make_method = iw::makeTarget($class, self::SCAFFOLDING_METHOD);
+				$make_method = iw::makeTarget($class, self::FINAL_SCAFFOLD_METHOD);
 
 				if (is_callable($make_method)) {
 					if (call_user_func($make_method, $target, $support_vars)) {
 
 					} else {
 						throw new fProgrammerException (
-							'Scaffolding failed, %s cannot build %s', $make_method, $target
+							'Scaffolding failed, %s cannot build %s',
+							$make_method,
+							$target
 						);
 					}
 				} else {
 					throw new fProgrammerException (
-						'Scaffolding failed, %s does not support %s', $class, self::SCAFFOLDING_METHOD
+						'Scaffolding failed, %s does not support %s',
+						$class,
+						self::FINAL_SCAFFOLD_METHOD
 					);
 				}
 			} else {
 				throw new fProgrammerException (
-					'Scaffolding failed, %s is an unknown class', $class
+					'Scaffolding failed, %s is an unknown class',
+					$class
 				);
 			}
 		}

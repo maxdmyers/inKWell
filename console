@@ -76,7 +76,11 @@
 
 	// Change to our includes directory and run init
 
-	chdir('includes');
+	chdir(implode(DIRECTORY_SEPARATOR, array(
+		dirname(__FILE__),
+		'includes'
+	)));
+
 	require 'init.php';
 
 	// Set some basics regardless of configuration

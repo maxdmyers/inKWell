@@ -135,10 +135,37 @@
 
 				self::$imageUploadDirectory = iw::getWriteDirectory('images');
 				self::$fileUploadDirectory  = iw::getWriteDirectory('files');
-				return;
+
+				$ar_configs = iw::getConfigsByType('ActiveRecord');
+
+				foreach ($ar_configs as $config_element => $config) {
+
+					$record_class = fGrammar::camelize($config_element, TRUE);
+					$name         = NULL;
+					$table        = NULL;
+					$entry        = NULL;
+
+					extract($config);
+
+					if (isset($name)) {
+						self::$nameTranslations[$record_class]  = $name;
+					}
+
+					if (isset($table)) {
+						self::$tableTranslations[$record_class] = $table;
+						fORM::mapClassToTable($record_class, $table);
+					}
+
+					if (isset($entry)) {
+						self::$entryTranslations[$record_class] = $entry;
+					}
+
+				}
+
+				return TRUE;
 
 			} elseif (!is_subclass_of($record_class, __CLASS__)) {
-				return;
+				return FALSE;
 			}
 
 			// Do not allow Active Records to be initialized twice
@@ -148,19 +175,6 @@
 			}
 
 			// Default and Configuable Values
-
-			if (isset($config['name'])) {
-				self::$nameTranslations[$record_class]  = $config['name'];
-			}
-
-			if (isset($config['table'])) {
-				self::$tableTranslations[$record_class] = $config['table'];
-				fORM::mapClassToTable($record_class, $config['table']);
-			}
-
-			if (isset($config['entry'])) {
-				self::$entryTranslations[$record_class] = $config['entry'];
-			}
 
 			if (isset($config['order'])) {
 				if (!is_array($config['order'])) {
@@ -300,12 +314,14 @@
 				self::$info[$record_class]['fkey_columns'][] = $column;
 			}
 
-			self::$info[$record_class]['is_relationship'] = count(
+			self::$info[$record_class]['is_relationship'] = !count(
 				array_diff(
 					self::$info[$record_class]['columns'],
 					self::$info[$record_class]['pkey_columns']
 				)
 			);
+
+			return TRUE;
 		}
 
 		/**
@@ -319,11 +335,11 @@
 		{
 
 			$tables = fORMSchema::retrieve()->getTables();
-			$config = iw::getConfig();
 			$record = fGrammar::underscorize($record_class);
+			$config = iw::getConfig($record);
 
-			if (isset($config[$record]['table'])) {
-				$table = $config[$record]['table'];
+			if (isset($config['table'])) {
+				$table = $config['table'];
 			} else {
 				$table = fORM::tablize($record_class);
 			}
@@ -643,10 +659,13 @@
 		{
 			if (isset(self::$info[$record_class])) {
 				if ($key !== NULL) {
+
 					if (isset(self::$info[$record_class][$key])) {
 						return self::$info[$record_class][$key];
 					}
+
 				} else {
+
 					return self::$info[$record_class];
 				}
 			}

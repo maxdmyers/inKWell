@@ -21,7 +21,7 @@
 
 		static private $config          = array();
 		static private $writeDirectory  = NULL;
-		static private $static_al_tests = array();
+		static private $staticALMatches = array();
 
 		/**
 		 * Constructing an iw object is not allowed, this is purely for
@@ -29,6 +29,19 @@
 		 */
 		final private function __construct()
 		{
+		}
+
+		/**
+		 * Creates a configuration array, but allows the user to typecast the
+		 * configuration for use with iw::getConfigsByType()
+		 *
+		 * @param string $type The configuration type
+		 * @return array The configuration array
+		 */
+		static public function createConfig($type, $config)
+		{
+			$config['__type'] = strtolower($type);
+			return $config;
 		}
 
 		/**
@@ -54,15 +67,28 @@
 				chdir($directory);
 
 				foreach (glob("*.php") as $config_file) {
+
 					$config_element = pathinfo($config_file, PATHINFO_FILENAME);
+
 					if (!$quiet) {
 						echo "Loading config data for $config_element...\n";
 					}
-					$config[$config_element] = include($config_file);
+
+					$current_config = include($config_file);
+
+					if (isset($current_config['__type'])) {
+						$type = $current_config['__type'];
+						unset($current_config['__type']);
+					} else {
+						$type = $config_element;
+					}
+
+					$config['types'][$type][] = $config_element;
+					$config[$config_element]  = $current_config;
 				}
 
 				foreach (glob("*", GLOB_ONLYDIR) as $sub_directory) {
-					$config = array_merge(
+					$config = array_merge_recursive(
 						$config,
 						self::buildConfig($sub_directory, $quiet)
 					);
@@ -139,88 +165,45 @@
 		}
 
 		/**
-		 * Gets the full inKWell configuration array loaded by iw::init()
+		 * Get configuration information. If no $config_element is specified
+		 * the full inKwell configuration is returned.
 		 *
-		 * @param void
-		 * @param array The configuration array which was loaded by iw::init()
+		 * @param string $config_element The configuration element to get
+		 * @param array The configuration array for the requested element
 		 */
-		static public function getConfig()
+		static public function getConfig($config_element = NULL)
 		{
-			return self::$config;
+			$config = self::$config;
+
+			if ($config_element !== NULL) {
+				if (isset($config[$config_element])) {
+					$config = $config[$config_element];
+				} else {
+					$config = array();
+				}
+			}
+
+			return $config;
 		}
 
 		/**
-		 * The inKWell conditional autoloader which allows for auto loading
-		 * based on dynamic class name matches.
+		 * Get all the configurations matching a certain type.
 		 *
-		 * @param string $class The class to be loaded
-		 * @param array $loaders An array of test => target autoloaders
-		 * @return mixed Whether or not the class was successfully loaded and initialized
+		 * @param string $type The configuration type
+		 * @return array An array of all the configurations matching the type
 		 */
-		static public function loadClass($class, array $loaders = array())
+		static public function getConfigsByType($type)
 		{
-			if (!count($loaders)) {
-				$loaders = self::$config['autoloaders'];
-			}
+			$type    = strtolower($type);
+			$configs = array();
 
-			foreach ($loaders as $test => $target) {
-
-				$match = $test;
-
-				if (!in_array($test, self::$static_al_tests)) {
-
-					if ($test == $class) {
-
-						// TODO: This needs to be thought about.  The default
-						// TODO: autoloaders are putting, library, as a static
-						// TODO: key, since it it doesn't contain a * the
-						// TODO: it recursively autoloads on the class_exists
-						// TODO: This prevents the recursive autoload from
-						// TODO: going any further than the key itself to try
-						// TODO: and load it... would one of the loaders below
-						// TODO: hypothetically be responsible for matching and
-						// TODO: targetting a class used as a key above?
-
-						return;
-
-					} elseif (strpos($test, '*') !== FALSE) {
-
-						$regex = str_replace('*', '(.*?)', $test);
-						$match = preg_match('/' . $regex . '/', $class);
-
-					} elseif (class_exists($test)) {
-
-						$test  = self::makeTarget(
-							$test,
-							self::MATCH_CLASS_METHOD
-						);
-
-						if (is_callable($test)) {
-							$match = call_user_func($test, $class);
-						}
-					}
-
-					if ($test == $match) {
-						self::$static_al_tests[] = $test;
-					}
-				}
-
-				if ($match) {
-
-					$file = implode(DIRECTORY_SEPARATOR, array(
-						$_SERVER['DOCUMENT_ROOT'],   // Document Root
-						trim($target, '/\\'),        // Target directory
-						$class . '.php'              // Class name as PHP file
-					));
-
-					if (file_exists($file)) {
-						include $file;
-						return self::initializeClass($class);
-					}
+			if (isset(self::$config['types'][$type])) {
+				foreach (self::$config['types'][$type] as $config_element) {
+					$configs[$config_element] = self::$config[$config_element];
 				}
 			}
 
-			return FALSE;
+			return $configs;
 		}
 
 		/**
@@ -272,6 +255,80 @@
 			}
 
 			return implode('::', array($entry, $action));
+		}
+
+		/**
+		 * The inKWell conditional autoloader which allows for auto loading
+		 * based on dynamic class name matches.
+		 *
+		 * @param string $class The class to be loaded
+		 * @param array $loaders An array of test => target autoloaders
+		 * @return mixed Whether or not the class was successfully loaded and initialized
+		 */
+		static public function loadClass($class, array $loaders = array())
+		{
+			if (!count($loaders)) {
+				$loaders = self::$config['autoloaders'];
+			}
+
+			foreach ($loaders as $test => $target) {
+
+				$match = $test;
+
+				if (!in_array($test, self::$staticALMatches)) {
+
+					if ($test == $class) {
+
+						// TODO: This needs to be thought about.  The default
+						// TODO: autoloaders are putting, library, as a static
+						// TODO: key, since it it doesn't contain a * the
+						// TODO: it recursively autoloads on the class_exists
+						// TODO: This prevents the recursive autoload from
+						// TODO: going any further than the key itself to try
+						// TODO: and load it... would one of the loaders below
+						// TODO: hypothetically be responsible for matching and
+						// TODO: targetting a class used as a key above?
+
+						return;
+
+					} elseif (strpos($test, '*') !== FALSE) {
+
+						$regex = str_replace('*', '(.*?)', $test);
+						$match = preg_match('/' . $regex . '/', $class);
+
+					} elseif (class_exists($test)) {
+
+						$test  = self::makeTarget(
+							$test,
+							self::MATCH_CLASS_METHOD
+						);
+
+						if (is_callable($test)) {
+							$match = call_user_func($test, $class);
+						}
+					}
+
+					if ($test == $match) {
+						self::$staticALMatches[] = $test;
+					}
+				}
+
+				if ($match) {
+
+					$file = implode(DIRECTORY_SEPARATOR, array(
+						$_SERVER['DOCUMENT_ROOT'],   // Document Root
+						trim($target, '/\\'),        // Target directory
+						$class . '.php'              // Class name as PHP file
+					));
+
+					if (file_exists($file)) {
+						include $file;
+						return self::initializeClass($class);
+					}
+				}
+			}
+
+			return FALSE;
 		}
 
 		/**

@@ -1,6 +1,6 @@
 <?php
 
-	return array(
+	return iw::createConfig('Global', array(
 
 		'disabled' => FALSE,
 
@@ -16,4 +16,4 @@
 
 		'host'     => array('127.0.0.1')
 
-	);
+	));

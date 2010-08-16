@@ -29,7 +29,7 @@
 	// any match a class which has not yet been loaded, however, would be
 	// loaded if the array of autoloaders were to be called again.
 
-	return array(
+	return iw::createConfig('Global', array(
 
 		// We use flourish for tons of stuff, including init, so it comes first
 
@@ -49,4 +49,4 @@
 		'ActiveRecord' => 'user/models',
 		'RecordSet'    => 'user/models/sets'
 
-	);
+	));

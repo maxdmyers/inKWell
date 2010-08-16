@@ -11,7 +11,7 @@
 		// Custom Object Methods
 
 		/**
-		 * Initializes all static class information for <?= $class ?> model
+		 * Initializes all static class information for the <?= $class ?> model
 		 *
 		 * @param array $config The configuration array
 		 * @return void
