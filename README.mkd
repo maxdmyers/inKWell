@@ -6,6 +6,9 @@ At the moment the stock CMS (usually part of the Admin Section) is in shambles.
 Do not expect it to work right.  In the mean time however feel free to use
 inKWell as a basic framework.
 
+inKWell is currently alpha software, we will answer any questions you might have
+directly.
+
 ## Licensing
 
 This program is free software: you can redistribute it and/or modify it under
@@ -27,7 +30,7 @@ please e-mail: Matthew J. Sahagian <msahagian@dotink.org>
 
 inKWell is an MVC framework built on Flourish (http://www.flourishlib.com) and
 Moor (http://www.github.com/jeffturcotte/moor).  It is designed to be extremely
-light weight and flexible.  Unlike other frameworks nearly every aspect of it
+lightweight and flexible.  Unlike other frameworks nearly every aspect of it
 is designed to allow for easy overrides, including scaffolding.
 
 The core framework follows a "KISS" philosophy.  We begin by keeping core
@@ -51,68 +54,169 @@ The core classes are as follows (and will be explained later):
 
 ## Configuration
 
-inKWell uses a modular configuration system where files are mapped one to one
-to a configuration key.  With the exception of those configuration files used
-to initialize inkwell itself, all configuration files are named after the
-underscorized version of your class names.
+inKWell uses a modular configuration system where files are mapped one-to-one
+to a configuration element.  Additionally configurations can be typecasted to
+allow for parent classes or the base framework to reliably find and use the
+information provided within.
 
-When your classes are autoloaded, the inKWell autoloader will take their
-particular configuration section and pass them to the static __init() method
-found on your class.  You are then responsible for setting up your class,
-registering any hooks you'd like, etc, based on the configuration information.
+With the exception of those configuration files used to initialize inkwell
+itself, all configuration files are named after the underscorized version of
+your class names.  Examples:  MyCustomController would make use of configuration
+information in my_custom_controller.php
 
-Let's take a look at an example from inkwell itself.  Below is the configuration
-file for our Controller class ('includes/config/classes/controller.php' by
-default):
+There is no required directory structure for the configuration information and
+the complete configuration is simply built by recursively scanning all
+directories in the config directory.  With that said, my_custom_controller.php
+could be placed in /includes/config, /includes/config/controllers, or wherever
+else you like.
 
-	return array(
+There are several ways in which configuration information can be used and
+accessed.  The most common method is within a class's __init() method via the
+inKWell  autoloader.  Whenever a class is loaded via the autoloader, the
+existence of a static method __init() is checked, and if it exists, the
+matching configuration element is passed to it as the first argument.
 
-		// The standard controller class allows for errors to be custom
-		// configured based on keys.  Controller::triggerError('not_found')
-		// for example would use the information provided by the 'not_found'
-		// key below.
-		//
-		// Custom error configurations are expected to be arrays containing
-		// the following key => value pairs:
-		//
-		//      'handler'  : A custom callback to handle the error
-		//      'header'   : A header to be sent when triggered
-		//      'messsage' : A default error message
-		//
-		// Errors which are not configured will fallback to using
-		// Controller::triggerHardError() with default 500 internal server
-		// error headers and a generic message
+If, for example, you had a configuration file located in
+/includes/config/controllers/custom_controller.php the first time the
+CustomController class is loaded, the array returned by that file will be
+passed to CustomController's __init() method (providing it exists).
 
-		'errors'             => array(
-			'not_found'      => array(
-				'handler'    => 'PagesController::notFound',
-				'header'     => 'HTTP/1.0 404 Not Found',
-				'message'    => 'The requested resource could not be found'
+The other way to make use of configuration data is via typecasted
+configurations.  Although it is not required, configuration arrays can be
+loosely typecasted by using the iw::createConfig() method.  This, for example
+is used by inKWell's active record class for custom table mappings.  Reference
+the below configuration for a User class:
+
+	<?php
+
+		return iw::createConfig('ActiveRecord', array(
+
+			'table'            => 'auth.users',
+			'password_columns' => array('login_password'),
+			'image_columns'    => array('avatar'),
+			'fixed_columns'    => array('date_created', 'date_last_accessed'),
+
+			'order'            => array(
+				'id'           => 'asc'
 			),
-			'not_authorized' => array(
-				'handler'    => 'AuthController::login',
-				'header'     => 'HTTP/1.0 401 Not Authorized',
-				'message'    => 'The requested resource requires authorization'
-			),
-			'forbidden'      => array(
-				'handler'    => 'PagesController::forbidden',
-				'header'     => 'HTTP/1.0 403 Forbidden',
-				'message'    => 'You do not have permission to view the requested resource'
+
+			// Defines the maximum number of login attempts to afford in
+			// a certain time frame.  This can be, default is 5 every 15
+			// minutes.
+
+			'max_login_attempts' => '5/15 minutes'
+
+		));
+
+This configuration will be used by at least two classes:
+
+1) ActiveRecord: When ActiveRecord is loaded for the first time it will make
+use of this configuration in order to establish basic ORM class to table mapping
+as well as a few other basic properties.
+
+2) User: This configuration will be used by the User class itself, passed to
+it's __init() method when the class is loaded for the first time.
+
+Please note that typecasting configurations is extremely loose.  A typecasted
+configuration is not inherently passed to any class's __init() which may or
+may not be identified by the type.  In order for ActiveRecord to find and
+make use of configurations typecasted it uses iw::getConfigsByType() within it
+__init().  Additionally there is no way to force required configuration keys
+based on a type, so any configuration handling should always determine if the
+array has the appropriate key set and throw its own exceptions if it is
+required or if it's value is inappropriate.
+
+Typecasting a configuration represents a simple way for configuration
+information to be used/accessed prior to a class being loaded.
+
+## Controllers
+
+Currently there are no controllers outside of the base controller class which
+are distributed with the inKWell core.  All "standard" controllers such as a
+PagesController, ARController (Active Record Controller), or the AuthController
+(Authorization Controller) will be distributed as extensions with the beta 1.0.
+
+If you would like not to have to write your own controllers for some of this
+functionality you can take a look at the inkwell_site branch of this project
+which has all of the above mentioned controllers.
+
+Let's take a look at the PagesController real quick just to get an idea of
+how things work.  Using a standard inKWell configuration, the PagesController
+would be copied to /user/controllers/PagesController.php -- the configuration
+on the inkwell_site branch resides in
+/includes/config/controllers/pages_controller.php and looks like this:
+
+	<?php
+
+		return iw::createConfig('Controller', array(
+
+			'pages_root'        => 'user/controllers/pages',
+
+			// The sections array allows you to define any number of base URLs
+			// with separate page titles.  Each base URL will be detected
+			// and used as an additional directory for the PagesController to
+			// look for controllers and/or views.  The default section is always
+			// 'default' and it's assignment here simply allows you to customize
+			// the title easily.
+
+			'sections'          => array(
+				'default'       => 'inKWell Site',
+				'admin'         => 'inKWell Console'
 			)
-		)
-	);
+		));
 
-As you can see from the above example, our core configuration file contains
-normal, executable php code.  Using nicely nested arrays and some commenting
-there is no need for additional parsers of third party object/data formats as
-is found in some other frameworks.  When controller is called, this
-configuration information is passed into it's __init() function which registers
-the error events based on the information.  How we chose to register them,
-what methods we use, etc, are completely up to us.
+In addition to this, there is a route added at the end of
+/includes/routing.php so that any request not handled by previous routes tries
+to hit the PagesController:
 
-Some things are currently not configurable in the controller but could be, for
-example, the default request format type which is currently html.  If we so
-chose, we could easily add a 'default_request_format' key to our array, and
-modify our __init() to set that directly or even use an externally accessible
-API like Controller::setDefaultRequestFormat()...  however we decide to do it,
-it remains 100% up to us, the developer.
+	<?php
+
+		require_once 'init.php';
+
+		Moor::setRequestParamPattern('[A-Za-z0-9_-]+');
+
+		Moor::
+
+			// Custom Routes Here
+
+			// General Page Routing
+
+			route('/*', 'PagesController::load') ->
+
+		run();
+
+When a URL is requested that hits the PagesController::load() function, the
+PagesController looks in the configured 'pages_root' for a file matching
+the request and delegates control to it.  So for example, on the inkwell site
+if a user visits http://inkwell.dotink.org/getting_started/ the PagesController
+attempts to delegate control to
+/user/controllers/pages/default/getting_started/index.php.  The 'default' is
+added implicitely since no recognize site section / base URL was used at 
+the beginning of request path.  Base URLs and site sections are configured in
+the 'site_sections' key of the PagesController configuration file.
+
+Continuing with the above example, we can then take a look at the file to
+which control is delegated:
+
+	<?php
+
+		fURL::redirect('/getting_started/install');
+
+Whoops, that's just a redirect, so let's take a look at what's in the
+install.php file:
+
+	<?php
+
+		$page = new PagesController();
+
+		$page->view
+			-> add    ('primary_section',   'pages/default/getting_started/install.php')
+			-> add    ('secondary_section', 'pages/default/aside.php')
+			-> push   ('id',                'install')
+			-> push   ('classes',           'getting_started')
+			-> push   ('title',             'Installation and Setup')
+			-> render ();
+
+That's much nicer.  As you can see, the file becomes responsible for
+actually instantiating the controller, setting up the view, and finally
+rendering it.  What resides in the views is generally just PHP templatized HTML.
