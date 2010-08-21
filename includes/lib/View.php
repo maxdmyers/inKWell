@@ -360,15 +360,15 @@
 		}
 
 		/**
-		 * Peals data off the end of referenced data storage array.  Optionally
+		 * Peels data off the end of referenced data storage array.  Optionally
 		 * the data can be destroyed.  Please note, that if the data is not
 		 * an array this becomes functionally equivalent to pull.
 		 *
 		 * @param string $key The key of the data from which to pop a value
 		 * @param boolean $destructive Whether or not to destroy the data
-		 * @return mixed The pealed data from the end of the data storage array
+		 * @return mixed The peeled data from the end of the data storage array
 		 */
-		protected function peal($key, $destructive = FALSE)
+		protected function peel($key, $destructive = FALSE)
 		{
 			if (array_key_exists($key, $this->data)) {
 				if (is_array($this->data[$key])) {
@@ -386,7 +386,7 @@
 
 			} else {
 				throw new fProgrammerException (
-					'Cannot peal view data referenced by %s', $key
+					'Cannot peel view data referenced by %s', $key
 				);
 			}
 		}

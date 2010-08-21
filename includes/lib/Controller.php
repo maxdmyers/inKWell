@@ -38,7 +38,7 @@
 		 * @param void
 		 * @return void
 		 */
-		final public function __construct()
+		final protected function __construct()
 		{
 			$this->view = new View();
 
