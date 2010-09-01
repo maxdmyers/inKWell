@@ -38,7 +38,7 @@
 		 public function populate()
 		 {
 		 	$record_class = get_class($this);
-		 	$record       = self::getInfo($record_class, 'record');
+		 	$record       = self::getRecordName($record_class);
 			$columns      = self::getInfo($record_class, 'columns');
 
 			fORM::callHookCallbacks(

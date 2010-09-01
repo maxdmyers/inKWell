@@ -9,21 +9,19 @@
 	{
 
 		const DEFAULT_VIEW_ROOT     = 'views';
-
-		const MINEX_COMMENTS        = '#(/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+/)|(//.*)#';
-		const MINEX_SPACES          = '#\s+#';
-		const MINEX_STRINGS         = '#((?<!//)["\'])(?:\\\1|.)*?\1#';
+		const DEFAULT_CACHE_DIR     = 'cache';
 
 		// Data storage area, render callbacks, and food?
 
-		private        $data            = array();
-		private        $renderCallbacks = array();
-		private        $isFood          = FALSE;
+		private        $data               = array();
+		private        $renderCallbacks    = array();
+		private        $isFood             = FALSE;
 
-		// Directory information for templating engine
+		// Information for templating engine
 
-		static private $viewRoot        = NULL;
-		static private $cacheDirectory  = NULL;
+		static private $viewRoot         = NULL;
+		static private $cacheDirectory   = NULL;
+		static private $minificationMode = NULL;
 
 		/**
 		 * Creates a new templating object.
@@ -44,6 +42,10 @@
 				}
 			} else {
 				parent::__construct($view_root);
+			}
+
+			if (self::$minificationMode) {
+				$this->enableMinification(self::$minificationMode, self::$cacheDirectory);
 			}
 
 		}
@@ -119,6 +121,19 @@
 		}
 
 		/**
+		 * Sets a file as the "master" template to be included when/if place
+		 * is called without arguments.
+		 *
+		 * @param string $file
+		 * @return fTemplating The template object, to allow for method chaining
+		 */
+		public function load($file)
+		{
+			$this->set('__main__', $file);
+			return $this;
+		}
+
+		/**
 		 * Overrides standard place functionality allowing for feed elements to
 		 * be digested and for nested view objects.
 		 *
@@ -128,129 +143,15 @@
 		 */
 		public function place($element = NULL, $file_type = NULL)
 		{
-			if ($element == NULL && $this->isFood) {
-				echo $this->get();
-			} else {
-				return parent::place($element, $file_type);
-			}
-
-		}
-
-		/**
-		 * Compresses Javascript and CSS files found within $element and
-		 * injects the combined script.
-		 *
-		 * @param string $element The name of the element
-		 * @return void
-		 */
-		 public function compress($element)
-		 {
-
-		 	if (self::$cacheDirectory === NULL) {
-		 		throw new fProgrammerException (
-		 			'The use of compress requires you to set a cache directory.'
-		 		);
-		 	}
-
-			$file_types = array();
-
-			// Normalize the element
-
-			if ($element = $this->get($element)){
-				if (!is_array($element)) {
-					$element = array($element);
-				}
-			} else {
-				$element = array();
-			}
-
-		 	// Organize the elements by code type and media type
-
-		 	foreach ($element as $file) {
-
-				if (is_array($file) && isset($file['path'])) {
-					$path  = $file['path'];
-					$media = (isset($file['media'])) ? $file['media'] : 'all';
-				} elseif (is_string($file)) {
-					$path  = $file;
-					$media = 'all';
+			if ($element === NULL) {
+				if ($this->isFood) {
+					echo $this->get();
 				} else {
-					throw new fProgrammerException(
-						'Compression not supported for element %s', $file
-					);
-				}
-
-				$extension = pathinfo($path, PATHINFO_EXTENSION);
-
-	 			if (strpos($path, '/') === 0) {
-	 				$file_types[$extension][$media][] = $_SERVER['DOCUMENT_ROOT'] . $path;
-	 			} else {
-		 			$file_types[$extension][$media][] = $path;
-		 		}
-		 	}
-
-			// ID, Compress (if need be), and place/inject.
-
-			foreach($file_types as $extension => $media_types) {
-				foreach ($media_types as $media_type => $media_files) {
-
-				 	$cached_id   = md5(implode('::', $media_files));
-
-				 	$cached_path = implode(DIRECTORY_SEPARATOR, array(
-						self::$cacheDirectory,        // Cache Directory
-						$cached_id . '.' . $extension // Filename
-				 	));
-
-					// See if we have a cached version, if not, create it
-
-					try {
-						$cached_file = new fFile($cached_path);
-						$regenerate  = FALSE;
-					} catch (fValidationException $e) {
-						$cached_file = fFile::create($cached_path, '');
-						$regenerate  = TRUE;
-					}
-
-					// Create file objects and look for modified files if
-					// the cache is already built.
-
-					$cache_last_modified = $cached_file->getMTime();
-
-					foreach ($media_files as $file) {
-						$files[] = $file = new fFile($file);
-						if (!$regenerate && $cache_last_modified < $file->getMTime()) {
-							$regenerate = TRUE;
-						}
-					}
-
-					// Regenerate if need be.
-
-					if ($regenerate) {
-						$contents = '';
-						foreach ($files as $file) {
-							$contents .= self::minify($file->read(), $extension);
-						}
-						$cached_file->write($contents);
-					}
-
-					// Inject the cache
-
-					switch ($extension) {
-						case 'css':
-							$this->set($cached_id, array(array(
-								'path'  => $cached_file->getPath(TRUE),
-								'media' => $media_type
-							)));
-							break;
-						case 'js':
-							$this->set($cached_id, $cached_file->getPath(TRUE));
-							break;
-					}
-
-					$this->place($cached_id);
-
+					return parent::place();
 				}
 			}
+
+			return parent::place($element, $file_type);
 		}
 
 		/**
@@ -569,7 +470,19 @@
 				)
 			)));
 
-			self::setCacheDirectory(iw::getWriteDirectory('cache'));
+			if (isset($config['cache_directory'])) {
+				$directory = iw::getWriteDirectory($config['cache_directory']);
+			} else {
+				$directory = iw::getWriteDirectory(self::DEFAULT_CACHE_DIR);
+			}
+
+			self::setCacheDirectory($directory);
+
+			if (isset($config['minification_mode'])) {
+				if ($config['minification_mode']) {
+					self::$minificationMode = $config['minification_mode'];
+				}
+			}
 		}
 
 		/**
@@ -603,82 +516,6 @@
 					'Cache directory %s is not writable', $directory
 				);
 			}
-		}
-
-		/**
-		 * Minifier for code.  Might not be as thorough as others
-		 * but good enough when keeping dependencies down.
-		 *
-		 * @param string $code The code to minify
-		 * @param string $type The type of code it is
-		 * @return string The minified version of the code
-		 * @throws fProgrammerException if $type is not supported
-		 */
-		static public function minify($code, $type)
-		{
-			switch (strtolower($type)) {
-				case 'css':
-					return self::minifyCSS($code);
-				case 'js':
-					return self::minifyJS($code);
-				default:
-					throw new fProgrammerException(
-						'Minifying code of type %s is not supported', $type
-					);
-			}
-		}
-
-		/**
-		 * Common minification code for C-like syntax.  This will remove
-		 * excess white space, and all commenting.  Should work in most
-		 * instances.  It's a beast, but that's why we cache.
-		 *
-		 * @param string $code The code to be minified
-		 * @return string The minified code
-		 */
-		static private function minifyCommon($code)
-		{
-			preg_match_all(self::MINEX_STRINGS, $code, $matches);
-			foreach ($matches[0] as $index => $match) {
-				$code = str_replace($match, "%{STR@POS[$index]}%", $code);
-			}
-			$code = preg_replace(self::MINEX_COMMENTS, '', $code);
-			$code = preg_replace(self::MINEX_SPACES,  ' ', $code);
-			$code = str_replace('; ', ';', $code);
-			$code = str_replace(': ', ':', $code);
-			$code = str_replace(' {', '{', $code);
-			$code = str_replace('{ ', '{', $code);
-			$code = str_replace(', ', ',', $code);
-			$code = str_replace('} ', '}', $code);
-			$code = str_replace(' }', '}', $code);
-			foreach ($matches[0] as $index => $match) {
-				$code = str_replace("%{STR@POS[$index]}%", $match, $code);
-			}
-			return trim($code);
-		}
-
-		/**
-		 * Minifier for CSS code.
-		 *
-		 * @param string $code The CSS to minify
-		 * @return string The minified CSS
-		 */
-		static private function minifyCSS($code)
-		{
-			// Add any CSS Specific minimizations here
-			return self::minifyCommon($code);
-		}
-
-		/**
-		 * Minifier for Javascript code.
-		 *
-		 * @param string $code The Javascript to minify
-		 * @return string The minified Javascript
-		 */
-		static private function minifyJS($code)
-		{
-			// Add any Javascript specific minimizations here
-			return self::minifyCommon($code);
 		}
 
 	}
