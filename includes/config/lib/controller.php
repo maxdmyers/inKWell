@@ -1,6 +1,6 @@
 <?php
 
-	return array(
+	return iw::createConfig('Library', array(
 
 		// The standard controller class allows for errors to be custom
 		// configured based on keys.  Controller::triggerError('not_found')
@@ -35,4 +35,4 @@
 				'message'        => 'You do not have permission to view the requested resource'
 			)
 		)
-	);
+	));

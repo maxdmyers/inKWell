@@ -1,6 +1,6 @@
 <?php
 
-	return array(
+	return iw::createConfig('Library', array(
 
 		'disabled'            => FALSE,
 		'scaffolding_root'    => 'scaffolding',
@@ -19,4 +19,4 @@
 			'RecordSet'       => 'user/models/sets'
 		)
 
-	);
+	));
