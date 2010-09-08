@@ -2,8 +2,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 	<head>
 		<title><%= $this->rcombine('title') %></title>
-		<% $this->compress('styles');  %>
-		<% $this->compress('scripts'); %>
+		<% $this->place('styles');  %>
+		<% $this->place('scripts'); %>
 	</head>
 	<body id="<%= $this->pull('id') %>" class="<%= $this->combine('classes', ' ') %>">
 		<% $this->place('header'); %>
