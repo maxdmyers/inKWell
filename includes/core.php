@@ -10,18 +10,20 @@
 	class iw
 	{
 
-		const DEFAULT_CONFIG_DIR        = 'config';
-		const DEFAULT_CONFIG_FILE       = 'config.php';
+		const DEFAULT_CONFIG_DIR           = 'config';
+		const DEFAULT_CONFIG_FILE          = 'config.php';
 
-		const INITIALIZATION_METHOD     = '__init';
-		const MATCH_CLASS_METHOD        = '__match';
+		const INITIALIZATION_METHOD        = '__init';
+		const MATCH_CLASS_METHOD           = '__match';
+		const CONFIG_TYPE_ELEMENT          = '__type';
 
-		const DEFAULT_REQUEST_FORMAT    = 'html';
-		const DEFAULT_WRITE_DIRECTORY   = 'writable';
+		const DEFAULT_REQUEST_FORMAT       = 'html';
+		const DEFAULT_WRITE_DIRECTORY      = 'writable';
 
-		static private $config          = array();
-		static private $writeDirectory  = NULL;
-		static private $staticALMatches = array();
+		static private $config             = array();
+		static private $writeDirectory     = NULL;
+		static private $staticALMatches    = array();
+		static private $initializedClasses = array();
 
 		/**
 		 * Constructing an iw object is not allowed, this is purely for
@@ -32,39 +34,48 @@
 		}
 
 		/**
-		 * Creates a configuration array, but allows the user to typecast the
-		 * configuration for use with iw::getConfigsByType()
+		 * Creates a configuration array, and sets the config type element to
+		 * match the specified $type provided by the user for later use with
+         * iw::getConfigsByType()
 		 *
 		 * @param string $type The configuration type
 		 * @return array The configuration array
 		 */
 		static public function createConfig($type, $config)
 		{
-			$config['__type'] = strtolower($type);
+			$config[self::CONFIG_TYPE_ELEMENT] = strtolower($type);
 			return $config;
 		}
 
 		/**
 		 * Builds a configuration from a series of separate configuration
-		 * files loaded from a root directory.  Each configuration file is
-		 * named after its key in the final $config and is a valid PHP script
-		 * which returns (from include) it's local configuration options.
+		 * files loaded from a single directory.  Each configuration key in the
+		 * final $config array is named after the file from which it is loaded.
+		 * Configuration files should be valid PHP scripts which return
+		 * it's local configuration options (for include).
 		 *
 		 * @param string $directory The directory containing the configuration elements
-		 * @param boolean $queit Whether or not to output information
+		 * @param boolean $quiet Whether or not to output information
 		 * @param array The configuration array which was built
 		 */
 		static public function buildConfig($directory = NULL, $quiet = FALSE)
 		{
 			$config = array();
 
-			if (!$directory) { $directory = self::DEFAULT_CONFIG_DIR;  }
+			if (!$directory) {
+				$directory = self::DEFAULT_CONFIG_DIR;
+			}
 
 			if (is_dir($directory) && is_readable($directory)) {
 
 				$current_working_directory = getcwd();
 
 				chdir($directory);
+
+				// Loads each PHP file into a configuration element named after
+				// the file.  We check to see if the CONFIG_TYPE_ELEMENT is set
+				// to ensure configurations are added to their respective
+				// type in the $config['types'] array.
 
 				foreach (glob("*.php") as $config_file) {
 
@@ -76,9 +87,9 @@
 
 					$current_config = include($config_file);
 
-					if (isset($current_config['__type'])) {
-						$type = $current_config['__type'];
-						unset($current_config['__type']);
+					if (isset($current_config[self::CONFIG_TYPE_ELEMENT])) {
+						$type = $current_config[self::CONFIG_TYPE_ELEMENT];
+						unset($current_config[self::CONFIG_TYPE_ELEMENT]);
 					} else {
 						$type = $config_element;
 					}
@@ -86,6 +97,10 @@
 					$config['types'][$type][] = $config_element;
 					$config[$config_element]  = $current_config;
 				}
+
+				// Ensures we recusively scan all directories and merge all
+				// configurations.  Directory names do not play a role in the
+				// configuration key name.
 
 				foreach (glob("*", GLOB_ONLYDIR) as $sub_directory) {
 					$config = array_merge_recursive(
@@ -95,6 +110,13 @@
 				}
 
 				chdir($current_working_directory);
+
+			} else {
+
+				throw new fProgrammerException (
+					'Unable to build configuration, directory %s does not exist.',
+					$directory
+				);
 			}
 
 			return $config;
@@ -105,19 +127,23 @@
 		 *
 		 * @param array $config The configuration array
 		 * @param string $file The file to write to
+		 * @param boolean $quiet Whether or not to output information
 		 * @return mixed Number of bytes written to file or FALSE on failure
 		 */
-		static public function writeConfig(array $config, $file = NULL)
+		static public function writeConfig(array $config, $file = NULL, $quiet = FALSE)
 		{
 			if (!$file) { $file = self::DEFAULT_CONFIG_FILE; }
 
-			echo "Writing configuration file...";
-
-			if ($result = file_put_contents($file, serialize($config))) {
-				echo "Success!";
-			} else {
-				echo "Failure.";
+			if (!$quiet) {
+				echo "Writing configuration file...";
 			}
+
+			$result = file_put_contents($file, serialize($config));
+
+			if (!$quiet) {
+				echo ($result) ? 'Sucess!' : 'Failure';
+			}
+
 			return $result;
 		}
 
@@ -218,10 +244,20 @@
 		static public function getWriteDirectory($sub_directory = NULL)
 		{
 			if ($sub_directory) {
+
+				// Prevent an absolute sub directory from repeating the
+				// base write directory
+
+				if (strpos($sub_directory, self::$writeDirectory) === 0) {
+					$offset        = strlen(self::$writeDirectory);
+					$sub_directory = substr($sub_directory, $offset);
+				}
+
 				$write_directory = implode(DIRECTORY_SEPARATOR, array(
 					self::$writeDirectory,
 					trim($sub_directory, '/\\')
 				));
+
 			} else {
 				$write_directory = self::$writeDirectory;
 			}
@@ -340,6 +376,19 @@
 		 */
 		static protected function initializeClass($class)
 		{
+
+			// Classes cannot be initialized twice
+			if (in_array($class, self::$initializedClasses)) {
+
+				throw new fProgrammerException(
+					'The class %s has already been initialized.', $class
+				);
+
+			} else {
+
+				self::$initializedClasses[] = $class;
+			}
+
 			$init_callback = array($class, self::INITIALIZATION_METHOD);
 
 			// If there's no __init we're done

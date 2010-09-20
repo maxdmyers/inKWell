@@ -11,7 +11,7 @@
 	php_value post_max_size          "16M"
 
 ################################################################################
-## Forbid reading of certain files                                            ##
+## Forbid reading of certain files directly                                   ##
 ################################################################################
 
 	<Files *.htaccess>

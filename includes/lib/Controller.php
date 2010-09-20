@@ -142,6 +142,18 @@
 			}
 		}
 
+
+		/**
+		 * Redirect to a controller target
+		 *
+		 * @param string $target an inKWell target to redirect to
+		 * @return void
+		 */
+		static protected function redirect($target)
+		{
+			fURL::redirect(Moor::linkTo($target));
+		}
+
 		/**
 		 * Attempts to execute a callback within the context of of Controller.
 		 *
@@ -314,6 +326,29 @@
 		{
 			return (self::getRequestFormat() == $format);
 		}
+
+		/**
+		 * Gets the current directly accessed action
+		 *
+		 * @param void
+		 * @return string The current directly accessed action
+		 */
+		static protected function getAction()
+		{
+			return Moor::getActiveShortMethod();
+		}
+
+		/**
+		 * Gets the current directly accessed entry
+		 *
+		 * @param void
+		 * @return string The current directly accessed entry
+		 */
+		static protected function getEntry()
+		{
+			return Moor::getActiveShortClass();
+		}
+
 
 		/**
 		 * Determines whether or not a particular class is the entry class

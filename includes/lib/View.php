@@ -10,6 +10,7 @@
 
 		const DEFAULT_VIEW_ROOT     = 'views';
 		const DEFAULT_CACHE_DIR     = 'cache';
+		const PRIMARY_VIEW_ELEMENT  = '__main__';
 
 		// Data storage area, render callbacks, and food?
 
@@ -129,7 +130,7 @@
 		 */
 		public function load($file)
 		{
-			$this->set('__main__', $file);
+			$this->set(self::PRIMARY_VIEW_ELEMENT, $file);
 			return $this;
 		}
 
@@ -144,14 +145,17 @@
 		public function place($element = NULL, $file_type = NULL)
 		{
 			if ($element === NULL) {
-				if ($this->isFood) {
-					echo $this->get();
-				} else {
-					return parent::place();
-				}
+				$element = self::PRIMARY_VIEW_ELEMENT;
 			}
 
-			return parent::place($element, $file_type);
+			// Digested elements are views whose primary element is content to
+			// be echoed instead of a file to be included.
+
+			if ($this->isFood) {
+				echo $this->get($element);
+			} else {
+				return parent::place($element, $file_type);
+			}
 		}
 
 		/**
