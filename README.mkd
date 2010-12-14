@@ -2,10 +2,6 @@
 
 ## Preamble
 
-At the moment the stock CMS (usually part of the Admin Section) is in shambles.
-Do not expect it to work right.  In the mean time however feel free to use
-inKWell as a basic framework.
-
 inKWell is currently alpha software, we will answer any questions you might have
 directly.
 

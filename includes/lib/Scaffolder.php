@@ -5,7 +5,7 @@
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 */
-	class Scaffolder extends iw
+	class Scaffolder extends iw implements inkwell
 	{
 
 		const DEFAULT_SCAFFOLDING_ROOT = 'scaffolding';
@@ -76,6 +76,7 @@
 				if (is_callable($test) && is_callable($make)) {
 					if (call_user_func($test, $class)) {
 						if (call_user_func($make, $class)) {
+
 							return self::initializeClass($class);
 						}
 					}

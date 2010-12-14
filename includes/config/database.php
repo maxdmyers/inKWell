@@ -4,15 +4,26 @@
 
 		'disabled' => FALSE,
 
+		// The database types used/allowed by inKWell reflect whatever is
+		// currently supported by Flourish, examples at the time of creating
+		// this file include: db2, mssql, mysql, oracle, postgresql, and sqlite
+
 		'type'     => 'postgresql',
+
 		'name'     => 'inkwelldemo_dotink_org',
+
+		// Authentication information if required
+
 		'user'     => 'inkwelldemo',
 		'password' => 'inkwell123',
 
 		// If the host parameter is configured as an array then inKWell will
 		// select a random host to pull data from.  This can be good for
-		// "round-robin" hunting, however, database replication has to be
-		// nearly instant.
+		// "round-robin" hunting.  The particular database server which a
+		// visitor connects to for the first time will be stored in their
+		// session to ensure any effect they have on the data will be reflected
+		// instantly to them.  Replication between databases must be handled
+		// elsewhere, and is presumed to be for the most part on-the-fly.
 
 		'host'     => array('127.0.0.1')
 

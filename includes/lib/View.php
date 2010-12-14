@@ -5,7 +5,7 @@
 	 *
 	 * @author Matthew J. Sahagian [mjs] <matt@imarc.net>
 	 */
-	class View extends fTemplating
+	class View extends fTemplating implements inkwell
 	{
 
 		const DEFAULT_VIEW_ROOT     = 'views';
@@ -297,15 +297,16 @@
 		}
 
 		/**
-		 * Allows for 'selecting' in the view if all data identified
-		 * by the keys of $matches contains (if array) or is equal to their
-		 * respective value in $matches.
+		 * Verifies/Checks view data.  View data is checked by ensuring that
+		 * all elements identified by the keys of $matches equal their
+		 * respective value in $matches, or if the value is an array, whether
+		 * or not the value identified by the element/key is contained in the
+		 * array.
 		 *
-		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
-		 * @param boolean $as_attribute How to return the resulting selected if all matches are valid
-		 * @return string 'selected' or 'selected="selected"' upon matching
+		 * @param array $matches An array of key (data element) to value (to match against) pairs.
+		 * @return boolean TRUE if the data element identified by the key matches or is contained in the value.
 		 */
-		protected function selectOn(array $matches, $as_attribute = FALSE)
+		protected function check(array $matches)
 		{
 			foreach ($matches as $key => $active_value) {
 				$match = FALSE;
@@ -317,10 +318,28 @@
 					}
 				}
 				if (!$match) {
-					return '';
+					return FALSE;
 				}
 			}
-			return ($as_attribute) ? 'selected="selected"' : 'selected';
+			return TRUE;
+		}
+
+		/**
+		 * Allows for 'selecting' in the view if all data identified
+		 * by the keys of $matches contains (if array) or is equal to their
+		 * respective value in $matches.
+		 *
+		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
+		 * @param boolean $as_attribute How to return the resulting selected if all matches are valid
+		 * @return string 'selected' or 'selected="selected"' upon matching
+		 */
+		protected function selectOn(array $matches, $as_attribute = FALSE)
+		{
+			if ($this->check($matches)) {
+				return ($as_attribute) ? 'selected="selected"' : 'selected';
+			} else {
+				return '';
+			}
 		}
 
 		/**
@@ -334,21 +353,11 @@
 		 */
 		protected function disableOn(array $matches, $as_attribute = FALSE)
 		{
-			foreach ($matches as $key => $active_value) {
-				$match = FALSE;
-				if (array_key_exists($key, $this->data)) {
-					if (is_array($this->data[$key])) {
-						$match = in_array($active_value, $this->data[$key]);
-					} else {
-						$match = $this->data[$key] == $active_value;
-					}
-				}
-				if (!$match) {
-					return '';
-				}
+			if ($this->check($matches)) {
+				return ($as_attribute) ? 'disabled="disabled"' : 'disabled';
+			} else {
+				return '';
 			}
-
-			return ($as_attribute) ? 'disabled="disabled"' : 'disabled';
 		}
 
 		/**
@@ -361,21 +370,11 @@
 		 */
 		protected function highlightOn(array $matches)
 		{
-			foreach ($matches as $key => $active_value) {
-				$match = FALSE;
-				if (array_key_exists($key, $this->data)) {
-					if (is_array($this->data[$key])) {
-						$match = in_array($active_value, $this->data[$key]);
-					} else {
-						$match = $this->data[$key] == $active_value;
-					}
-				}
-				if (!$match) {
-					return '';
-				}
+			if ($this->check($matches)) {
+				return 'highlighted';
+			} else {
+				return '';
 			}
-
-			return 'highlighted';
 		}
 
 		/**
@@ -510,6 +509,8 @@
 		/**
 		 * Sets the cache directory for compressed output or stored views
 		 *
+		 * @param string|fDirectory $directory The cache directory
+		 * @return void
 		 */
 		static public function setCacheDirectory($directory)
 		{
@@ -520,6 +521,23 @@
 					'Cache directory %s is not writable', $directory
 				);
 			}
+		}
+
+		/**
+		 * Check whether or not a particular view file exists.
+		 *
+		 * @param string $view_file The relative path to the view file to check
+		 */
+		static public function exists($view_file)
+		{
+			if (strpos(self::$viewRoot, $view_file) !== 0) {
+				$view_file = implode(DIRECTORY_SEPARATOR, array(
+					self::$viewRoot,
+					ltrim($view_file, '/\\')
+				));
+			}
+
+			return is_readable($view_file);
 		}
 
 	}

@@ -5,7 +5,7 @@
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 */
-	class RecordSet extends fRecordSet
+	class RecordSet extends fRecordSet implements inkwell
 	{
 
 		/**

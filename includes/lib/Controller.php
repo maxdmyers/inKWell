@@ -6,7 +6,7 @@
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 */
-	class Controller extends MoorAbstractController
+	class Controller extends MoorAbstractController implements inkwell
 	{
 
 		const SUFFIX                 = __CLASS__;
@@ -43,8 +43,9 @@
 			$this->view = new View();
 
 			if (method_exists($this, 'prepare')) {
-				$prepare_callback  = array($this, 'prepare');
-				call_user_func_array($prepare_callback, func_get_args());
+				$prepare_callback = array($this, 'prepare');
+				$arguments        = func_get_args();
+				call_user_func_array($prepare_callback, $arguments);
 			}
 		}
 
@@ -149,9 +150,23 @@
 		 * @param string $target an inKWell target to redirect to
 		 * @return void
 		 */
-		static protected function redirect($target)
+		static protected function redirect($target, $args = array())
 		{
-			fURL::redirect(Moor::linkTo($target));
+			if (count($args)) {
+
+				array_unshift($args, $target . ' ' . implode(
+					' ',
+					array_keys($args)
+				));
+
+				fURL::redirect(call_user_func_array(
+					'Moor::linkTo',
+					$args
+				));
+			} else {
+				fURL::redirect(Moor::linkTo($target));
+			}
+
 		}
 
 		/**

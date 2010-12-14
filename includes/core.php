@@ -1,6 +1,16 @@
 <?php
 
 	/**
+	 * The inKWell interface is used to determine whether or not a class will
+	 * support the following methods:
+	 *
+	 *  __init()
+	 *  __match()
+	 */
+
+	interface inkwell {}
+
+	/**
 	 * IW is the core inKWell class responsible for all shared functionality
 	 * of all it's components.  It is a purely static class and is not meant
 	 * to be instantiated or extended.
@@ -17,7 +27,6 @@
 		const MATCH_CLASS_METHOD           = '__match';
 		const CONFIG_TYPE_ELEMENT          = '__type';
 
-		const DEFAULT_REQUEST_FORMAT       = 'html';
 		const DEFAULT_WRITE_DIRECTORY      = 'writable';
 
 		static private $config             = array();
@@ -156,7 +165,9 @@
 		static public function init($config_file = NULL)
 		{
 
-			if (!$config_file) { $config_file = self::DEFAULT_CONFIG_FILE; }
+			if (!$config_file) {
+				$config_file = self::DEFAULT_CONFIG_FILE;
+			}
 
 			if (is_readable($config_file)) {
 				$config = @unserialize(file_get_contents($config_file));
@@ -303,6 +314,7 @@
 		 */
 		static public function loadClass($class, array $loaders = array())
 		{
+
 			if (!count($loaders)) {
 				$loaders = self::$config['autoloaders'];
 			}
@@ -358,8 +370,14 @@
 					));
 
 					if (file_exists($file)) {
+
 						include $file;
-						return self::initializeClass($class);
+
+						$interfaces = class_implements($class, FALSE);
+
+						return (in_array('inkwell', $interfaces))
+							? self::initializeClass($class)
+							: TRUE;
 					}
 				}
 			}

@@ -6,14 +6,21 @@
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 */
-	abstract class ActiveRecord extends fActiveRecord
+	abstract class ActiveRecord extends fActiveRecord implements inkwell
 	{
+
+		const DEFAULT_FIELD_SEPARATOR = '-';
+		const DEFAULT_WORD_SEPARATOR  = '_';
+
 		static private $info                 = array();
 
 		static private $nameTranslations     = array();
 		static private $tableTranslations    = array();
 		static private $entryTranslations    = array();
 		static private $setTranslations      = array();
+
+		static private $fieldSeparator       = NULL;
+		static private $wordSeparator        = NULL;
 
 		static private $imageUploadDirectory = NULL;
 		static private $fileUploadDirectory  = NULL;
@@ -25,50 +32,14 @@
 		 */
 		public function __toString()
 		{
-			return fGrammar::underscorize(get_class($this));
-		}
+			$record_class = get_class($this);
 
-		/**
-		 * Populates a record using fRequest::get().  The format of the name
-		 * value should be such of $record[$column].
-		 *
-		 * @param void
-		 * @return ActiveRecord The active record for method chaining
-		 */
-		 public function populate()
-		 {
-		 	$record_class = get_class($this);
-		 	$record       = self::getRecordName($record_class);
-			$columns      = self::getInfo($record_class, 'columns');
-
-			fORM::callHookCallbacks(
-				$this,
-				'pre::populate()',
-				$this->values,
-				$this->old_values,
-				$this->related_records,
-				$this->cache
-			);
-
-			$data = fRequest::get($record, 'array', array());
-			foreach ($columns as $column) {
-				if (isset($data[$column])) {
-					$method = 'set' . fGrammar::camelize($column, TRUE);
-					$this->$method($data[$column]);
-				}
+			if (($id_column = self::getInfo($record_class, 'id_column'))) {
+				return self::encode($id_column);
 			}
 
-			fORM::callHookCallbacks(
-				$this,
-				'post::populate()',
-				$this->values,
-				$this->old_values,
-				$this->related_records,
-				$this->cache
-			);
-
-			return $this;
-		 }
+			return fGrammar::humanize($record_class);
+		}
 
 		/**
 		 * Creates an identifying slug which can be comprised ultimately of the
@@ -88,7 +59,7 @@
 				$pkey_data[] = fURL::makeFriendly($this->$pkey_method());
 			}
 
-			$slug = implode('-', $pkey_data);
+			$slug = implode(self::$fieldSeparator, $pkey_data);
 
 			if ($identify) {
 				$slug .= '/' . fURL::makeFriendly($this->__toString());
@@ -136,6 +107,16 @@
 				self::$imageUploadDirectory = iw::getWriteDirectory('images');
 				self::$fileUploadDirectory  = iw::getWriteDirectory('files');
 
+				self::$fieldSeparator = (isset($config['field_separator']))
+					? $config['field_separator']
+					: self::DEFAULT_FIELD_SEPARATOR;
+
+				self::$wordSeparator = (isset($config['word_separator']))
+					? $config['word_separator']
+					: self::DEFAULT_WORD_SEPARATOR;
+
+				// Configure active records
+
 				$ar_configs = iw::getConfigsByType('ActiveRecord');
 
 				foreach ($ar_configs as $config_element => $config) {
@@ -168,13 +149,21 @@
 				return FALSE;
 			}
 
-			// Do not allow Active Records to be initialized twice
+			$schema = fORMSchema::retrieve();
+			$table  = fORM::tablize($record_class);
 
-			if (isset($info[$record_class])) {
-				return;
+			// Default and Configurable Values
+
+			if (isset($config['id_column'])) {
+				self::$info[$record_class]['id_column'] = $config['id_column'];
+			} else {
+				$u_keys = $schema->getKeys($table, 'unique');
+				if (sizeof($u_keys) == 1 && sizeof($u_keys[0]) == 1) {
+					self::$info[$record_class]['id_column'] = $u_keys[0][0];
+				} else {
+					self::$info[$record_class]['id_column'] = NULL;
+				}
 			}
-
-			// Default and Configuable Values
 
 			if (isset($config['order'])) {
 				if (!is_array($config['order'])) {
@@ -193,6 +182,8 @@
 				'password_columns',
 				'order_columns',
 				'money_columns',
+				'url_columns',
+				'email_columns',
 				'fixed_columns'
 			);
 
@@ -260,6 +251,30 @@
 								$record_class,
 								$column
 							);
+
+							$order =& self::$info[$record_class]['order'];
+							if (!isset($order[$column])) {
+								$order[$column] = 'asc';
+							}
+
+							break;
+
+						// Special handling for URL columns
+
+						case 'url_columns':
+							fORMColumn::configureLinkColumn(
+								$record_class,
+								$column
+							);
+							break;
+
+						// Special handling for e-mail columns
+
+						case 'email_columns':
+							fORMColumn::configureEmailColumn(
+								$record_class,
+								$column
+							);
 							break;
 
 						// Special handling for money columns
@@ -274,10 +289,17 @@
 				}
 			}
 
-			// Set all non-configurable information
+			// If there are password columns, handle them properly
 
-			$schema = fORMSchema::retrieve();
-			$table  = fORM::tablize($record_class);
+			if (count(self::$info[$record_class]['password_columns'])) {
+				fORM::registerHookCallback(
+					$record_class,
+					'pre::validate()',
+					iw::makeTarget(__CLASS__, 'handlePasswordColumns')
+				);
+			}
+
+			// Set all non-configurable information
 
 			self::$info[$record_class]['columns']        = array();
 			self::$info[$record_class]['pkey_columns']   = array();
@@ -367,29 +389,82 @@
 		 */
 		static public function inspectColumn($record_class, $column, &$info = array())
 		{
+
+			$schema = fORMSchema::retrieve();
+			$table  = self::getRecordTable($record_class);
+
+			// Populate basic information if it is not provided
+
 			if (!count($info)) {
-				$schema  = fORMSchema::retrieve();
-				$info    = $schema->getColumnInfo($record_class, $column);
+				$info = $schema->getColumnInfo($record_class, $column);
 			}
 
-			$info['is_fkey'] = in_array(
-				$column,
-				self::getInfo($record_class, 'fkey_columns')
-			);
+			// Populate advanced foreign key information
 
-			// Determine a format for the column
+			$fkey_info       = array();
+			$info['is_fkey'] = FALSE;
+
+			foreach ($schema->getKeys($table, 'foreign') as $fkey) {
+				if ($fkey['column'] == $column) {
+
+					$info['is_fkey'] = TRUE;
+					$info            = array_merge($info, $fkey);
+				}
+			}
+
+			// Determine any special formatting for the column
 
 			$image_columns = self::getInfo($record_class, 'image_columns');
 			$file_columns  = self::getInfo($record_class, 'file_columns');
 			$pass_columns  = self::getInfo($record_class, 'password_columns');
+			$order_columns = self::getInfo($record_class, 'order_columns');
+			$url_columns   = self::getInfo($record_class, 'url_columns');
+			$email_columns = self::getInfo($record_class, 'email_columns');
 
-			if (in_array($column, $image_columns)) {
+			if (in_array($column, $order_columns)) {
+				$info['format'] = 'ordering';
+
+			} elseif (in_array($column, $image_columns)) {
 				$info['format'] = 'image';
+
 			} elseif (in_array($column, $file_columns)) {
 				$info['format'] = 'file';
+
 			} elseif (in_array($column, $pass_columns)) {
 				$info['format'] = 'password';
-			} else {
+
+			} elseif (in_array($column, $url_columns)) {
+				$info['format'] = 'url';
+
+			} elseif (in_array($column, $email_columns)) {
+				$info['format'] = 'email';
+
+			} elseif ($info['is_fkey']) {
+
+				$relationships = $schema->getRelationships($table);
+
+				foreach ($relationships as $type => $relationship) {
+					foreach ($relationship as $relation_info) {
+						if ($relation_info['column'] == $column) {
+							switch ($type) {
+								case 'one-to-many':
+									$info['format'] = 'records';
+									break;
+								case 'one-to-one':
+								case 'many-to-one':
+									$info['format'] = 'record';
+									break;
+							}
+						}
+					}
+				}
+
+			}
+
+			// Last ditch attempt to get a usable format
+
+			if (!isset($info['format'])) {
+
 				switch ($info['type']) {
 					case 'varchar':
 						$info['format'] = 'string';
@@ -405,12 +480,14 @@
 
 			// Determine additional properties
 
-			$fixed_columns  = self::getInfo($record_class, 'fixed_columns');
-			$serial_columns = self::getInfo($record_class, 'serial_columns');
+			$fixed_columns     = self::getInfo($record_class, 'fixed_columns');
+			$serial_columns    = self::getInfo($record_class, 'serial_columns');
 
-			$info['serial'] = FALSE;
+			$info['serial']    = FALSE;
 
-			if (in_array($column, $fixed_columns)) {
+			if (in_array($column, $fixed_columns) ||
+				$info['format'] == 'ordering'
+			) {
 				$info['fixed']  = TRUE;
 			} elseif (in_array($column, $serial_columns)) {
 				$info['fixed']  = TRUE;
@@ -435,7 +512,9 @@
 				self::$nameTranslations[$record] = NULL;
 				try {
 					$record_class = fGrammar::camelize($record_name, TRUE);
-					if (@is_subclass_of($record_class, __CLASS__)) {
+					if (class_exists($record_class) &&
+						is_subclass_of($record_class, __CLASS__)
+					) {
 						self::$recordTranslations[$record_class] = $record_name;
 					}
 				} catch (fProgrammerException $e) {}
@@ -456,7 +535,9 @@
 			if (!in_array($record_table, self::$tableTranslations)) {
 				try {
 					$record_class = fORM::classize($record_table);
-					if (@is_subclass_of($record_class, __CLASS__)) {
+					if (class_exists($record_class) &&
+						is_subclass_of($record_class, __CLASS__)
+					) {
 						self::$tableTranslations[$record_class] = $record_table;
 					}
 				} catch (fProgrammerException $e) {}
@@ -477,7 +558,13 @@
 			if (!in_array($record_set, self::$setTranslations)) {
 				try {
 					$record_class = fGrammar::singularize($record_set);
-					if (@is_subclass_of($record_class, __CLASS__)) {
+					// The class_exists() is a workaround for PHP bug #46753
+					// it should not be required as is_subclass_of should
+					// properly trigger autoload.  This behavior is fixed
+					// in PHP 5.3+
+					if (class_exists($record_class) &&
+						is_subclass_of($record_class, __CLASS__)
+					) {
 						self::$setTranslations[$record_class] = $record_set;
 					}
 				} catch (fProgrammerException $e) {}
@@ -498,8 +585,10 @@
 			if (!in_array($entry, self::$entryTranslations)) {
 				try {
 					$singularized = fGrammar::singularize($entry);
-					$record_class = fGrammar::camelize($entry, TRUE);
-					if (@is_subclass_of($record_class, __CLASS__)) {
+					$record_class = fGrammar::camelize($singularized, TRUE);
+					if (class_exists($record_class) &&
+						is_subclass_of($record_class, __CLASS__)
+					) {
 						self::$entryTranslations[$record_class] = $entry;
 					}
 				} catch (fProgrammerException $e) {}
@@ -593,6 +682,61 @@
 		}
 
 		/**
+		 * A validation hook for password columns. If any columns are set as
+		 * password columns, this method will be registered to ensure that a
+		 * password confirmation field matches the original field when storing
+		 * the record or that if a password is already set, an empty value will
+		 * result in no change.
+		 *
+		 * @param fActiveRecord The active record object
+		 * @param array $values The new column values being set
+		 * @param array $old_values The original column values
+		 * @param array $related The related records array for the record
+		 * @param array $cache The cache array for the record
+		 * @param array $validation_messages An array of validation messages
+		 * @return void
+		 */
+		static public function handlePasswordColumns($object, &$values, &$old_values, &$related_records, &$cache, &$validation_messages)
+		{
+			$record_class     = get_class($object);
+			$password_columns = self::getInfo($record_class, 'password_columns');
+
+			foreach ($password_columns as $password_column) {
+
+				if (
+					!empty($values[$password_column])     &&
+					!empty($old_values[$password_column])
+				) {
+
+					$confirmation = fRequest::get(implode('-', array(
+						'confirm',
+						$password_column
+					)));
+
+					if ($confirmation == $values[$password_column]) {
+
+						$values[$password_column] = fCryptography::hashPassword(
+							$values[$password_column]
+						);
+
+					} else {
+						$validation_messages[] = implode(': ', array(
+							fGrammar::humanize($password_column),
+							'The confirmation value does not match'
+						));
+					}
+
+				} elseif (!empty($old_values[$password_column])) {
+
+					$values[$password_column] = end(
+						$old_values[$password_column]
+					);
+
+				}
+			}
+		}
+
+		/**
 		 * Creates a record from a provided class, slug, and identifier.  The
 		 * identifier is optional, but if is provided acts as an additional
 		 * check against the validity of the record.
@@ -609,7 +753,7 @@
 			} else {
 
 				$pkey_columns = self::getInfo($record_class, 'pkey_columns');
-				$pkey_data    = explode('-', $slug);
+				$pkey_data    = explode(self::$fieldSeparator, $slug);
 
 				if (sizeof($pkey_data) < sizeof($pkey_columns)) {
 					throw new fProgrammerException(
@@ -619,17 +763,21 @@
 				}
 
 				if (sizeof($pkey_columns) == 1) {
-					$pkey = implode('-', $pkey_data);
+					$pkey = implode(self::$fieldSeparator, $pkey_data);
 				} else {
+
 					foreach ($pkey_columns as $pkey_column) {
 						$pkey[$pkey_column] = array_shift($pkey_data);
 						$last_column        = &$pkey[$pkey_column];
 					}
 
-					// Allows for dashes in final pkey column
+					// Allows for fieldSeparator in final pkey column
 
 					if (count($pkey_data) > 0) {
-						$last_column .= '-' . implode('-', $pkey_data);
+						$last_column .= implode(
+							self::$fieldSeparator,
+							$pkey_data
+						);
 					}
 				}
 
