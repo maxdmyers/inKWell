@@ -154,10 +154,10 @@
 		{
 			if (count($args)) {
 
-				array_unshift($args, $target . ' ' . implode(
-					' ',
-					array_keys($args)
-				));
+				array_unshift($args, implode(' ', array_unshift(
+					array_keys($args),
+					$target
+				)));
 
 				fURL::redirect(call_user_func_array(
 					'Moor::linkTo',

@@ -551,7 +551,7 @@
 		 * for example: Users to User
 		 *
 		 * @param string $recordset The name of the recordset
-		 * @return string|NULL The class name of the active record or NULL if it does not exist
+		 * @return string|FALSE The class name of the active record or FALSE if it does not exist
 		 */
 		static public function classFromRecordSet($record_set)
 		{

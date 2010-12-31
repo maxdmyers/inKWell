@@ -122,3 +122,8 @@
 		iw::loadClass('Scaffolder');
 	}
 
+	// Run the router if we're not in command line mode
+
+	if (strtolower(php_sapi_name()) != 'cli') {
+		require_once 'routing.php';
+	}

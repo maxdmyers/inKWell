@@ -20,49 +20,6 @@
 		}
 	}
 
-	/**
-	 * Set a fake GET request as if you were hitting the URL from a browser.
-	 * This is useful if you are getting white pages of death to determine
-	 * segfaults or something which might not be flushed properly via
-	 * the server.
-	 *
-	 * @param $url The full URL, i.e. http://inkwell.dotink.org/
-	 * @param $params An array of GET parameters (param => value)
-	 * @return void
-	 */
-	function get($url, $params = array()) {
-		$request_info = parse_url($url);
-		if (isset($request_info['host'])) {
-			$_SERVER['SERVER_NAME'] = $request_info['host'];
-		}
-		if (isset($request_info['path'])) {
-			$_SERVER['REQUEST_URI'] = $request_info['path'];
-		}
-		$_SERVER['REQUEST_METHOD'] = 'GET';
-		$_GET                      = $params;
-		include 'routing.php';
-	}
-
-	/**
-	 * Set a fake POST request as if you were hitting the URL from a browser.
-	 *
-	 * @param $url The full URL, i.e. http://inkwell.dotink.org/
-	 * @param $params An array of GET parameters (param => value)
-	 * @return void
-	 */
-	function post($url, $params = array()) {
-		$request_info = parse_url($url);
-		if (isset($request_info['host'])) {
-			$_SERVER['SERVER_NAME'] = $request_info['host'];
-		}
-		if (isset($request_info['path'])) {
-			$_SERVER['REQUEST_URI'] = $request_info['path'];
-		}
-		$_SERVER['REQUEST_METHOD'] = 'POST';
-		$_POST                      = $params;
-		include 'routing.php';
-	}
-
 	// Register the respawn shutdown function
 
 	register_shutdown_function('___respawn');
@@ -73,6 +30,7 @@
 	$_SERVER['REQUEST_URI']    = '/';
 	$_SERVER['REQUEST_METHOD'] = 'GET';
 	$_SERVER['REMOTE_ADDR']    = '127.0.0.1';
+	$_SERVER['SERVER_NAME']    = 'localhost';
 
 	// Change to our includes directory and run init
 

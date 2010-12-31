@@ -75,7 +75,16 @@
 				$directory = self::DEFAULT_CONFIG_DIR;
 			}
 
-			if (is_dir($directory) && is_readable($directory)) {
+			if ($directory instanceof fDirectory) {
+				$directory = $directory->getPath();
+
+			} elseif (!is_dir($directory) || !is_readable($directory)) {
+				throw new fProgrammerException (
+					'Unable to build configuration, directory %s is not readable.',
+					$directory
+				);
+
+			} else {
 
 				$current_working_directory = getcwd();
 
@@ -120,12 +129,6 @@
 
 				chdir($current_working_directory);
 
-			} else {
-
-				throw new fProgrammerException (
-					'Unable to build configuration, directory %s does not exist.',
-					$directory
-				);
 			}
 
 			return $config;
@@ -141,7 +144,9 @@
 		 */
 		static public function writeConfig(array $config, $file = NULL, $quiet = FALSE)
 		{
-			if (!$file) { $file = self::DEFAULT_CONFIG_FILE; }
+			if (!$file) {
+				$file = self::DEFAULT_CONFIG_FILE;
+			}
 
 			if (!$quiet) {
 				echo "Writing configuration file...";
@@ -159,14 +164,22 @@
 		/**
 		 * Initializes the inKWell system with a configuration
 		 *
-		 * @param array $config_file The location of the config file
+		 * @param string|fFile $config_file The location of the config file
 		 * @return void
 		 */
 		static public function init($config_file = NULL)
 		{
 
 			if (!$config_file) {
-				$config_file = self::DEFAULT_CONFIG_FILE;
+				$config_file = realpath(self::DEFAULT_CONFIG_FILE);
+
+			} elseif ($config_file instanceof fFile) {
+				$config_file = $config_file->getPath();
+
+			} elseif (!is_string($config_file)) {
+				throw new fProgrammerException(
+					'Configuration file must be passed as a string or fFile object'
+				);
 			}
 
 			if (is_readable($config_file)) {
@@ -250,11 +263,20 @@
 		 * directory does not exist, it will create it with owner and group
 		 * writable permissions.
 		 *
-		 * @param string $sub_directory The optional sub directory to return.
+		 * @param string|fDirectory $sub_directory The optional sub directory to return.
 		 */
 		static public function getWriteDirectory($sub_directory = NULL)
 		{
 			if ($sub_directory) {
+
+				if ($sub_directory instanceof fDirectory) {
+					$sub_directory = $sub_directory->getPath();
+
+				} elseif (!is_string($sub_directory)) {
+					throw new fProgrammerException(
+						'Sub directory must be a string or fDirectory object'
+					);
+				}
 
 				// Prevent an absolute sub directory from repeating the
 				// base write directory
@@ -275,7 +297,7 @@
 
 			if(!is_writable($write_directory)) {
 				try {
-					fDirectory::create($write_directory, 0775);
+					fDirectory::create($write_directory);
 				} catch (fException $e) {
 					throw new fEnvironmentException(
 						'Directory %s is not writable or createable.',

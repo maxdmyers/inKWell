@@ -38,7 +38,7 @@
 		RewriteBase   /
 
 		RewriteCond	%{DOCUMENT_ROOT}/%{REQUEST_URI} !-f
-		RewriteRule	^.*$ includes/routing.php [NS,QSA]
+		RewriteRule	^.*$ includes/init.php [NS,QSA]
 	</IfModule>
 
 
