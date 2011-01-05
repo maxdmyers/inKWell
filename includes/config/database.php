@@ -2,20 +2,20 @@
 
 	return iw::createConfig('Global', array(
 
-		'disabled' => FALSE,
+		'disabled' => TRUE,
 
 		// The database types used/allowed by inKWell reflect whatever is
 		// currently supported by Flourish, examples at the time of creating
 		// this file include: db2, mssql, mysql, oracle, postgresql, and sqlite
 
-		'type'     => 'postgresql',
+		'type'     => '',
 
-		'name'     => 'inkwelldemo_dotink_org',
+		'name'     => '',
 
 		// Authentication information if required
 
-		'user'     => 'inkwelldemo',
-		'password' => 'inkwell123',
+		'user'     => '',
+		'password' => '',
 
 		// If the host parameter is configured as an array then inKWell will
 		// select a random host to pull data from.  This can be good for

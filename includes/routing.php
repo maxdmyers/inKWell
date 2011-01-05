@@ -1,7 +1,5 @@
 <?php
 
-	require_once 'init.php';
-
 	Moor::setRequestParamPattern('[A-Za-z0-9_-]+');
 
 	Moor::
