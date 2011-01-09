@@ -2,6 +2,14 @@
 
 	return iw::createConfig('Library', array(
 
+		// The default request format for standard browser based requests.
+
+		'default_request_format'      => 'html',
+
+		// The default request format for AJAX/XHR browser based requests.
+
+		'default_ajax_request_format' => 'json',
+
 		// The standard controller class allows for errors to be custom
 		// configured based on keys.  Controller::triggerError('not_found')
 		// for example would use the information provided by the 'not_found'

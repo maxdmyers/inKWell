@@ -30,9 +30,9 @@
 		{
 			if ($record_class = ActiveRecord::classFromRecordSet($record_set)) {
 
-				eval(Scaffolder::makeClass($record_set, __CLASS__, array(
+				Scaffolder::makeClass($record_set, __CLASS__, array(
 					'active_record' => $record_class
-				)));
+				));
 
 				if (class_exists($record_set, FALSE)) {
 					return TRUE;

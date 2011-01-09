@@ -170,7 +170,9 @@
 				} else {
 					ob_start();
 					include $scaffolding_template;
-					return ob_get_clean();
+					$code = ob_get_clean();
+					eval($code);
+					return $code;
 				}
 
 			} else {

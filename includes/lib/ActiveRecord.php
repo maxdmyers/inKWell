@@ -16,8 +16,8 @@
 
 		static private $nameTranslations     = array();
 		static private $tableTranslations    = array();
-		static private $entryTranslations    = array();
 		static private $setTranslations      = array();
+		static private $entryTranslations    = array();
 
 		static private $fieldSeparator       = NULL;
 		static private $wordSeparator        = NULL;
@@ -85,13 +85,15 @@
 
 		/**
 		 * Matches whether or not a given class name is a potential
-		 * ActiveRecord
+		 * ActiveRecord by looking for the tablized form in the list of
+		 * database tables.
 		 *
 		 * @param string $class The name of the class to check
 		 * @return boolean TRUE if it matches, FALSE otherwise
 		 */
 		static public function __match($class) {
-			return TRUE;
+			$schema = fORMSchema::retrieve();
+			return in_array(fORM::tablize($class), $schema->getTables());
 		}
 
 		/**
@@ -122,20 +124,31 @@
 				foreach ($ar_configs as $config_element => $config) {
 
 					$record_class = fGrammar::camelize($config_element, TRUE);
-					$name         = NULL;
+					$database     = NULL;
 					$table        = NULL;
-					$entry        = NULL;
+					$name         = NULL;
+					$entry        = NULL; // TODO: Should not be on ActiveRecord
 
 					extract($config);
 
-					if (isset($name)) {
-						self::$nameTranslations[$record_class]  = $name;
+					if (isset($database)) {
+						if ($database !== 'default') {
+							fORM::mapClassToDatabase($record_class, $database);
+						}
 					}
 
 					if (isset($table)) {
 						self::$tableTranslations[$record_class] = $table;
 						fORM::mapClassToTable($record_class, $table);
 					}
+
+					if (isset($name)) {
+						self::$nameTranslations[$record_class]  = $name;
+					}
+
+					// TODO: Entries and entry translations should not be a
+					// TODO: function of the model by the controller... this
+					// TODO: needs to be cleaned up.
 
 					if (isset($entry)) {
 						self::$entryTranslations[$record_class] = $entry;
@@ -149,7 +162,7 @@
 				return FALSE;
 			}
 
-			$schema = fORMSchema::retrieve();
+			$schema = fORMSchema::retrieve($record_class);
 			$table  = fORM::tablize($record_class);
 
 			// Default and Configurable Values
@@ -356,19 +369,12 @@
 		static public function __make($record_class)
 		{
 
-			$tables = fORMSchema::retrieve()->getTables();
-			$record = fGrammar::underscorize($record_class);
-			$config = iw::getConfig($record);
-
-			if (isset($config['table'])) {
-				$table = $config['table'];
-			} else {
-				$table = fORM::tablize($record_class);
-			}
+			$tables = fORMSchema::retrieve($record_class)->getTables();
+			$table  = fORM::tablize($record_class);
 
 			if (in_array($table, $tables)) {
 
-				eval(Scaffolder::makeClass($record_class, __CLASS__, array()));
+				Scaffolder::makeClass($record_class, __CLASS__, array());
 
 				if (class_exists($record_class, FALSE)) {
 					return TRUE;
@@ -390,7 +396,7 @@
 		static public function inspectColumn($record_class, $column, &$info = array())
 		{
 
-			$schema = fORMSchema::retrieve();
+			$schema = fORMSchema::retrieve($record_class);
 			$table  = self::getRecordTable($record_class);
 
 			// Populate basic information if it is not provided
@@ -551,7 +557,7 @@
 		 * for example: Users to User
 		 *
 		 * @param string $recordset The name of the recordset
-		 * @return string|FALSE The class name of the active record or FALSE if it does not exist
+		 * @return string|NULL The class name of the active record or NULL if it does not exist
 		 */
 		static public function classFromRecordSet($record_set)
 		{

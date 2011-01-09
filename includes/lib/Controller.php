@@ -9,27 +9,33 @@
 	class Controller extends MoorAbstractController implements inkwell
 	{
 
-		const SUFFIX                 = __CLASS__;
+		const SUFFIX                      = __CLASS__;
 
-		const DEFAULT_VIEW_ROOT      = 'views';
-		const DEFAULT_REQUEST_FORMAT = 'html';
+		const DEFAULT_VIEW_ROOT           = 'views';
+		const DEFAULT_REQUEST_FORMAT      = 'html';
+		const DEFAULT_AJAX_REQUEST_FORMAT = 'json';
 
-		const MSG_TYPE_ERROR         = 'error';
-		const MSG_TYPE_ALERT         = 'alert';
-		const MSG_TYPE_SUCCESS       = 'success';
+		const MSG_TYPE_ERROR              = 'error';
+		const MSG_TYPE_ALERT              = 'alert';
+		const MSG_TYPE_SUCCESS            = 'success';
 
 		// Instiated controllers have a localized view
 
-		protected        $view                  = NULL;
+		protected        $view                     = NULL;
 
 		// Handlers for common errors
 
-		static private   $errors                = array();
+		static private   $errors                   = array();
+
+		// Request Format Configuration
+
+		static private   $defaultRequestFormat     = NULL;
+		static private   $defaultAjaxRequestFormat = NULL;
 
 		// State information
 
-		static private   $requestFormat         = NULL;
-		static private   $typeHeadersRegistered = FALSE;
+		static private   $requestFormat            = NULL;
+		static private   $typeHeadersRegistered    = FALSE;
 
 		/**
 		 * Builds a new controller by assigning it a local view and running
@@ -57,22 +63,10 @@
 		 */
 		protected function prepare()
 		{
-			switch($format = self::getRequestFormat()) {
-
-				case 'html':
-					$this->view->load('html.php');
-					break;
-
-				case 'json':
-					$this->view->load('json.php');
-					break;
-
-				case 'xml':
-					$this->view->load('xml.php');
-					break;
-			}
+			$format = self::getRequestFormat();
 
 			if (!self::$typeHeadersRegistered) {
+
 				switch($format) {
 					case 'html':
 						$content_type_callback = 'fHTML::sendHeader';
@@ -89,6 +83,8 @@
 
 				self::$typeHeadersRegistered = TRUE;
 			}
+
+			$this->view->load($format . '.php');
 		}
 
 
@@ -112,6 +108,29 @@
 		 */
 		static public function __init($config)
 		{
+
+			// Configure default request format
+
+			self::$defaultRequestFormat = self::DEFAULT_REQUEST_FORMAT;
+
+			if (isset($config['default_request_format'])) {
+				self::$defaultRequestFormat = strtolower(
+					$config['default_request_format']
+				);
+			}
+
+			// Configure default AJAX request format
+
+			self::$defaultAjaxRequestFormat = self::DEFAULT_AJAX_REQUEST_FORMAT;
+
+			if (isset($config['default_ajax_request_format'])) {
+				self::$defaultAjaxRequestFormat = strtolower(
+					$config['default_ajax_request_format']
+				);
+			}
+
+			// Configure errors and error handlers
+
 			if (isset($config['errors'])) {
 				if (!is_array($config['errors'])) {
 					throw new fProgrammerException (
@@ -121,7 +140,8 @@
 				foreach ($config['errors'] as $error => $info) {
 					if (!is_array($info)) {
 						throw new fProgrammerException (
-							'Error %s must be configured as an array.'
+							'Error %s must be configured as an array.',
+							$error
 						);
 					}
 
@@ -143,30 +163,24 @@
 			}
 		}
 
-
 		/**
 		 * Redirect to a controller target
 		 *
 		 * @param string $target an inKWell target to redirect to
+		 * @param array $mapping an associative array containing routing keys to values
 		 * @return void
 		 */
-		static protected function redirect($target, $args = array())
+		static protected function redirect($target, $mapping = array())
 		{
-			if (count($args)) {
+			$params = array_keys($mapping);
+			$target = (array_unshift($params, $target) == 1)
+				? $target
+				: implode(' ', $params);
 
-				array_unshift($args, implode(' ', array_unshift(
-					array_keys($args),
-					$target
-				)));
-
-				fURL::redirect(call_user_func_array(
-					'Moor::linkTo',
-					$args
-				));
-			} else {
-				fURL::redirect(Moor::linkTo($target));
-			}
-
+			fURL::redirect(call_user_func_array(
+				'Moor::linkTo',
+				array_merge(array($target), $mapping)
+			));
 		}
 
 		/**
@@ -284,9 +298,10 @@
 			$controller = new Controller();
 
 			$controller->view
-				-> pack   ('id',              $error)
-				-> push   ('title',           fGrammar::humanize($error))
-				-> digest ('primary_section', $message);
+				-> pack   ('id',       $error)
+				-> push   ('classes',  self::MSG_TYPE_ERROR)
+				-> push   ('title',    fGrammar::humanize($error))
+				-> digest ('contents', $message);
 
 			$controller->view->render();
 			exit();
@@ -314,18 +329,22 @@
 		static protected function getRequestFormat()
 		{
 			if (self::$requestFormat === NULL) {
-				if ($format = fRequest::get('request_format', 'string', NULL)) {
-					if (!self::isRequestAjax()) {
-						fSession::set('request_format', $format);
-					} else {
-						return self::$requestFormat = $format;
-					}
-				} elseif (!fSession::get('request_format', NULL)) {
-					fSession::set('request_format', self::DEFAULT_REQUEST_FORMAT);
+
+				if (!self::isRequestAjax()) {
+					$request_format_key     = 'request_format';
+					$default_request_format = self::$defaultRequestFormat;
+				} else {
+					$request_format_key     = 'ajax_request_format';
+					$default_request_format = self::$defaultAjaxRequestFormat;
 				}
 
-				self::$requestFormat = fSession::get('request_format');
+				if ($format = fRequest::get('request_format', 'string', NULL)) {
+					fSession::set($request_format_key, strtolower($format));
+				} elseif (!fSession::get($request_format_key, NULL)) {
+					fSession::set($request_format_key, $default_request_format);
+				}
 
+				self::$requestFormat = fSession::get($request_format_key);
 			}
 
 			return self::$requestFormat;
@@ -339,7 +358,7 @@
 		 */
 		static protected function checkRequestFormat($format)
 		{
-			return (self::getRequestFormat() == $format);
+			return (strtolower($format) == self::getRequestFormat());
 		}
 
 		/**
@@ -363,7 +382,6 @@
 		{
 			return Moor::getActiveShortClass();
 		}
-
 
 		/**
 		 * Determines whether or not a particular class is the entry class
