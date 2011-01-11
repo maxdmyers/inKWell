@@ -1,6 +1,6 @@
 <?php
 
-	return iw::createConfig('Global', array(
+	return iw::createConfig('Core', array(
 
 		// This is the writable directory where everything from sessions
 		// to file uploads will be stored.  The default .htaccess file

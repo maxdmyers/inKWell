@@ -1,8 +1,8 @@
 <?php
 
-	return iw::createConfig('Global', array(
+	return iw::createConfig('Core', array(
 
-		'disabled'         => FALSE,
+		'disabled'         => TRUE,
 
 		'databases'        => array(
 

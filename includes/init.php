@@ -25,7 +25,7 @@
 
 	fSession::setPath(
 		iw::getWriteDirectory(implode(DIRECTORY_SEPARATOR, array(
-			'tmp',
+			'.tmp',
 			'sessions'
 		)))
 	);
