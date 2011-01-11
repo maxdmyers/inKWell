@@ -45,58 +45,75 @@
 	}
 	fSession::open();
 
-	// Initialize the Database
+	// Initialize the Databases
 
 	if (
-		isset($config['database']['disabled']) &&
-		!$config['database']['disabled']
+		isset($config['database']['disabled'])  &&
+		!$config['database']['disabled']        &&
+		isset($config['database']['databases'])
 	)  {
 
-		if (
-			!isset($config['database']['type']) ||
-			!isset($config['database']['name'])
-		) {
+		if (!is_array($config['database']['databases'])) {
 			throw new fProgrammerException (
-				'Database support requires specifying the type and name.'
+				'Databases must be configured as an array.'
 			);
 		}
 
-		$database_user = (isset($config['database']['user']))
-			? $config['database']['user']
-			: NULL;
+		foreach ($config['database']['databases'] as $name => $settings) {
 
-		$database_password = (isset($config['database']['password']))
-			? $config['database']['password']
-			: NULL;
-
-		$database_host = (isset($config['database']['host']))
-			? $config['database']['host']
-			: NULL;
-
-		if (is_array($database_host) && count($database_host)) {
-
-			$target = iw::makeTarget('iw', 'database_host');
-
-			if (!($stored_host = fSession::get($target, NULL))) {
-
-				$host_index    = array_rand($database_host);
-				$database_host = $database_host[$host_index];
-
-				fSession::set($target, $database_host);
-
-			} else {
-
-				$database_host = $stored_host;
+			if (!is_array($settings)) {
+				throw new fProgrammerException (
+					'Database settings must be configured as an array.'
+				);
 			}
-		}
 
-		fORMDatabase::attach(new fDatabase(
-			$config['database']['type'],
-			$config['database']['name'],
-			$database_user,
-			$database_password,
-			$database_host
-		));
+			if (!isset($settings['type']) || !isset($settings['name'])) {
+				throw new fProgrammerException (
+					'Database support requires specifying the type and name.'
+				);
+			}
+
+			$database_user = (isset($settings['user']))
+				? $settings['user']
+				: NULL;
+
+			$database_password = (isset($settings['password']))
+				? $settings['password']
+				: NULL;
+
+			$database_host = (isset($settings['host']))
+				? $settings['host']
+				: NULL;
+
+			$database_role = (isset($settings['role']))
+				? $settings['role']
+				: 'both';
+
+			if (is_array($database_host) && count($database_host)) {
+
+				$target = iw::makeTarget('iw', 'database_host['. $name . ']');
+
+				if (!($stored_host = fSession::get($target, NULL))) {
+
+					$host_index    = array_rand($database_host);
+					$database_host = $database_host[$host_index];
+
+					fSession::set($target, $database_host);
+
+				} else {
+
+					$database_host = $stored_host;
+				}
+			}
+
+			fORMDatabase::attach(new fDatabase(
+				$settings['type'],
+				$settings['name'],
+				$database_user,
+				$database_password,
+				$database_host
+			), $name, $database_role);
+		}
 	}
 
 	// Initialize Date and Time Information
