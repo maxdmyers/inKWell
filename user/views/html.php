@@ -8,9 +8,7 @@
 	<body id="<%= $this->pull('id') %>" class="<%= $this->combine('classes', ' ') %>">
 		<% $this->place('header'); %>
 		<div class="torso">
-			<% $this->place('primary_section')   %>
-			<% $this->place('secondary_section') %>
-			<% $this->place('tertiary_section')  %>
+			<% $this->place('contents')   %>
 		</div>
 		<% $this->place('footer'); %>
 	</body>

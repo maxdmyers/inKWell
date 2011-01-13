@@ -1,5 +1,5 @@
 {
-	"status" : <%= fJSON::encode($this->pull('status')) %>,
-	"type"   : <%= fJSON::encode($this->pull('type'))   %>,
-	"data"   : <%= fJSON::encode($this->pull('data'))   %>
+	"id"       : <%= fJSON::encode($this->pull('id')) %>,
+	"class"    : <%= fJSON::encode($this->peel('classes'))   %>,
+	"contents" : <%= fJSON::encode($this->pull('contents'))   %>
 }

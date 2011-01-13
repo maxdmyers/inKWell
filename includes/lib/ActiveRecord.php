@@ -62,7 +62,10 @@
 			$slug = implode(self::$fieldSeparator, $pkey_data);
 
 			if ($identify) {
-				$slug .= '/' . fURL::makeFriendly($this->__toString());
+				$slug = implode('/', array(
+					fURL::makeFriendly($this->__toString()),
+					$slug
+				));
 			}
 
 			return $slug;

@@ -164,23 +164,49 @@
 		}
 
 		/**
-		 * Redirect to a controller target
+		 * Get a link to to a controller target
 		 *
 		 * @param string $target an inKWell target to redirect to
-		 * @param array $mapping an associative array containing routing keys to values
+		 * @param array $query an associative array containing parameters => values
 		 * @return void
 		 */
-		static protected function redirect($target, $mapping = array())
+		static public function linkTo($target, $query = array())
 		{
-			$params = array_keys($mapping);
+			if (!is_callable($target)) {
+
+				$query = (count($query))
+					? '?' . http_build_query($query)
+					: NULL;
+
+				if (strpos($target, '/') === 0 && Moor::getActiveProxyURI()) {
+					return Moor::getActiveProxyURI() . $target . $query;
+				}
+
+				return $target . $query;
+			}
+
+			$params = array_keys($query);
+
 			$target = (array_unshift($params, $target) == 1)
 				? $target
 				: implode(' ', $params);
 
-			fURL::redirect(call_user_func_array(
+			return call_user_func_array(
 				'Moor::linkTo',
-				array_merge(array($target), $mapping)
-			));
+				array_merge(array($target), $query)
+			);
+		}
+
+		/**
+		 * Redirect to a controller target
+		 *
+		 * @param string $target an inKWell target to redirect to
+		 * @param array $query an associative array containing parameters => values
+		 * @return void
+		 */
+		static protected function redirect($target, $query = array())
+		{
+			fURL::redirect(self::linkTo($target, $query));
 		}
 
 		/**
