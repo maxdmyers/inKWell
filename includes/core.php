@@ -33,6 +33,7 @@
 		static private $writeDirectory     = NULL;
 		static private $staticALMatches    = array();
 		static private $initializedClasses = array();
+		static private $failureToken       = NULL;
 
 		/**
 		 * Constructing an iw object is not allowed, this is purely for
@@ -324,6 +325,29 @@
 			}
 
 			return implode('::', array($entry, $action));
+		}
+
+		/**
+		 * Creates a unique failure token which can then be checked with
+		 * checkFailureToken().
+		 *
+		 * @param void
+		 * @return string A unique failure token for immediate use
+		 */
+		static public function makeFailureToken()
+		{
+			self::$failureToken = fCryptography::randomString(8);
+		}
+		
+		/**
+		 * Checks the unique failure token against the stored value
+		 *
+		 * @param string $failure_token The failure token to check
+		 * @return boolean TRUE if the failure token matches, FALSE otherwise
+		 */
+		static public function checkFailureToken($failure_token)
+		{
+			return (self::$failureToken === $failure_token);
 		}
 
 		/**
