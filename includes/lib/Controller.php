@@ -170,7 +170,7 @@
 		 * @param array $query an associative array containing parameters => values
 		 * @return void
 		 */
-		static public function linkTo($target, $query = array())
+		static protected function linkTo($target, $query = array())
 		{
 			if (!is_callable($target)) {
 
@@ -334,20 +334,6 @@
 		}
 
 		/**
-		 * Determines whether or not the request was made via AJAX
-		 *
-		 * @param void
-		 * @return boolean TRUE if the request was made via AJAX, FALSE otherwise
-		 */
-		static protected function isRequestAjax()
-		{
-			return (
-				isset($_SERVER['HTTP_X_REQUESTED_WITH']) &&
-				($_SERVER['HTTP_X_REQUESTED_WITH'] == 'XMLHttpRequest')
-			);
-		}
-
-		/**
 		 * Determines the request format for the resource
 		 *
 		 * @return string The request format, i.e. 'html' (default), 'xml', or 'json'
@@ -356,7 +342,7 @@
 		{
 			if (self::$requestFormat === NULL) {
 
-				if (!self::isRequestAjax()) {
+				if (!fRequest::isAjax()) {
 					$request_format_key     = 'request_format';
 					$default_request_format = self::$defaultRequestFormat;
 				} else {
@@ -374,17 +360,6 @@
 			}
 
 			return self::$requestFormat;
-		}
-
-		/**
-		 * A quick way to check against the current request format
-		 *
-		 * @param string $format The format to check for
-		 * @return boolean TRUE if the format matches the current request format, FALSE otherwise
-		 */
-		static protected function checkRequestFormat($format)
-		{
-			return (strtolower($format) == self::getRequestFormat());
 		}
 
 		/**
@@ -410,13 +385,24 @@
 		}
 
 		/**
+		 * A quick way to check against the current request format
+		 *
+		 * @param string $format The format to check for
+		 * @return boolean TRUE if the format matches the current request format, FALSE otherwise
+		 */
+		static protected function checkRequestFormat($format)
+		{
+			return (strtolower($format) == self::getRequestFormat());
+		}
+
+		/**
 		 * Determines whether or not a particular class is the entry class
 		 * being used by the router.
 		 *
 		 * @param string $class The class to check against the router
 		 * @return void
 		 */
-		static protected function isEntry($class)
+		static protected function checkEntry($class)
 		{
 			return (Moor::getActiveShortClass()  == $class);
 		}
@@ -428,7 +414,7 @@
 		 * @param string $method The method name to check against the router
 		 * @return void
 		 */
-		static protected function isAction($method)
+		static protected function checkAction($method)
 		{
 			return (Moor::getActiveShortMethod()  == $method);
 		}
@@ -441,8 +427,8 @@
 		 * @param string $method The method name to check against the router
 		 * @return void
 		 */
-		static protected function isEntryAction($class, $method) {
-			return (self::isEntry($class) && self::isAction($method));
+		static protected function checkEntryAction($class, $method) {
+			return (self::checkEntry($class) && self::checkAction($method));
 		}
 
 	}
