@@ -338,7 +338,7 @@
 		{
 			self::$failureToken = fCryptography::randomString(8);
 		}
-		
+
 		/**
 		 * Checks the unique failure token against the stored value
 		 *

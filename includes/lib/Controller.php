@@ -164,11 +164,39 @@
 		}
 
 		/**
+		 * Determines whether or not we should accept the request based on
+		 * the mime type accepted by the user agent.
+		 *
+		 * @param array $types An array of acceptable mime types
+		 * @return mixed The method will trigger a 'not_acceptable' error on failure, will return the best type upon success.
+		 */
+		static protected function acceptTypes($types = array())
+		{
+			return ($best_type = fRequest::getBestAcceptType($types))
+				? $best_type
+				: self::triggerError('not_acceptable');
+		}
+
+		/**
+		 * Determines whether or not we should accept the request based on
+		 * the languages accepted by the user agent.
+		 *
+		 * @param array $language An array of acceptable languages
+		 * @return mixed The method will trigger a 'not_accepted' error on failure, will return the best type upon success.
+		 */
+		static protected function acceptLanguages($languages = array())
+		{
+			return ($best_language = fRequest::getBestAcceptType($types))
+				? $best_language
+				: self::triggerError('not_acceptable');
+		}
+
+		/**
 		 * Redirect to a controller target.
 		 *
 		 * @param string $target an inKWell target to redirect to
 		 * @param array $query an associative array containing parameters => values
-		 * @return mixed 
+		 * @return mixed
 		 */
 		static protected function redirect($target, $query = array())
 		{
@@ -270,7 +298,7 @@
 		/**
 		 * Determines the request format for the resource
 		 *
-		 * @return string The request format, i.e. 'html' (default), 'xml', or 'json'
+		 * @return string The request format, i.e. 'html', 'xml', 'json', etc...
 		 */
 		static protected function getRequestFormat()
 		{
@@ -338,7 +366,7 @@
 		 */
 		static protected function checkEntry($class)
 		{
-			return (Moor::getActiveShortClass()  == $class);
+			return (Moor::getActiveShortClass() == $class);
 		}
 
 		/**
@@ -350,7 +378,7 @@
 		 */
 		static protected function checkAction($method)
 		{
-			return (Moor::getActiveShortMethod()  == $method);
+			return (Moor::getActiveShortMethod() == $method);
 		}
 
 		/**
