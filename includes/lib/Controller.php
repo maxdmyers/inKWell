@@ -164,13 +164,83 @@
 		}
 
 		/**
+		 * Redirect to a controller target.
+		 *
+		 * @param string $target an inKWell target to redirect to
+		 * @param array $query an associative array containing parameters => values
+		 * @return mixed 
+		 */
+		static protected function redirect($target, $query = array())
+		{
+			fURL::redirect(self::makeLink($target, $query));
+		}
+
+		/**
+		 * Trigger an error if a function fails uniquely.
+		 *
+		 * @param mixed $value The value to check.  If this matches the current iw::$failureToken the provided error will be triggered
+		 * @param string $error The name of the error to trigger upon failure, defaults to 'not_found'
+		 * @return mixed The original value upon success
+		 */
+		static protected function demand($value, $error = 'not_found')
+		{
+			return (iw::checkFailureToken($value))
+				? self::triggerError($error)
+				: $value;
+		}
+
+		/**
+		 * Attempts to execute a target within the context of of Controller.
+		 * By default the execution of the target is optional, meaning the
+		 * target need not exist.  You can wrap this function in ::demand()
+		 * in order to require it.
+		 *
+		 * @param string $target An inKWell target to execute
+		 * @param mixed Additional parameters to pass to the callback
+		 * @return mixed The return of the callback, if valid, an inKWell failure token otherwise.
+		 */
+		static protected function exec($target)
+		{
+			if (is_callable($target)) {
+				$params = array_slice(func_get_args(), 1);
+				return call_user_func_array($target, $params);
+			}
+
+			return iw::makeFailureToken();
+		}
+
+		/**
+		 * Attempts to delegate control to a file within the context of
+		 * Controller.  By default the delegation is optional, meaning the
+		 * file need not exist.  You can wrap this function in ::demand() in
+		 * order to require it.
+		 *
+		 * @param string|fFile $file The file to delegate control to
+		 * @return mixed The return of the included file, if accessible, an inKWell failure token otherwise
+		 */
+		static protected function delegate($file)
+		{
+			try {
+				if (!($file instanceof fFile)) {
+					$file = new fFile($file);
+				}
+				return include $file->getPath();
+			} catch (fValidationException $e) {
+				if ($required) {
+					self::triggerError('not_found');
+				}
+			}
+			return iw::makeFailureToken();
+		}
+
+		/**
 		 * Get a link to to a controller target
 		 *
 		 * @param string $target an inKWell target to redirect to
 		 * @param array $query an associative array containing parameters => values
 		 * @return void
 		 */
-		static protected function linkTo($target, $query = array())
+		static protected function makeLink($target, $query = array())
 		{
 			if (!is_callable($target)) {
 
@@ -195,142 +265,6 @@
 				'Moor::linkTo',
 				array_merge(array($target), $query)
 			);
-		}
-
-		/**
-		 * Redirect to a controller target
-		 *
-		 * @param string $target an inKWell target to redirect to
-		 * @param array $query an associative array containing parameters => values
-		 * @return void
-		 */
-		static protected function redirect($target, $query = array())
-		{
-			fURL::redirect(self::linkTo($target, $query));
-		}
-
-		/**
-		 * Attempts to execute a callback within the context of of Controller.
-		 *
-		 * @param string $target An inKWell target to execute
-		 * @param mixed Additional parameters to pass to the callback
-		 * @return mixed The return of the callback, if valid, NULL otherwise
-		 */
-		static protected function exec($target)
-		{
-			if (is_callable($target)) {
-				$params = array_slice(func_get_args(), 1);
-				return call_user_func_array($target, $params);
-			} else {
-				fURL::redirect($target);
-			}
-		}
-
-		/**
-		 * Attempts to delegate control to a file within the context of
-		 * Controller.  If the $required parameter is set to TRUE then this
-		 * function will execute triggerNotFound() if the file is not
-		 * accessible.
-		 *
-		 * @param string|fFile $file The file to delegate control to
-		 * @param boolean $required TRUE if the file is required, FALSE otherwise
-		 * @return mixed The return of the included file, if accessible, NULL otherwise
-		 */
-		static protected function delegate($file, $required = FALSE)
-		{
-			try {
-				$file = new fFile($file);
-			} catch (fValidationException $e) {
-				if ($required) {
-					self::triggerError('not_found');
-					return;
-				}
-			}
-
-			if ($file instanceof fFile) {
-				return include $file->getPath();
-			}
-
-			return NULL;
-		}
-
-		/**
-		 * Sets error information for the Controller
-		 *
-		 * @param string $error The error to set a handler for
-		 * @param string $handler An inKWell target to execute if the error is triggered
-		 * @param string $header The HTTP header to output if the error is triggered
-		 * @param string $message A default message to display explaining the error
-		 * @return void
-		 */
-		static protected function setError($error, $handler = NULL, $header = NULL, $message = NULL)
-		{
-			self::$errors[$error]['handler'] = $handler;
-			self::$errors[$error]['header']  = $header;
-			self::$errors[$error]['message'] = $message;
-		}
-
-		/**
-		 * Triggers a standard error which will attempt to use whatever error
-		 * handlers have been assigned.  If the error is unknown an HTTP/1.0
-		 * 500 Internal Server Error header will be sent.  Otherwise headers
-		 * will be matched against any set error headers or the defaults.  If
-		 * no handler is set a hard error will be triggered.
-		 *sd
-		 * @param string $error The error to be triggered.
-		 * @param string $message_type The type of message to display
-		 * @param string $message The message to be displayed
-		 * @return void
-		 */
-		static protected function triggerError($error, $message_type = NULL, $message = NULL)
-		{
-			$message_type  = ($message_type) ? $message_type : self::MSG_TYPE_ERROR;
-
-			$error_info    = array(
-				'handler' => NULL,
-				'header'  => 'HTTP/1.0 500 Internal Server Error',
-				'message' => 'An Unknown error occurred.'
-			);
-
-			if (isset(self::$errors[$error])) {
-
-				$error_info = array_merge($error_info, self::$errors[$error]);
-				$message    = ($message) ? $message : $error_info['message'];
-
-				@header($error_info['header']);
-
-				if ($handler = $error_info['handler']) {
-					fMessaging::create($message_type, $handler, $message);
-					self::exec($handler);
-					return;
-				}
-
-			}
-
-			self::triggerHardError($error, $error_info['message']);
-		}
-
-		/**
-		 * Triggers a hard error doing little more than outputting the message
-		 * on the screen, this should not be called except by extended error
-		 * handlers or by Controller::triggerError()
-		 *
-		 * @param string $error The error being sent.
-		 * @param string $message The message to output with it.
-		 * @return void The function exits the script.
-		 */
-		static protected function triggerHardError($error, $message)
-		{
-			$controller = new Controller();
-
-			$controller->view
-				-> pack   ('id',       $error)
-				-> push   ('classes',  self::MSG_TYPE_ERROR)
-				-> push   ('title',    fGrammar::humanize($error))
-				-> digest ('contents', $message);
-
-			$controller->view->render();
-			exit();
 		}
 
 		/**
@@ -431,4 +365,82 @@
 			return (self::checkEntry($class) && self::checkAction($method));
 		}
 
+		/**
+		 * Triggers a standard error which will attempt to use whatever error
+		 * handlers have been assigned.  If the error is unknown an HTTP/1.0
+		 * 500 Internal Server Error header will be sent.  Otherwise headers
+		 * will be matched against any set error headers or the defaults.  If
+		 * no handler is set a hard error will be triggered.
+		 *sd
+		 * @param string $error The error to be triggered.
+		 * @param string $message_type The type of message to display
+		 * @param string $message The message to be displayed
+		 * @return void
+		 */
+		static protected function triggerError($error, $message_type = NULL, $message = NULL)
+		{
+			$message_type  = ($message_type) ? $message_type : self::MSG_TYPE_ERROR;
+
+			$error_info    = array(
+				'handler' => NULL,
+				'header'  => 'HTTP/1.0 500 Internal Server Error',
+				'message' => 'An Unknown error occurred.'
+			);
+
+			if (isset(self::$errors[$error])) {
+
+				$error_info = array_merge($error_info, self::$errors[$error]);
+				$message    = ($message) ? $message : $error_info['message'];
+
+				@header($error_info['header']);
+
+				if ($handler = $error_info['handler']) {
+					fMessaging::create($message_type, $handler, $message);
+					self::exec($handler);
+					return;
+				}
+
+			}
+
+			self::triggerHardError($error, $error_info['message']);
+		}
+
+		/**
+		 * Triggers a hard error doing little more than outputting the message
+		 * on the screen, this should not be called except by extended error
+		 * handlers or by Controller::triggerError()
+		 *
+		 * @param string $error The error being sent.
+		 * @param string $message The message to output with it.
+		 * @return void The function exits the script.
+		 */
+		static protected function triggerHardError($error, $message)
+		{
+			$controller = new Controller();
+
+			$controller->view
+				-> pack   ('id',       $error)
+				-> push   ('classes',  self::MSG_TYPE_ERROR)
+				-> push   ('title',    fGrammar::humanize($error))
+				-> digest ('contents', $message);
+
+			$controller->view->render();
+			exit();
+		}
+
+		/**
+		 * Sets error information for the Controller
+		 *
+		 * @param string $error The error to set a handler for
+		 * @param string $handler An inKWell target to execute if the error is triggered
+		 * @param string $header The HTTP header to output if the error is triggered
+		 * @param string $message A default message to display explaining the error
+		 * @return void
+		 */
+		static private function setError($error, $handler = NULL, $header = NULL, $message = NULL)
+		{
+			self::$errors[$error]['handler'] = $handler;
+			self::$errors[$error]['header']  = $header;
+			self::$errors[$error]['message'] = $message;
+		}
 	}
