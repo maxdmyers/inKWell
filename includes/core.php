@@ -336,7 +336,7 @@
 		 */
 		static public function makeFailureToken()
 		{
-			self::$failureToken = fCryptography::randomString(8);
+			return (self::$failureToken = fCryptography::randomString(8));
 		}
 
 		/**

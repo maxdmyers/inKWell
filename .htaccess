@@ -8,6 +8,7 @@
 ################################################################################
 
 	php_flag  register_globals       0
+	php_flag  display_errors         1
 	php_flag  magic_quotes_gpc       0
 	php_flag  short_open_tag         0
 	php_flag  asp_tags               1

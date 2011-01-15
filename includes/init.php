@@ -10,15 +10,18 @@
 		error_reporting($config['inkwell']['error_level']);
 	}
 
-	if (
-		isset($config['inkwell']['display_errors']) &&
-		$config['inkwell']['display_errors']
-	) {
-		fCore::enableErrorHandling('html');
-		fCore::enableExceptionHandling('html');
-	} elseif (isset($config['inkwell']['error_email_to'])) {
-		fCore::enableErrorHandling($config['inkwell']['error_email_to']);
-		fCore::enableExceptionHandling($config['inkwell']['error_email_to']);
+	if (isset($config['inkwell']['display_errors'])) {
+		if ($config['inkwell']['display_errors']) {
+			fCore::enableErrorHandling('html');
+			fCore::enableExceptionHandling('html');
+		} elseif (isset($config['inkwell']['error_email_to'])) {
+			$admin_email = $config['inkwell']['error_email_to'];
+			fCore::enableErrorHandling($admin_email);
+			fCore::enableExceptionHandling($admin_email);
+			ini_set('display_errors', 0);
+		} else {
+			ini_set('display_errors', 0);
+		}
 	}
 
 	// Initialize the Session

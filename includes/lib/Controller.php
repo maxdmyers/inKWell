@@ -170,7 +170,7 @@
 		 * @param array $types An array of acceptable mime types
 		 * @return mixed The method will trigger a 'not_acceptable' error on failure, will return the best type upon success.
 		 */
-		static protected function acceptTypes($types = array())
+		static protected function acceptTypes(array $types = array())
 		{
 			return ($best_type = fRequest::getBestAcceptType($types))
 				? $best_type
@@ -184,11 +184,34 @@
 		 * @param array $language An array of acceptable languages
 		 * @return mixed The method will trigger a 'not_accepted' error on failure, will return the best type upon success.
 		 */
-		static protected function acceptLanguages($languages = array())
+		static protected function acceptLanguages(array $languages = array())
 		{
 			return ($best_language = fRequest::getBestAcceptType($types))
 				? $best_language
 				: self::triggerError('not_acceptable');
+		}
+
+		/**
+		 * Determines whether or not accept the request method is allowed.  If
+		 * the current request method is not in the list of allowed methods,
+		 * the method will trigger the error 'not_allowed'
+		 *
+		 * @param array $methods An array of allowed request methods
+		 * @return boolean TRUE if the current request method is in the array, FALSE otherwise
+		 */
+		static protected function allowMethods(array $methods = array())
+		{
+			$request_method  = strtoupper($_SERVER['REQUEST_METHOD']);
+			$allowed_methods = array_map('strtoupper', $methods);
+
+			if (!in_array($request_method, $allowed_methods)) {
+				self::triggerError('not_allowed', NULL, NULL, array(
+					'Allow: ' . implode(', ', $allowed_methods)
+				));
+				return FALSE;
+			}
+
+			return TRUE;
 		}
 
 		/**
@@ -254,10 +277,9 @@
 				}
 				return include $file->getPath();
 			} catch (fValidationException $e) {
-				if ($required) {
-					self::triggerError('not_found');
-				}
+
 			}
+
 			return iw::makeFailureToken();
 		}
 
@@ -403,9 +425,10 @@
 		 * @param string $error The error to be triggered.
 		 * @param string $message_type The type of message to display
 		 * @param string $message The message to be displayed
+		 * @param array  $added_headers Additional headers to output after the initial header
 		 * @return void
 		 */
-		static protected function triggerError($error, $message_type = NULL, $message = NULL)
+		static protected function triggerError($error, $message_type = NULL, $message = NULL, array $added_headers = array())
 		{
 			$message_type  = ($message_type) ? $message_type : self::MSG_TYPE_ERROR;
 
@@ -421,6 +444,10 @@
 				$message    = ($message) ? $message : $error_info['message'];
 
 				@header($error_info['header']);
+
+				foreach ($added_headers as $header) {
+					@header($header);
+				}
 
 				if ($handler = $error_info['handler']) {
 					fMessaging::create($message_type, $handler, $message);
