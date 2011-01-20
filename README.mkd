@@ -3,7 +3,10 @@
 ## Preamble
 
 inKWell is currently alpha software, we will answer any questions you might have
-directly.
+directly.  Feel free to message us on GitHub, username: dotink.
+
+If you wish to license this software under different terms and conditions than
+presented below, please e-mail: Matthew J. Sahagian <msahagian@dotink.org>
 
 ## Licensing
 
@@ -17,202 +20,18 @@ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License along
-with this program. If not, see <http://www.gnu.org/licenses/>.
-
-If you wish to license this software under different terms and conditions,
-please e-mail: Matthew J. Sahagian <msahagian@dotink.org>
+with this program. If not, see <[[http://www.gnu.org/licenses/]]>.
 
 ## Introduction
 
-inKWell is an MVC framework built on Flourish (http://www.flourishlib.com) and
-Moor (http://www.github.com/jeffturcotte/moor).  It is designed to be extremely
-lightweight and flexible.  Unlike other frameworks nearly every aspect of it
-is designed to allow for easy overrides, including scaffolding.
+inKWell is an MVC framework built on Flourish ([[http://www.flourishlib.com]])
+and Moor ([[http://www.github.com/jeffturcotte/moor]]).  It is designed to be
+extremely lightweight and flexible.  Unlike other frameworks nearly every aspect
+of it is designed to allow for easy overrides, including scaffolding.
 
 The core framework follows a "KISS" philosophy.  We begin by keeping core
 concepts and API to a minimum, providing only six classes in that comprise
 the base framework, while everything else is an extension.
 
-Nearly all aspects of integration start with a configuration file and a
-single method on all your classes: \_\_init().  The complexity of what you write
-is completely up to you.  Because our core libraries, including Flourish offer
-a nice set of hooks, \_\_init() is all you need to provide full integration with
-everything else.
-
-The core classes are as follows (and will be explained later):
-
-1. IW (Contains only the basic framework functionality, mainly autoloading)
-2. ActiveRecord (An advanced active record/model class built on fActiveRecord)
-3. RecordSet (A wrapper for multiple ActiveRecords built on fRecordSet)
-4. View (A standard view/templating engine built on fTemplating)
-5. Controller (A simple controller with common triggers)
-6. Scaffolder (A scaffolder which supports templating)
-
-## Configuration
-
-inKWell uses a modular configuration system where files are mapped one-to-one
-to a configuration element.  Additionally configurations can be typecasted to
-allow for parent classes or the base framework to reliably find and use the
-information provided within.
-
-With the exception of those configuration files used to initialize inkwell
-itself, all configuration files are named after the underscorized version of
-your class names.  Examples:  MyCustomController would make use of configuration
-information in my_custom_controller.php
-
-There is no required directory structure for the configuration information and
-the complete configuration is simply built by recursively scanning all
-directories in the config directory.  With that said, my_custom_controller.php
-could be placed in /includes/config, /includes/config/controllers, or wherever
-else you like.
-
-There are several ways in which configuration information can be used and
-accessed.  The most common method is within a class's \_\_init() method via the
-inKWell  autoloader.  Whenever a class is loaded via the autoloader, the
-existence of a static method \_\_init() is checked, and if it exists, the
-matching configuration element is passed to it as the first argument.
-
-If, for example, you had a configuration file located in
-/includes/config/controllers/custom_controller.php the first time the
-CustomController class is loaded, the array returned by that file will be
-passed to CustomController's \_\_init() method (providing it exists).
-
-The other way to make use of configuration data is via typecasted
-configurations.  Although it is not required, configuration arrays can be
-loosely typecasted by using the iw::createConfig() method.  This, for example
-is used by inKWell's active record class for custom table mappings.  Reference
-the below configuration for a User class:
-
-	<?php
-
-		return iw::createConfig('ActiveRecord', array(
-
-			'table'            => 'auth.users',
-			'password_columns' => array('login_password'),
-			'image_columns'    => array('avatar'),
-			'fixed_columns'    => array('date_created', 'date_last_accessed'),
-
-			'order'            => array(
-				'id'           => 'asc'
-			),
-
-			// Defines the maximum number of login attempts to afford in
-			// a certain time frame.  This can be, default is 5 every 15
-			// minutes.
-
-			'max_login_attempts' => '5/15 minutes'
-
-		));
-
-This configuration will be used by at least two classes:
-
-1) ActiveRecord: When ActiveRecord is loaded for the first time it will make
-use of this configuration in order to establish basic ORM class to table mapping
-as well as a few other basic properties.
-
-2) User: This configuration will be used by the User class itself, passed to
-it's \_\_init() method when the class is loaded for the first time.
-
-Please note that typecasting configurations is extremely loose.  A typecasted
-configuration is not inherently passed to any class's \_\_init() which may or
-may not be identified by the type.  In order for ActiveRecord to find and
-make use of configurations typecasted it uses iw::getConfigsByType() within it
-\_\_init().  Additionally there is no way to force required configuration keys
-based on a type, so any configuration handling should always determine if the
-array has the appropriate key set and throw its own exceptions if it is
-required or if it's value is inappropriate.
-
-Typecasting a configuration represents a simple way for configuration
-information to be used/accessed prior to a class being loaded.
-
-## Controllers
-
-Currently there are no controllers outside of the base controller class which
-are distributed with the inKWell core.  All "standard" controllers such as a
-PagesController, ARController (Active Record Controller), or the AuthController
-(Authorization Controller) will be distributed as extensions with the beta 1.0.
-
-If you would like not to have to write your own controllers for some of this
-functionality you can take a look at the inkwell_site branch of this project
-which has all of the above mentioned controllers.
-
-Let's take a look at the PagesController real quick just to get an idea of
-how things work.  Using a standard inKWell configuration, the PagesController
-would be copied to /user/controllers/PagesController.php -- the configuration
-on the inkwell_site branch resides in
-/includes/config/controllers/pages_controller.php and looks like this:
-
-	<?php
-
-		return iw::createConfig('Controller', array(
-
-			'pages_root'        => 'user/controllers/pages',
-
-			// The sections array allows you to define any number of base URLs
-			// with separate page titles.  Each base URL will be detected
-			// and used as an additional directory for the PagesController to
-			// look for controllers and/or views.  The default section is always
-			// 'default' and it's assignment here simply allows you to customize
-			// the title easily.
-
-			'sections'          => array(
-				'default'       => 'inKWell Site',
-				'admin'         => 'inKWell Console'
-			)
-		));
-
-In addition to this, there is a route added at the end of
-/includes/routing.php so that any request not handled by previous routes tries
-to hit the PagesController:
-
-	<?php
-
-		require_once 'init.php';
-
-		Moor::setRequestParamPattern('[A-Za-z0-9_-]+');
-
-		Moor::
-
-			// Custom Routes Here
-
-			// General Page Routing
-
-			route('/*', 'PagesController::load') ->
-
-		run();
-
-When a URL is requested that hits the PagesController::load() function, the
-PagesController looks in the configured 'pages_root' for a file matching
-the request and delegates control to it.  So for example, on the inkwell site
-if a user visits http://inkwell.dotink.org/getting_started/ the PagesController
-attempts to delegate control to
-/user/controllers/pages/default/getting_started/index.php.  The 'default' is
-added implicitely since no recognize site section / base URL was used at 
-the beginning of request path.  Base URLs and site sections are configured in
-the 'site_sections' key of the PagesController configuration file.
-
-Continuing with the above example, we can then take a look at the file to
-which control is delegated:
-
-	<?php
-
-		fURL::redirect('/getting_started/install');
-
-Whoops, that's just a redirect, so let's take a look at what's in the
-install.php file:
-
-	<?php
-
-		$page = new PagesController();
-
-		$page->view
-			-> add    ('primary_section',   'pages/default/getting_started/install.php')
-			-> add    ('secondary_section', 'pages/default/aside.php')
-			-> push   ('id',                'install')
-			-> push   ('classes',           'getting_started')
-			-> push   ('title',             'Installation and Setup')
-			-> render ();
-
-That's much nicer.  As you can see, the file becomes responsible for
-actually instantiating the controller, setting up the view, and finally
-rendering it.  What resides in the views is generally just PHP templatized HTML.
+If you'd like to learn how to  use inKWell or a bit more about its design, you
+can visit our wiki pages here: [[http://github.com/dotink/inKWell/wiki]]
