@@ -20,12 +20,12 @@ WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE.  See the GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License along
-with this program. If not, see <[[http://www.gnu.org/licenses/]]>.
+with this program. If not, see <http://www.gnu.org/licenses/>.
 
 ## Introduction
 
-inKWell is an MVC framework built on Flourish ([[http://www.flourishlib.com]])
-and Moor ([[http://www.github.com/jeffturcotte/moor]]).  It is designed to be
+inKWell is an MVC framework built on Flourish (http://www.flourishlib.com)
+and Moor (http://www.github.com/jeffturcotte/moor).  It is designed to be
 extremely lightweight and flexible.  Unlike other frameworks nearly every aspect
 of it is designed to allow for easy overrides, including scaffolding.
 
