@@ -2,7 +2,18 @@
 
 	require_once 'core.php';
 
+	/**
+	 * You can add customized initialization logic here, including overriding
+	 * how or where the configuration is derived from.
+	 */
+
 	$config = iw::init();
+
+	/**
+	 * Below this point is the standard configuration logic for inKWell, this
+	 * includes the attachment of databases, registering error handling, date
+	 * formats, timezone, etc.
+	 */
 
 	// Initialize Error Reporting
 
