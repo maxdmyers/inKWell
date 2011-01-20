@@ -729,10 +729,11 @@
 						);
 
 					} else {
-						$validation_messages[] = implode(': ', array(
-							fGrammar::humanize($password_column),
-							'The confirmation value does not match'
-						));
+						$validation_messages[] = fText::compose(
+							'post',
+							'%s: Does not match confirmation field',
+							fGrammar::humanize($password_column)
+						);
 					}
 
 				} elseif (!empty($old_values[$password_column])) {
@@ -766,7 +767,7 @@
 
 				if (sizeof($pkey_data) < sizeof($pkey_columns)) {
 					throw new fProgrammerException(
-						'Cannot parse slug for class %s, slug is malformed',
+						'Malformed slug for class %s, check the primary key.',
 						$record_class
 					);
 				}
@@ -796,7 +797,7 @@
 					$match_id = fURL::makeFriendly($record->__toString());
 					if ($identifier != $match_id) {
 						throw new fValidationException(
-							'The record identifier does not match.'
+							'Provided identifier does not match.'
 						);
 					}
 				}

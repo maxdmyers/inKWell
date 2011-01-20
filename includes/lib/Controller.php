@@ -450,6 +450,9 @@
 				}
 
 				if ($handler = $error_info['handler']) {
+
+					$message = fText::compose('pre', $message);
+
 					fMessaging::create($message_type, $handler, $message);
 					self::exec($handler);
 					return;
@@ -472,11 +475,13 @@
 		static protected function triggerHardError($error, $message)
 		{
 			$controller = new Controller();
+			$title      = fText::compose('pre', fGrammar::humanize($error));
+			$message    = fText::compose('pre', $message);
 
 			$controller->view
 				-> pack   ('id',       $error)
 				-> push   ('classes',  self::MSG_TYPE_ERROR)
-				-> push   ('title',    fGrammar::humanize($error))
+				-> push   ('title',    $title)
 				-> digest ('contents', $message);
 
 			$controller->view->render();

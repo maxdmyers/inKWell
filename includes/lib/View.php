@@ -36,7 +36,8 @@
 			if ($view_root === NULL) {
 				if (self::$viewRoot === NULL) {
 					throw new fProgrammerException (
-						'No view root has been specified, please call setViewRoot'
+						'No view root has been specified, please call %s',
+						iw::makeTarget(__CLASS__, 'setViewRoot()')
 					);
 				} else {
 					parent::__construct(self::$viewRoot);
@@ -82,21 +83,18 @@
 		 */
 		public function render($element = NULL)
 		{
-			try {
-				foreach ($this->renderCallbacks as $callback_info) {
-					if (count($callback_info['arguments'])) {
-						call_user_func_array(
-							$callback_info['method'],
-							$callback_info['arguments']
-						);
-					} else {
-						call_user_func($callback_info['method']);
-					}
+			foreach ($this->renderCallbacks as $callback_info) {
+				if (count($callback_info['arguments'])) {
+					call_user_func_array(
+						$callback_info['method'],
+						$callback_info['arguments']
+					);
+				} else {
+					call_user_func($callback_info['method']);
 				}
-				return $this->place($element);
-			} catch (fException $e) {
-				echo 'The view cannot be rendered: ' . $e->getMessage();
 			}
+
+			return $this->place($element);
 		}
 
 		/**
@@ -191,7 +189,7 @@
 					$data_set = array($data_set => $value);
 				} else {
 					throw new fProgrammerException(
-						'Packed Data requires an array as first parameter if no $value is specified'
+						'No value provided for scalar data set.'
 					);
 				}
 			}
@@ -218,7 +216,7 @@
 					$data_set = array($data_set => $value);
 				} else {
 					throw new fProgrammerException(
-						'Pushed Data requires an array as first parameter if no $value is specified'
+						'No data provided for scalar data set.'
 					);
 				}
 			}
@@ -259,7 +257,7 @@
 
 			} else {
 				throw new fProgrammerException (
-					'Cannot pull view data referenced by %s', $key
+					'Data referenced by %s does not exist.', $key
 				);
 			}
 		}
@@ -291,7 +289,7 @@
 
 			} else {
 				throw new fProgrammerException (
-					'Cannot peel view data referenced by %s', $key
+					'Data referenced by %s does not exist.', $key
 				);
 			}
 		}
