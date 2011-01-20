@@ -34,4 +34,4 @@ concepts and API to a minimum, providing only six classes in that comprise
 the base framework, while everything else is an extension.
 
 If you'd like to learn how to  use inKWell or a bit more about its design, you
-can visit our wiki pages here: [[http://github.com/dotink/inKWell/wiki]]
+can visit our wiki pages here: http://github.com/dotink/inKWell/wiki
