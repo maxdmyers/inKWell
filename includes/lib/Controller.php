@@ -15,6 +15,10 @@
 		const DEFAULT_REQUEST_FORMAT      = 'html';
 		const DEFAULT_AJAX_REQUEST_FORMAT = 'json';
 
+		const DEFAULT_SITE_SECTION        = 'default';
+		const DEFAULT_SITE_TITLE          = 'inKWell Site';
+		const DEFAULT_USE_SSL             = FALSE;
+
 		const MSG_TYPE_ERROR              = 'error';
 		const MSG_TYPE_ALERT              = 'alert';
 		const MSG_TYPE_SUCCESS            = 'success';
@@ -31,6 +35,12 @@
 
 		static private   $defaultRequestFormat     = NULL;
 		static private   $defaultAjaxRequestFormat = NULL;
+
+		// Site sections
+
+		static private   $siteSections             = array();
+		static private   $baseURL                  = NULL;
+		static private   $requestPath              = NULL;
 
 		// State information
 
@@ -63,7 +73,25 @@
 		 */
 		protected function prepare()
 		{
-			$format = self::getRequestFormat();
+			$format  = self::getRequestFormat();
+			$section = self::getBaseURL();
+
+			$title   = (isset(self::$siteSections[$section]['title']))
+				? self::$siteSections[$section]['title']
+				: self::DEFAULT_SITE_TITLE;
+
+			$use_ssl = (isset(self::$siteSections[$section]['use_ssl']))
+				? self::$siteSections[$section]['use_ssl']
+				: self::DEFAULT_USE_SSL;
+
+			// Redirect to https:// if required for the section
+
+			if ($use_ssl && empty($_SERVER['HTTPS'])) {
+				$domain     = fURL::getDomain();
+				$request    = fURL::getWithQueryString();
+				$ssl_domain = str_replace('http://', 'https://', $domain);
+				fURL::redirect($ssl_domain . $request);
+			}
 
 			if (!self::$typeHeadersRegistered) {
 
@@ -84,7 +112,9 @@
 				self::$typeHeadersRegistered = TRUE;
 			}
 
-			$this->view->load($format . '.php');
+			$this->view
+				-> load ($format . '.php')
+				-> push ('title',   $title);
 		}
 
 
@@ -127,6 +157,30 @@
 				self::$defaultAjaxRequestFormat = strtolower(
 					$config['default_ajax_request_format']
 				);
+			}
+
+			// Build our site sections
+
+			$controller_configs = array_merge(
+				iw::getConfig('Controller'),
+				iw::getConfigsByType('Controller')
+			);
+
+			foreach ($controller_configs as $controller_config) {
+
+				if (isset($controller_config['sections'])) {
+					if (!is_array($controller_config['sections'])) {
+						throw new fProgrammerException (
+							'Site sections must be an array of base urls (keys) to titles (values)'
+						);
+					}
+
+					self::$siteSections = array_merge(
+						self::$siteSections,
+						$controller_config['sections']
+					);
+				}
+
 			}
 
 			// Configure errors and error handlers
@@ -318,6 +372,52 @@
 		}
 
 		/**
+		 * Determines the baseURL from the server's request URI
+		 *
+		 * @param void
+		 * @return string The Base URL
+		 */
+		static protected function getBaseURL()
+		{
+			if (self::$baseURL == NULL) {
+				self::$baseURL   = self::DEFAULT_SITE_SECTION;
+				$request_info    = parse_url(Moor::getRequestPath());
+				$request_path    = ltrim($request_info['path'], '/');
+				$request_parts   = explode('/', $request_path);
+				$site_sections   = array_keys(self::$siteSections);
+
+				// If the request meets these conditions it will overwrite the
+				// base URL.
+
+				$has_base_url    = (in_array($request_parts[0], $site_sections));
+				$is_not_default  = ($request_parts[0] != self::$baseURL);
+				$has_sub_request = (count($request_parts) > 1);
+
+				if ($has_base_url && $is_not_default && $has_sub_request) {
+					self::$baseURL = array_shift($request_parts);
+				}
+
+				self::$requestPath = implode('/', $request_parts);
+			}
+
+			return self::$baseURL;
+		}
+
+		/**
+		 * Determines the internal request path (i.e. without a baseURL)
+		 *
+		 * @param void
+		 * @return string The internal request path
+		 */
+		static protected function getRequestPath()
+		{
+			if (self::$requestPath == NULL) {
+				self::getBaseURL();
+			}
+			return self::$requestPath;
+		}
+
+		/**
 		 * Determines the request format for the resource
 		 *
 		 * @return string The request format, i.e. 'html', 'xml', 'json', etc...
@@ -366,6 +466,17 @@
 		static protected function getEntry()
 		{
 			return Moor::getActiveShortClass();
+		}
+
+		/**
+		 * A quick way to check against the current base URL
+		 *
+		 * @param string $base_url The base URL to check against
+		 * @return boolean TRUE if the base URL matched the current base URL, FALSE otherwise
+		 */
+		static protected function checkBaseURL($base_url)
+		{
+			return (self::getBaseURL() == $base_url);
 		}
 
 		/**
