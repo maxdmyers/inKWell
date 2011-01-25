@@ -36,19 +36,22 @@
 
 				foreach ($route_parts as $route_part) {
 
-					switch ($route_part[0]) {
-						case ':':
-							$extra_points = 1;
-							break;
-						case '@':
-							$extra_points = 2;
-							break;
-						default:
-							$extra_points = strlen($route_part);
-							break;
-					}
+					if (isset($route_part[0])) {
 
-					$specificity += $extra_points;
+						switch ($route_part[0]) {
+							case ':':
+								$extra_points = 1;
+								break;
+							case '@':
+								$extra_points = 2;
+								break;
+							default:
+								$extra_points = strlen($route_part);
+								break;
+						}
+
+						$specificity += $extra_points;
+					}
 				}
 
 				$routes[$route] = array(
@@ -60,14 +63,14 @@
 		}
 	}
 
-	foreach($routes as $index => $route) {
-		$ordered_routes[$index] = strtolower($route[$specificity]);
+	foreach($routes as $route => $info) {
+		$ordered_routes[$route] = $info['specificity'];
 	}
 
 	arsort($ordered_routes);
 
-	foreach ($ordered_routes as $index => $specificity) {
-		Moor::route($index, $routes[$index]['target']);
+	foreach ($ordered_routes as $route => $specificity) {
+		Moor::route($route, $routes[$route]['target']);
 	}
 
 	$router->run();

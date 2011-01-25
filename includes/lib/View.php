@@ -79,22 +79,34 @@
 		 * is a pseudonym for place wrapped to catch exceptions.
 		 *
 		 * @param string $element An optional name of an element to output
+		 * @param boolean $return Whether or not to return output as a string
 		 * @return void
 		 */
-		public function render($element = NULL)
+		public function render($element = NULL, $return = FALSE)
 		{
-			foreach ($this->renderCallbacks as $callback_info) {
-				if (count($callback_info['arguments'])) {
-					call_user_func_array(
-						$callback_info['method'],
-						$callback_info['arguments']
-					);
-				} else {
-					call_user_func($callback_info['method']);
+			try {
+				foreach ($this->renderCallbacks as $callback_info) {
+					if (count($callback_info['arguments'])) {
+						call_user_func_array(
+							$callback_info['method'],
+							$callback_info['arguments']
+						);
+					} else {
+						call_user_func($callback_info['method']);
+					}
 				}
-			}
 
-			return $this->place($element);
+				if (!$return) {
+					return $this->place($element);
+				} else {
+					ob_start();
+					$this->place($element);
+					return ob_get_clean();
+				}
+
+			} catch (fException $e) {
+				echo 'The view cannot be rendered: ' . $e->getMessage();
+			}
 		}
 
 		/**
