@@ -39,12 +39,6 @@
 
 				'host'     => array('127.0.0.1'),
 
-				// You can specify a role for the database such as
-				// 'read', 'write', or 'both' -- if NULL or missing,
-				// the default is both
-
-				'role'     => 'both'
-
 			),
 		),
 	));
