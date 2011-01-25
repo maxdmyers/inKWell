@@ -11,6 +11,7 @@
 
 		const DEFAULT_FIELD_SEPARATOR = '-';
 		const DEFAULT_WORD_SEPARATOR  = '_';
+		const RESOURCE_SEPARATOR      = '::';
 
 		static private $info                 = array();
 
@@ -56,15 +57,23 @@
 			$pkey_methods = self::getInfo($record_class, 'pkey_methods');
 
 			foreach ($pkey_methods as $pkey_method) {
-				$pkey_data[] = fURL::makeFriendly($this->$pkey_method());
+				$pkey_data[] = fURL::makeFriendly(
+					$this->$pkey_method(),
+					NULL,
+					self::$wordSeparator
+				);
 			}
 
 			$slug = implode(self::$fieldSeparator, $pkey_data);
 
 			if ($identify) {
 				$slug = implode('/', array(
-					fURL::makeFriendly($this->__toString()),
-					$slug
+					$slug,
+					fURL::makeFriendly(
+						$this->__toString(),
+						NULL,
+						self::$wordSeparator
+					)
 				));
 			}
 
@@ -80,7 +89,7 @@
 		 */
 		public function makeResourceKey()
 		{
-			return implode('-', array(
+			return implode(self::RESOURCE_SEPARATOR, array(
 				self::getEntry(get_class($this)),
 				$this->makeSlug(FALSE)
 			));
@@ -387,6 +396,24 @@
 		}
 
 		/**
+		 * Determines if the Active Record class has been defined.
+		 *
+		 * @param string $record_class The Active Record class
+		 * @return boolean Whether or not the class is defined
+		 */
+		static public function isDefined($record_class)
+		{
+			return (
+				// The class_exists() is a workaround for PHP bug #46753
+				// it should not be required as is_subclass_of should
+				// properly trigger autoload.  This behavior is fixed
+				// in PHP 5.3+
+				class_exists($record_class) &&
+				is_subclass_of($record_class, __CLASS__)
+			);
+		}
+
+		/**
 		 * Inspects a column on a particular record class.  If this is called
 		 * using the inspectColumn() method on an active record it will add
 		 * enhanced information.
@@ -521,9 +548,7 @@
 				self::$nameTranslations[$record] = NULL;
 				try {
 					$record_class = fGrammar::camelize($record_name, TRUE);
-					if (class_exists($record_class) &&
-						is_subclass_of($record_class, __CLASS__)
-					) {
+					if (self::isDefined($record_class)){
 						self::$recordTranslations[$record_class] = $record_name;
 					}
 				} catch (fProgrammerException $e) {}
@@ -544,9 +569,7 @@
 			if (!in_array($record_table, self::$tableTranslations)) {
 				try {
 					$record_class = fORM::classize($record_table);
-					if (class_exists($record_class) &&
-						is_subclass_of($record_class, __CLASS__)
-					) {
+					if (self::isDefined($record_class)){
 						self::$tableTranslations[$record_class] = $record_table;
 					}
 				} catch (fProgrammerException $e) {}
@@ -567,13 +590,7 @@
 			if (!in_array($record_set, self::$setTranslations)) {
 				try {
 					$record_class = fGrammar::singularize($record_set);
-					// The class_exists() is a workaround for PHP bug #46753
-					// it should not be required as is_subclass_of should
-					// properly trigger autoload.  This behavior is fixed
-					// in PHP 5.3+
-					if (class_exists($record_class) &&
-						is_subclass_of($record_class, __CLASS__)
-					) {
+					if (self::isDefined($record_class)){
 						self::$setTranslations[$record_class] = $record_set;
 					}
 				} catch (fProgrammerException $e) {}
@@ -595,9 +612,7 @@
 				try {
 					$singularized = fGrammar::singularize($entry);
 					$record_class = fGrammar::camelize($singularized, TRUE);
-					if (class_exists($record_class) &&
-						is_subclass_of($record_class, __CLASS__)
-					) {
+					if (self::isDefined($record_class)){
 						self::$entryTranslations[$record_class] = $entry;
 					}
 				} catch (fProgrammerException $e) {}
@@ -794,7 +809,13 @@
 				$record = new $record_class($pkey);
 
 				if ($identifier !== NULL) {
-					$match_id = fURL::makeFriendly($record->__toString());
+
+					$match_id = fURL::makeFriendly(
+						$record->__toString(),
+						NULL,
+						self::$wordSeparator
+					);
+
 					if ($identifier != $match_id) {
 						throw new fValidationException(
 							'Provided identifier does not match.'
