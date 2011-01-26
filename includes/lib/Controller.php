@@ -185,10 +185,8 @@
 
 			// Build our site sections
 
-			$controller_configs = array_unshift(
-				iw::getConfigsByType('controller'),
-				iw::getConfig('controller')
-			);
+			$controller_configs = iw::getConfigsByType('controller');
+			array_unshift($controller_configs, iw::getConfig('controller'));
 
 			foreach ($controller_configs as $controller_config) {
 
