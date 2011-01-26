@@ -473,7 +473,8 @@
 		 */
 		static public function __init($config)
 		{
-			self::setViewRoot(implode(DIRECTORY_SEPARATOR, array(
+
+			self::$viewRoot = implode(DIRECTORY_SEPARATOR, array(
 				$_SERVER['DOCUMENT_ROOT'],
 				trim(
 					isset($config['view_root'])
@@ -481,55 +482,43 @@
 					: self::DEFAULT_VIEW_ROOT
 					, '/\\'
 				)
-			)));
+			));
 
-			if (isset($config['cache_directory'])) {
-				$directory = iw::getWriteDirectory($config['cache_directory']);
-			} else {
-				$directory = iw::getWriteDirectory(self::DEFAULT_CACHE_DIR);
+			try {
+				self::$viewRoot = new fDirectory(self::$viewRoot);
+			} catch (fValidationException $e) {
+				throw new fProgrammerException (
+					'View root directory %s is not readable',
+					self::$viewRoot
+				);
 			}
 
-			self::setCacheDirectory($directory);
+			self::$cacheDirectory = iw::getWriteDirectory(
+				isset($config['cache_directory'])
+					? $config['cache_directory']
+					: self::DEFAULT_CACHE_DIRECTORY
+			);
+
+			try {
+				self::$cacheDirectory = new fDirectory(self::$cacheDirectory);
+			} catch (fValidationException $e) {
+				throw new fProgrammerException (
+					'Cache directory %s does not exist',
+					self::$cacheDirectory
+				);
+			}
+
+			if (!self::$cacheDirectory->isWritable()) {
+				throw new fProgrammerException (
+					'Cache directory %s is not writable',
+					self::$cacheDirectory
+				);
+			}
 
 			if (isset($config['minification_mode'])) {
 				if ($config['minification_mode']) {
 					self::$minificationMode = $config['minification_mode'];
 				}
-			}
-		}
-
-		/**
-		 * Sets the default view root directory for newly created views.
-		 *
-		 * @param string $directory The directory to set as the view root
-		 * @return void
-		 * @throws fEnvironmentException if $directoy is not readable
-		 */
-		static public function setViewRoot($directory)
-		{
-			if (is_readable($directory)) {
-				self::$viewRoot = new fDirectory($directory);
-			} else {
-				throw new fProgrammerException (
-					'View root directory %s is not readable', $directory
-				);
-			}
-		}
-
-		/**
-		 * Sets the cache directory for compressed output or stored views
-		 *
-		 * @param string|fDirectory $directory The cache directory
-		 * @return void
-		 */
-		static public function setCacheDirectory($directory)
-		{
-			if (is_writable($directory)) {
-				self::$cacheDirectory = new fDirectory($directory);
-			} else {
-				throw new fProgrammerException (
-					'Cache directory %s is not writable', $directory
-				);
 			}
 		}
 

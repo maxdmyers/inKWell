@@ -11,7 +11,8 @@
 
 		const SUFFIX                      = __CLASS__;
 
-		const DEFAULT_VIEW_ROOT           = 'views';
+		const DEFAULT_CONTROLLER_ROOT     = 'user/controllers';
+
 		const DEFAULT_REQUEST_FORMAT      = 'html';
 		const DEFAULT_AJAX_REQUEST_FORMAT = 'json';
 
@@ -25,27 +26,31 @@
 
 		// Instiated controllers have a localized view
 
-		protected        $view                     = NULL;
+		protected      $view                     = NULL;
+
+
+		static private $controllerRoot           = NULL;
+		static private $basePath                 = NULL;
 
 		// Handlers for common errors
 
-		static private   $errors                   = array();
+		static private $errors                   = array();
 
 		// Request Format Configuration
 
-		static private   $defaultRequestFormat     = NULL;
-		static private   $defaultAjaxRequestFormat = NULL;
+		static private $defaultRequestFormat     = NULL;
+		static private $defaultAjaxRequestFormat = NULL;
 
 		// Site sections
 
-		static private   $siteSections             = array();
-		static private   $baseURL                  = NULL;
-		static private   $requestPath              = NULL;
+		static private $siteSections             = array();
+		static private $baseURL                  = NULL;
+		static private $requestPath              = NULL;
 
 		// State information
 
-		static private   $requestFormat            = NULL;
-		static private   $typeHeadersRegistered    = FALSE;
+		static private $requestFormat            = NULL;
+		static private $typeHeadersRegistered    = FALSE;
 
 		/**
 		 * Builds a new controller by assigning it a local view and running
@@ -139,6 +144,25 @@
 		static public function __init($config)
 		{
 
+			self::$controllerRoot = implode(DIRECTORY_SEPARATOR, array(
+				$_SERVER['DOCUMENT_ROOT'],
+				trim(
+					isset($config['controller_root'])
+					? $config['controller_root']
+					: self::DEFAULT_CONTROLLER_ROOT
+					, '/\\'
+				)
+			));
+
+			try {
+				self::$controllerRoot = new fDirectory(self::$controllerRoot);
+			} catch (fValidationException $e) {
+				throw new fProgrammerException (
+					'View root directory %s is not readable',
+					self::$controllerRoot
+				);
+			}
+
 			// Configure default request format
 
 			self::$defaultRequestFormat = self::DEFAULT_REQUEST_FORMAT;
@@ -161,9 +185,9 @@
 
 			// Build our site sections
 
-			$controller_configs = array_merge(
-				iw::getConfig('Controller'),
-				iw::getConfigsByType('Controller')
+			$controller_configs = array_unshift(
+				iw::getConfigsByType('controller'),
+				iw::getConfig('controller')
 			);
 
 			foreach ($controller_configs as $controller_config) {
@@ -372,7 +396,7 @@
 		}
 
 		/**
-		 * Determines the baseURL from the server's request URI
+		 * Determines the base URL from the server's request URI
 		 *
 		 * @param void
 		 * @return string The Base URL
@@ -381,19 +405,19 @@
 		{
 			if (self::$baseURL == NULL) {
 				self::$baseURL   = self::DEFAULT_SITE_SECTION;
-				$request_info    = parse_url(Moor::getRequestPath());
-				$request_path    = ltrim($request_info['path'], '/');
-				$request_parts   = explode('/', $request_path);
-				$site_sections   = array_keys(self::$siteSections);
+				$request_info   = parse_url(Moor::getRequestPath());
+				$request_path   = ltrim($request_info['path'], '/');
+				$request_parts  = explode('/', $request_path);
+				$site_sections  = array_keys(self::$siteSections);
 
 				// If the request meets these conditions it will overwrite the
 				// base URL.
 
-				$has_base_url    = (in_array($request_parts[0], $site_sections));
-				$is_not_default  = ($request_parts[0] != self::$baseURL);
-				$has_sub_request = (count($request_parts) > 1);
+				$has_base_url   = (in_array($request_parts[0], $site_sections));
+				$is_not_default = ($request_parts[0] != self::$baseURL);
+				$is_sub_request = (count($request_parts) > 1);
 
-				if ($has_base_url && $is_not_default && $has_sub_request) {
+				if ($has_base_url && $is_not_default && $is_sub_request) {
 					self::$baseURL = array_shift($request_parts);
 				}
 
@@ -401,6 +425,26 @@
 			}
 
 			return self::$baseURL;
+		}
+
+		/**
+		 * Determines the base path of the controller from the controller root
+		 * and base URL.
+		 *
+		 * @param string $sub_directory An optional subdirectory to append
+		 * @return string The full base path
+		 */
+		static protected function getBasePath($sub_directory = NULL)
+		{
+
+			if (self::$basePath == NULL || $sub_directory !== NULL) {
+				self::$basePath = implode(DIRECTORY_SEPARATOR, array(
+					self::$controllerRoot . self::getBaseURL(),
+					$sub_directory
+				));
+			}
+
+			return self::$basePath;
 		}
 
 		/**

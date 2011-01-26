@@ -227,6 +227,9 @@
 			$config = self::$config;
 
 			if ($config_element !== NULL) {
+
+				$config_element = strtolower($config_element);
+
 				if (isset($config[$config_element])) {
 					$config = $config[$config_element];
 				} else {

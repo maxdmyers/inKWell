@@ -773,58 +773,65 @@
 		 */
 		static public function createFromSlug($record_class, $slug, $identifier = NULL)
 		{
+
+			if (!self::isDefined($record_class)) {
+				throw new fProgrammerException(
+					'Cannot create record of type %s, missing class',
+					$record_class
+				);
+			}
+
 			if (empty($slug)) {
 				return new $record_class();
+			}
+
+			$pkey_columns = self::getInfo($record_class, 'pkey_columns');
+			$pkey_data    = explode(self::$fieldSeparator, $slug);
+
+			if (sizeof($pkey_data) < sizeof($pkey_columns)) {
+				throw new fProgrammerException(
+					'Malformed slug for class %s, check the primary key.',
+					$record_class
+				);
+			}
+
+			if (sizeof($pkey_columns) == 1) {
+				$pkey = implode(self::$fieldSeparator, $pkey_data);
 			} else {
 
-				$pkey_columns = self::getInfo($record_class, 'pkey_columns');
-				$pkey_data    = explode(self::$fieldSeparator, $slug);
+				foreach ($pkey_columns as $pkey_column) {
+					$pkey[$pkey_column] = array_shift($pkey_data);
+					$last_column        = &$pkey[$pkey_column];
+				}
 
-				if (sizeof($pkey_data) < sizeof($pkey_columns)) {
-					throw new fProgrammerException(
-						'Malformed slug for class %s, check the primary key.',
-						$record_class
+				// Allows for fieldSeparator in final pkey column
+
+				if (count($pkey_data) > 0) {
+					$last_column .= implode(
+						self::$fieldSeparator,
+						$pkey_data
 					);
 				}
-
-				if (sizeof($pkey_columns) == 1) {
-					$pkey = implode(self::$fieldSeparator, $pkey_data);
-				} else {
-
-					foreach ($pkey_columns as $pkey_column) {
-						$pkey[$pkey_column] = array_shift($pkey_data);
-						$last_column        = &$pkey[$pkey_column];
-					}
-
-					// Allows for fieldSeparator in final pkey column
-
-					if (count($pkey_data) > 0) {
-						$last_column .= implode(
-							self::$fieldSeparator,
-							$pkey_data
-						);
-					}
-				}
-
-				$record = new $record_class($pkey);
-
-				if ($identifier !== NULL) {
-
-					$match_id = fURL::makeFriendly(
-						$record->__toString(),
-						NULL,
-						self::$wordSeparator
-					);
-
-					if ($identifier != $match_id) {
-						throw new fValidationException(
-							'Provided identifier does not match.'
-						);
-					}
-				}
-
-				return $record;
 			}
+
+			$record = new $record_class($pkey);
+
+			if ($identifier !== NULL) {
+
+				$match_id = fURL::makeFriendly(
+					$record->__toString(),
+					NULL,
+					self::$wordSeparator
+				);
+
+				if ($identifier != $match_id) {
+					throw new fValidationException(
+						'Provided identifier does not match.'
+					);
+				}
+			}
+
+			return $record;
 		}
 
 		/**
