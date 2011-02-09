@@ -11,5 +11,4 @@
 
 	return iw::createConfig('Core', array(
 
-
 	));
