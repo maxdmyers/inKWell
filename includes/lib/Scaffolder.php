@@ -4,6 +4,10 @@
 	 * The inKWell scaffolder
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
+	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
+	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 *
+	 * @package inKWell
 	 */
 	class Scaffolder extends iw implements inkwell
 	{
@@ -11,24 +15,27 @@
 		const DEFAULT_SCAFFOLDING_ROOT = 'scaffolding';
 		const DYNAMIC_SCAFFOLD_METHOD  = '__make';
 		const FINAL_SCAFFOLD_METHOD    = '__scaffold';
-
 		const VARIABLE_REGEX           = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
 
-		// Configuration Informations
-
+		/**
+		 * The directory containing scaffolding templates
+		 *
+		 * @static
+		 * @access private
+		 * @var string|fDirectory
+		 */
 		static private $scaffoldingRoot = NULL;
-		static private $config          = array();
 
 		/**
 		 * Initializses the Scaffolder class
 		 *
+		 * @static
+		 * @access public
 		 * @param array $config The configuration array
 		 * @return void
 		 */
 		static public function __init(array $config = array())
 		{
-			self::$config = $config;
-
 			if (isset($config['disabled']) && $config['disabled']) {
 				return FALSE;
 			}
@@ -58,6 +65,8 @@
 		/**
 		 * Attempts to load a class via Scaffolder
 		 *
+		 * @static
+		 * @access public
 		 * @param string $class The class to be loaded
 		 * @param array $output_map The output map array of $class => $target members
 		 * @return mixed Whether or not the class was successfully loaded and initialized
@@ -65,7 +74,8 @@
 		static public function loadClass($class, array $output_map = array())
 		{
 			if (!count($output_map)) {
-				$output_map = self::$config['output_map'];
+				$config     = iw::getConfig(fGrammar::underscorize(__CLASS__));
+				$output_map = $config['output_map'];
 			}
 
 			foreach ($output_map as $loader => $target) {
@@ -205,7 +215,7 @@
 		 * @param mixed $variable The variable to export
 		 * @return string A PHP parseable version of the variable
 		 */
-		static private function export_var($variable)
+		static private function exportVariable($variable)
 		{
 			$translated = var_export($variable, TRUE);
 			$translated = str_replace("\n", '', $translated);

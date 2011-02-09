@@ -331,6 +331,40 @@
 		}
 
 		/**
+		 * Get a link to to a controller target
+		 *
+		 * @param string $target an inKWell target to redirect to
+		 * @param array $query an associative array containing parameters => values
+		 * @return void
+		 */
+		static public function makeLink($target, $query = array())
+		{
+			if (!is_callable($target)) {
+
+				$query = (count($query))
+					? '?' . http_build_query($query)
+					: NULL;
+
+				if (strpos($target, '/') === 0 && Moor::getActiveProxyURI()) {
+					return Moor::getActiveProxyURI() . $target . $query;
+				}
+
+				return $target . $query;
+			}
+
+			$params = array_keys($query);
+
+			$target = (array_unshift($params, $target) == 1)
+				? $target
+				: implode(' ', $params);
+
+			return call_user_func_array(
+				'Moor::linkTo',
+				array_merge(array($target), $query)
+			);
+		}
+
+		/**
 		 * Creates a unique failure token which can then be checked with
 		 * checkFailureToken().
 		 *

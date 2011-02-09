@@ -4,6 +4,10 @@
 	 * RecordSet class for aggregated arrays of Active Records
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
+	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
+	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 *
+	 * @package inKWell
 	 */
 	abstract class RecordSet extends fRecordSet implements inkwell
 	{
@@ -16,6 +20,22 @@
 		 * @return boolean TRUE if it matches, FALSE otherwise
 		 */
 		static public function __match($class) {
+			try {
+				$record_class = fGrammar::singularize($class);
+				return ActiveRecord::__match($record_class);
+			} catch (fProgrammerException $e) {}
+
+			return FALSE;
+		}
+
+		/**
+		 * Initializes all static class information for the RecordSet
+		 *
+		 * @param array $config The configuration array
+		 * @return boolean TRUE if initialization succeeds, FALSE otherwise
+		 */
+		static public function __init(array $config = array())
+		{
 			return TRUE;
 		}
 

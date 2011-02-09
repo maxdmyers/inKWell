@@ -5,10 +5,10 @@
 inKWell is currently alpha software, we will answer any questions you might have
 directly.  Feel free to message us on GitHub, username: dotink.
 
-If you wish to license this software under different terms and conditions than
-presented below, please e-mail: Matthew J. Sahagian <msahagian@dotink.org>
-
 ## Licensing
+
+If you wish to license this software under different terms and conditions than
+presented below, please e-mail: info@dotink.org
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU Affero General Public License as published by the Free

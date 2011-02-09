@@ -5,6 +5,10 @@
 	 * responses, and building higher level controllers.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
+	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
+	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 *
+	 * @package inKWell
 	 */
 	class Controller extends MoorAbstractController implements inkwell
 	{
@@ -246,7 +250,7 @@
 		 * @param array $types An array of acceptable mime types
 		 * @return mixed The method will trigger a 'not_acceptable' error on failure, will return the best type upon success.
 		 */
-		static protected function acceptTypes(array $types = array())
+		static protected function acceptTypes(array $types)
 		{
 			return ($best_type = fRequest::getBestAcceptType($types))
 				? $best_type
@@ -260,7 +264,7 @@
 		 * @param array $language An array of acceptable languages
 		 * @return mixed The method will trigger a 'not_accepted' error on failure, will return the best type upon success.
 		 */
-		static protected function acceptLanguages(array $languages = array())
+		static protected function acceptLanguages(array $languages)
 		{
 			return ($best_language = fRequest::getBestAcceptType($types))
 				? $best_language
@@ -299,7 +303,7 @@
 		 */
 		static protected function redirect($target, $query = array())
 		{
-			fURL::redirect(self::makeLink($target, $query));
+			fURL::redirect(iw::makeLink($target, $query));
 		}
 
 		/**
@@ -360,40 +364,6 @@
 		}
 
 		/**
-		 * Get a link to to a controller target
-		 *
-		 * @param string $target an inKWell target to redirect to
-		 * @param array $query an associative array containing parameters => values
-		 * @return void
-		 */
-		static protected function makeLink($target, $query = array())
-		{
-			if (!is_callable($target)) {
-
-				$query = (count($query))
-					? '?' . http_build_query($query)
-					: NULL;
-
-				if (strpos($target, '/') === 0 && Moor::getActiveProxyURI()) {
-					return Moor::getActiveProxyURI() . $target . $query;
-				}
-
-				return $target . $query;
-			}
-
-			$params = array_keys($query);
-
-			$target = (array_unshift($params, $target) == 1)
-				? $target
-				: implode(' ', $params);
-
-			return call_user_func_array(
-				'Moor::linkTo',
-				array_merge(array($target), $query)
-			);
-		}
-
-		/**
 		 * Determines the base URL from the server's request URI
 		 *
 		 * @param void
@@ -402,7 +372,7 @@
 		static protected function getBaseURL()
 		{
 			if (self::$baseURL == NULL) {
-				self::$baseURL   = self::DEFAULT_SITE_SECTION;
+				self::$baseURL  = self::DEFAULT_SITE_SECTION;
 				$request_info   = parse_url(Moor::getRequestPath());
 				$request_path   = ltrim($request_info['path'], '/');
 				$request_parts  = explode('/', $request_path);
@@ -426,26 +396,6 @@
 		}
 
 		/**
-		 * Determines the base path of the controller from the controller root
-		 * and base URL.
-		 *
-		 * @param string $sub_directory An optional subdirectory to append
-		 * @return string The full base path
-		 */
-		static protected function getBasePath($sub_directory = NULL)
-		{
-
-			if (self::$basePath == NULL || $sub_directory !== NULL) {
-				self::$basePath = implode(DIRECTORY_SEPARATOR, array(
-					self::$controllerRoot . self::getBaseURL(),
-					$sub_directory
-				));
-			}
-
-			return self::$basePath;
-		}
-
-		/**
 		 * Determines the internal request path (i.e. without a baseURL)
 		 *
 		 * @param void
@@ -457,6 +407,24 @@
 				self::getBaseURL();
 			}
 			return self::$requestPath;
+		}
+
+		/**
+		 * Determines the base path of the controller from the controller root
+		 * and base URL.
+		 *
+		 * @param string $sub_directory An optional subdirectory to append
+		 * @return fDirectory The full base path
+		 */
+		static protected function getBasePath($sub_directory = NULL)
+		{
+			if (self::$basePath == NULL) {
+				self::$basePath = new fDirectory(
+					self::$controllerRoot . self::getBaseURL()
+				);
+			}
+
+			return new fDirectory(self::$basePath . $sub_directory);
 		}
 
 		/**
