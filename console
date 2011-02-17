@@ -24,6 +24,103 @@
 
 	register_shutdown_function('___respawn');
 
+
+	/**
+	 * Check syntax and other validity aspects of PHP source code.
+	 *
+	 * @param string $string A string of PHP source code without an open tag
+	 * @return boolean TRUE if code appears valid, FALSE otherwise
+	 */
+	function ___check($string)
+	{
+
+		$source      = '<?php ' . $string;
+
+		$syntax_check = shell_exec(sprintf(
+			'echo %s | php -l',
+			escapeshellarg($source)
+		));
+
+		if (stripos($syntax_check, 'No syntax errors') === FALSE) {
+			return FALSE;
+		}
+
+
+		foreach (($tokens = token_get_all($source)) as $i => $token) {
+
+			if (is_array($token)) {
+
+				if ($token[0] == T_STRING && $tokens[$i + 1] == '(') {
+
+					$t      = $token[1];
+					$c      = 1;
+					$method = NULL;
+
+					do {
+
+						$previous_token = is_array($tokens[$i - $c])
+							? $tokens[$i - $c][0]
+							: $tokens[$i - $c];
+
+						$c++;
+
+					} while($previous_token == T_WHITESPACE);
+
+					switch ($previous_token) {
+
+						// Safe Cases
+
+						case T_FUNCTION:
+						case T_OBJECT_OPERATOR:
+							break;
+
+						case T_PAAMAYIM_NEKUDOTAYIM:
+
+							$t      = $tokens[$i - 2][1];
+							$method = $token[1];
+
+						case T_NEW:
+
+							if (!class_exists($t)) {
+								echo sprintf(
+									'Error:  Class %s does not exist.%s',
+									$t
+								) . PHP_EOL;
+								return FALSE;
+							}
+
+							// Handle method_exists check for static methods
+
+							if (isset($method) && !method_exists($t, $method)) {
+								echo sprintf(
+									'Error:  Method %s() does not exist on %s.',
+									$method,
+									$t
+								) . PHP_EOL;
+								return FALSE;
+							}
+
+							break;
+
+						default:
+
+							if (!function_exists($t)) {
+								echo sprintf(
+									'Error:  Function %s() does not exist.',
+									$t
+								) . PHP_EOL;
+								return FALSE;
+							}
+							break;
+					}
+				}
+			}
+		}
+
+		return TRUE;
+	}
+
+
 	// Establish fake server parameters
 
 	$_SERVER['DOCUMENT_ROOT']  = dirname(__FILE__);
@@ -50,14 +147,17 @@
 
 	$___stdin   = fopen('php://stdin', 'r');
 	$___depth   = 0;
+	$___line    = 1;
 	$___command = '';
 
 	do {
 
-		$___command = trim($___command);
+		$___command  = trim($___command);
 
 		if ($___command) {
-			$___echar = substr($___command, strlen($___command) - 1);
+
+			$___echar    = substr($___command, strlen($___command) - 1);
+			$___command .= PHP_EOL;
 
 			switch ($___echar) {
 				case '{':
@@ -65,31 +165,48 @@
 					break;
 				case '}':
 					$___depth--;
+					if ($___depth < 0) {
+						$___depth = 0;
+					}
 					break;
 			}
 
 			if ($___depth == 0 && ($___echar == '}' || $___echar == ';')) {
-				ob_start();
-				fCore::startErrorCapture();
-				try {
-					eval($___command);
-				} catch (fException $___e) {
-					echo 'inKWell Exception:  ' . $___e->getMessage();
-				}
-				if(is_array($errors = fCore::stopErrorCapture())) {
-					foreach ($errors as $error) {
-						echo $error['type'] . ':  ' . $error['string'];
+
+				$___line = 1;
+
+				if (___check($___command)) {
+
+					ob_start();
+
+					fCore::startErrorCapture();
+					try {
+						eval($___command);
+					} catch (fException $___e) {
+						echo 'Exception:  ' . $___e->getMessage();
 					}
+
+					if(is_array($errors = fCore::stopErrorCapture())) {
+						foreach ($errors as $error) {
+							echo $error['type'] . ':  ' . $error['string'];
+						}
+					}
+
+					$___command = '';
+					$___output  = ob_get_clean();
+
+					if($___output) {
+						echo $___output;
+						echo PHP_EOL;
+					}
+				} else {
+					$___command = '';
 				}
 
-				$___command = '';
-				$___output  = ob_get_clean();
-
-				if($___output) {
-					echo $___output;
-					echo "\n";
-				}
 			} else {
+
+				$___line++;
+
 				switch (trim($___command)) {
 					case 'exit':
 					case 'quit':
@@ -103,6 +220,8 @@
 				}
 			}
 		}
-		echo '[' . getcwd() . ']# ';
+
+		echo '[' . getcwd() . '][' . sprintf('%02s', $___line) . ']# ';
+
 	} while(($___command .= fgets($___stdin)));
 

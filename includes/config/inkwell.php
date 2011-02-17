@@ -45,5 +45,12 @@
 			'console_date'      => 'M jS, Y',
 			'console_time'      => 'g:ia',
 			'console_timestamp' => 'M jS, Y @ g:ia'
-		)
+		),
+
+		// Interfaces can be loaded in bulk from the array of interface
+		// directories.  By default this is /includes/lib/interfaces
+
+		'interfaces'            => array(
+			'includes/lib/interfaces'
+		),
 	));

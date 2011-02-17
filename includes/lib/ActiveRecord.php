@@ -13,9 +13,6 @@
 	abstract class ActiveRecord extends fActiveRecord implements inkwell
 	{
 
-		// Default constants.  These can be overridden in the class
-		// configuration
-
 		const DEFAULT_FIELD_SEPARATOR = '-';
 		const DEFAULT_WORD_SEPARATOR  = '_';
 
@@ -53,11 +50,41 @@
 		 */
 		static private $inspectionInfo = array();
 
+		/**
+		 * Cached name translations for record classes
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $nameTranslations = array();
 
-		static private $nameTranslations     = array();
-		static private $tableTranslations    = array();
-		static private $setTranslations      = array();
-		static private $entryTranslations    = array();
+		/**
+		 * Cached table translations for record classes
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $tableTranslations = array();
+
+		/**
+		 * Cached record set translations for record classes
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $setTranslations = array();
+
+		/**
+		 * Cached entry translations for record classes
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $entryTranslations = array();
 
 		/**
 		 * The slug field separator, default is a dash
@@ -96,7 +123,9 @@
 		static private $fileUploadDirectory = NULL;
 
 		/**
-		 * Represents the object as a string
+		 * Represents the object as a string using the value of a configured
+		 * or natural id_column.  If no such column exists, it uses the
+		 * human version of the record class.
 		 *
 		 * @access public
 		 * @return string The string representation of the object
@@ -114,10 +143,10 @@
 
 		/**
 		 * Get the value of the record's primary key as passed to the
-		 * constructor.
+		 * constructor or as a serialized string.
 		 *
 		 * @access public
-		 * @param boolean $serialize Whether or not to serialize the pkey as JSON
+		 * @param boolean $serialize Whether or not to serialize the pkey
 		 * @return mixed The primary key, usable in the constructor
 		 */
 		public function getPrimaryKey($serialize = FALSE)
@@ -145,11 +174,10 @@
 		}
 
 		/**
-		 * Creates an identifying slug which can be comprised ultimately of the
-		 * record name, a URL friendly string representation of the primary key,
-		 * and optionally the value of the record's configured id_column. The
-		 * slug is HTML friendly by nature, although it is not independently
-		 * HTML encoded.
+		 * Creates an identifying slug which can be comprised ultimately of a
+		 * URL friendly string representation of the primary key and optionally
+		 * the value of the record's configured id_column. The slug is HTML
+		 * friendly by nature, although it is not independently HTML encoded.
 		 *
 		 * @access public
 		 * @param string $identify Whether or not to append an identifier
@@ -207,13 +235,13 @@
 
 		/**
 		 * Creates a resource key which can be comprised ultimately of the
-		 * record name and a JSON serialized primary key.  The returned value
-		 * is not necessarily HTML safe and should be encoded if embedded in
-		 * HTML.
+		 * JSON serialized primary key and optionally the identifier.  The
+		 * returned value is not necessarily HTML safe and should be encoded
+		 * if embedded in HTML.
 		 *
 		 * @access public
 		 * @param boolean $identify Whether or not to append an identifiier
-		 * @return void
+		 * @return string The JSON serialized resource key
 		 */
 		public function makeResourceKey($identify = TRUE)
 		{
@@ -242,7 +270,8 @@
 
 		/**
 		 * Matches whether or not a given class name is a potential
-		 * ActiveRecord by looking for the tablized form in the list of
+		 * ActiveRecord by looking for an available matching ActiveRecord
+		 * configuration or the tablized form in the list of the default
 		 * database tables.
 		 *
 		 * @static
@@ -263,12 +292,14 @@
 		}
 
 		/**
-		 * Initializses the ActiveRecord class
+		 * Initializses the ActiveRecord class or a child class to be used
+		 * as an active record.
 		 *
 		 * @static
 		 * @access public
 		 * @param array $config The configuration array
-		 * @return void
+		 * @paramm string $record_class A specific record class to configure
+		 * @return boolen TRUE if the configuration succeeds, FALSE otherwise
 		 */
 		static public function __init($config, $record_class = NULL)
 		{
@@ -560,33 +591,26 @@
 		}
 
 		/**
-		 * Dynamically defines an ActiveRecord if the provided class is the
-		 * classized version of a table in the attached schema.
+		 * Dynamically scaffolds an Active Record class.
 		 *
 		 * @static
 		 * @access public
-		 * @param string $record_class The Class name to dynamically define
-		 * @return boolean TRUE if an active record was dynamically defined, FALSE otherwise
+		 * @param string $record_class The class name to scaffold
+		 * @return boolean TRUE if the record class was scaffolded, FALSE otherwise
 		 */
 		static public function __make($record_class)
 		{
+			Scaffolder::makeClass($record_class, __CLASS__, array());
 
-			$tables = fORMSchema::retrieve($record_class)->getTables();
-			$table  = fORM::tablize($record_class);
-
-			if (in_array($table, $tables)) {
-
-				Scaffolder::makeClass($record_class, __CLASS__, array());
-
-				if (class_exists($record_class, FALSE)) {
-					return TRUE;
-				}
+			if (class_exists($record_class, FALSE)) {
+				return TRUE;
 			}
+
 			return FALSE;
 		}
 
 		/**
-		 * Determines if the Active Record class has been defined.
+		 * Determines if an Active Record class has been defined.
 		 *
 		 * @static
 		 * @access public
@@ -619,6 +643,10 @@
 		 */
 		static public function inspectColumn($record_class, $column, &$info = array())
 		{
+
+			// TODO: Determine if flourish will cache the $info array with
+			// TODO: additional changes here... if not, implement local cache
+			// TODO: using self::$inspectionInfo
 
 			$schema = fORMSchema::retrieve($record_class);
 			$table  = self::getRecordTable($record_class);
@@ -898,6 +926,8 @@
 		/**
 		 * Gets the the ordering of the Active Record class
 		 *
+		 * @static
+		 * @access public
 		 * @param string $record_class The Active Record class name
 		 * @return array The ordering array for the Active Record class
 		 */
@@ -920,6 +950,25 @@
 			return self::getInfo($record_class, 'is_relationship');
 		}
 
+		/**
+		 * Resets somme cached information such as the slug and resource keys
+		 * in the event related information such as primary key values has
+		 * changed.
+		 *
+		 * @static
+		 * @access public
+		 * @param fActiveRecord The active record object
+		 * @param array $values The new column values being set
+		 * @param array $old_values The original column values
+		 * @param array $related The related records array for the record
+		 * @param array $cache The cache array for the record
+		 * @return void
+		 */
+
+		static public function resetCache($object, &$values, &$old_values, &$related_records, &$cache)
+		{
+			// TODO: Implement method
+		}
 
 		/**
 		 * A validation hook for the slug column.  This ensures that the slug
@@ -937,7 +986,7 @@
 		 */
 		static public function validateSlugColumn($object, &$values, &$old_values, &$related_records, &$cache, &$validation_messages)
 		{
-
+			// TODO: Implement method
 		}
 
 		/**

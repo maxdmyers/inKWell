@@ -35,6 +35,28 @@
 		}
 	}
 
+	// Include any interfaces
+
+	if (isset($config['inkwell']['interfaces'])) {
+
+		foreach ($config['inkwell']['interfaces'] as $interface_directory) {
+			$available_interfaces = glob(implode(DIRECTORY_SEPARATOR, array(
+				$_SERVER['DOCUMENT_ROOT'],
+				$interface_directory,
+				'*.php'
+			)));
+
+			foreach ($available_interfaces as $available_interface) {
+
+				$interface = pathinfo($available_interface, PATHINFO_FILENAME);
+
+				if (!interface_exists($interface, FALSE)) {
+					include $available_interface;
+				}
+			}
+		}
+	}
+
 	// Initialize the Session
 
 	fSession::setPath(

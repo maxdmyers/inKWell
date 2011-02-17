@@ -1,7 +1,8 @@
 <?php
 
 	/**
-	 * Description
+	 * The view class is responsible for interfacing Controllers with actual
+	 * view files / templates.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
@@ -16,21 +17,61 @@
 		const DEFAULT_CACHE_DIR     = 'cache';
 		const PRIMARY_VIEW_ELEMENT  = '__main__';
 
-		// Data storage area, render callbacks, and food?
+		/**
+		 * The data storage area
+		 *
+		 * @access private
+		 * @var array
+		 */
+		private $data = array();
 
-		private        $data               = array();
-		private        $renderCallbacks    = array();
-		private        $isFood             = FALSE;
+		/**
+		 * A list of callbacks to call when render() is called
+		 *
+		 * @access private
+		 * @var array
+		 */
+		private $renderCallbacks = array();
 
-		// Information for templating engine
+		/**
+		 * If the template represents string content
+		 *
+		 * @access private
+		 * @var boolean
+		 */
+		private $isFood = FALSE;
 
-		static private $viewRoot         = NULL;
-		static private $cacheDirectory   = NULL;
+		/**
+		 * The path from which relative views are loaded
+		 *
+		 * @static
+		 * @access private
+		 * @var string|fDirectory
+		 */
+		static private $viewRoot = NULL;
+
+		/**
+		 * The path where cached views and compressed styles/scripts are stored
+		 *
+		 * @static
+		 * @access private
+		 * @var string|fDirectory
+		 */
+		static private $cacheDirectory = NULL;
+
+		/**
+		 * The minification mode for compressing styles/scripts
+		 *
+		 * @static
+		 * @access private
+		 * @var string|NULL
+		 */
 		static private $minificationMode = NULL;
 
 		/**
 		 * Creates a new templating object.
 		 *
+		 * @access public
 		 * @param string $view_root The root directory for views
 		 * @param string $cache_dir A directory where cached views can be stored
 		 * @return void
@@ -57,38 +98,19 @@
 		}
 
 		/**
-		 * Overrides standard get functionality in order to allow a feed
-		 * to be created.  Feeds use small areas of output buffered code to
-		 * allow inline placement of views.
-		 *
-		 * @example /sup/documentation/examples/templating/feed-1.inc
-		 * @param string $property The name of the property to try and get
-		 * @return mixed The result of the magic method, or TRUE/FALSE for feed initialization
-		 *
-		 */
-		public function __get($property)
-		{
-			switch ($property) {
-				case 'feed':
-					return ob_start();
-				case 'food':
-					return ob_get_clean();
-				default:
-					return parent::__get($property);
-			}
-		}
-
-		/**
 		 * Outputs the view or a particular view element to the screen, this
-		 * is a pseudonym for place wrapped to catch exceptions.
+		 * is a pseudonym for place wrapped to catch exceptions and allow for
+		 * callbacks.
 		 *
+		 * @access public
 		 * @param string $element An optional name of an element to output
 		 * @param boolean $return Whether or not to return output as a string
-		 * @return void
+		 * @return void|string Void if $return is FALSE, the rendered template as a string otherwise
 		 */
 		public function render($element = NULL, $return = FALSE)
 		{
 			try {
+
 				foreach ($this->renderCallbacks as $callback_info) {
 					if (count($callback_info['arguments'])) {
 						call_user_func_array(
@@ -118,8 +140,10 @@
 		 * Keep in mind that rendering has to be done explicitely and that
 		 * embedded views are not "rendered", but placed in other views.
 		 *
+		 * @access public
 		 * @param callback $callback The callback to be registered
 		 * @param mixed $args Each additional parameter is an additional argument for the callback
+		 * @return void
 		 */
 		public function onRender($callback)
 		{
@@ -136,22 +160,35 @@
 		}
 
 		/**
-		 * Sets a file as the "master" template to be included when/if place
-		 * is called without arguments.
+		 * Loads a view file.  If the file begins with a '/' it will be looked
+		 * for relative to $_SERVER['DOCUMENT_ROOT'].  If the file does not it
+		 * will be relative to the configured view root.  If the first parameter
+		 * may be an array of files, of which, the first one to exist will be
+		 * used.
 		 *
-		 * @param string $file
-		 * @return fTemplating The template object, to allow for method chaining
+		 * @access public
+		 * @param string|array $file The path to the view file or an array of candidate files
+		 * @return View The view object, to allow for method chaining
 		 */
 		public function load($file)
 		{
+			if (is_array($file)) {
+				foreach ($file as $candidate_file) {
+					if (self::exists($candidate_file)) {
+						$file = $candidate_file;
+						break;
+					}
+				}
+			}
+
 			$this->set(self::PRIMARY_VIEW_ELEMENT, $file);
 			return $this;
 		}
 
 		/**
-		 * Overrides standard place functionality allowing for feed elements to
-		 * be digested and for nested view objects.
+		 * Places a view or view element.
 		 *
+		 * @access public
 		 * @param string $element The name of the element
 		 * @param string $file_type An optional forced file_type (irrelevant for feeds)
 		 * @return void
@@ -173,8 +210,11 @@
 		}
 
 		/**
-		 * Internally consumes content into an internal element.
+		 * Adds string content to a view element, such that when the element
+		 * is placed the content is directly outputted.  In short, this is
+		 * for non-data elements which do not have template files.
 		 *
+		 * @access public
 		 * @param string $element The name of the element
 		 * @param string $content An optional string of content to consume
 		 * @return View The view object to allow for method chaining
@@ -194,18 +234,19 @@
 		 * Pack's data into the view's data storage area destroying any
 		 * existing keys which may be in it's way
 		 *
+		 * @access public
 		 * @param string $data_set A string indicating the data set to pack into
 		 * @param mixed $value The value to pack into the data set
 		 * @return View The view object to allow for method chaining
 		 */
-		public function pack ($data_set, $value = NULL)
+		public function pack($data_set, $value = NULL)
 		{
 			if (!is_array($data_set)) {
 				if (is_string($data_set) || is_int($data_set)) {
 					$data_set = array($data_set => $value);
 				} else {
 					throw new fProgrammerException(
-						'No value provided for scalar data set.'
+						'Invalid data set supplied, must be a string or integer'
 					);
 				}
 			}
@@ -221,30 +262,31 @@
 		 * Pushes data onto the end of the data storage arrays given keys.
 		 * If an element is pushed on which is not an array, it will become one.
 		 *
+		 * @access public
 		 * @param string $data_set A string indicating the data set to push into
 		 * @param mixed $value The value to push into the data set
 		 * @return View The view object to allow for method chaining
 		 */
-		 public function push ($data_set, $value = NULL)
+		 public function push($data_set, $value = NULL)
 		 {
 			if (!is_array($data_set)) {
 				if (is_string($data_set) || is_int($data_set)) {
 					$data_set = array($data_set => $value);
 				} else {
 					throw new fProgrammerException(
-						'No data provided for scalar data set.'
+						'Invalid data set supplied, must be a string or integer'
 					);
 				}
 			}
 
 		 	foreach ($data_set as $key => $value) {
-		 		if (!isset($this->data[$key])) {
+		 		if (!array_key_exists($key, $this->data)) {
 		 			$this->data[$key] = array();
-		 		}
-		 		if (!is_array($this->data[$key])) {
+		 		} elseif (!is_array($this->data[$key])) {
 		 			$this->data[$key] = array($this->data[$key]);
 		 		}
-		 		$this->data[$key][]   = $value;
+
+		 		$this->data[$key][] = $value;
 		 	}
 
 		 	return $this;
@@ -255,11 +297,13 @@
 		 * Optionally the data can be destroyed after being pulled and will no
 		 * longer be accessible through future calls.
 		 *
+		 * @access protected
 		 * @param string $key The key of the data to try an pull
+		 * @param mixed $default The default value if the key is not found
 		 * @param boolean $destructive Whether or not to destroy the data
 		 * @return mixed The pulled data from the data storage array
 		 */
-		protected function pull($key, $destructive = FALSE)
+		protected function pull($key, $default = NULL, $destructive = FALSE)
 		{
 			if (array_key_exists($key, $this->data)) {
 
@@ -271,6 +315,8 @@
 
 				return $data;
 
+			}  elseif (func_num_args() > 1) {
+				return $default;
 			} else {
 				throw new fProgrammerException (
 					'Data referenced by %s does not exist.', $key
@@ -283,11 +329,13 @@
 		 * the data can be destroyed.  Please note, that if the data is not
 		 * an array this becomes functionally equivalent to pull.
 		 *
+		 * @access protected
 		 * @param string $key The key of the data from which to pop a value
+		 * @param mixed $default The default value if the key is not found
 		 * @param boolean $destructive Whether or not to destroy the data
 		 * @return mixed The peeled data from the end of the data storage array
 		 */
-		protected function peel($key, $destructive = FALSE)
+		protected function peel($key, $default = NULL, $destructive = FALSE)
 		{
 			if (array_key_exists($key, $this->data)) {
 				if (is_array($this->data[$key])) {
@@ -303,6 +351,8 @@
 					return $this->pull($key, $destructive);
 				}
 
+			} elseif (func_num_args() > 1) {
+				return $default;
 			} else {
 				throw new fProgrammerException (
 					'Data referenced by %s does not exist.', $key
@@ -317,6 +367,7 @@
 		 * or not the value identified by the element/key is contained in the
 		 * array.
 		 *
+		 * @access protected
 		 * @param array $matches An array of key (data element) to value (to match against) pairs.
 		 * @return boolean TRUE if the data element identified by the key matches or is contained in the value.
 		 */
@@ -335,6 +386,7 @@
 					return FALSE;
 				}
 			}
+
 			return TRUE;
 		}
 
@@ -343,6 +395,7 @@
 		 * by the keys of $matches contains (if array) or is equal to their
 		 * respective value in $matches.
 		 *
+		 * @access protected
 		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
 		 * @param boolean $as_attribute How to return the resulting selected if all matches are valid
 		 * @return string 'selected' or 'selected="selected"' upon matching
@@ -361,6 +414,7 @@
 		 * the keys of $matches contains (if array) or is equal to their
 		 * respective value in $matches.
 		 *
+		 * @access protected
 		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
 		 * @param boolean $as_attribute How to return the resulting disabled if all matches are valid
 		 * @return string 'disabled' or 'disabled="disabled"' upon matching
@@ -379,6 +433,7 @@
 		 * by the keys of $matches contains (if array) or is equal to their
 		 * respective value in $matches.
 		 *
+		 * @access protected
 		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
 		 * @return string 'highlighted' (for use as class) upon matching, an empty string if not
 		 */
@@ -395,6 +450,7 @@
 		 * Determines position information about $current_value in the array or
 		 * iterator identified by $key in the data storage area.
 		 *
+		 * @access protected
 		 * @param string $key The key of the iterator in the data storage area
 		 * @param mixed $current_value The the current value in the outter loop
 		 * @return string A space separated string of position information (first/last and even/odd)
@@ -405,8 +461,8 @@
 
 			if (array_key_exists($key, $this->data)) {
 				if (
-					$this->data[$key] instanceof Traversable ||
-					is_array($this->data[$key])
+					$this->data[$key] instanceof Traversable
+					|| is_array($this->data[$key])
 				) {
 					foreach ($this->data[$key] as $index => $member) {
 						if ($current_value === $member) {
@@ -434,6 +490,7 @@
 		 * Combines the view element $element together with the separate
 		 * provided by $separator.
 		 *
+		 * @access protected
 		 * @param string $element The name of the element to combine
 		 * @param string $separator The string which separates the pieces
 		 * @return string The string of combined elements, or an empty string if the element was not an array
@@ -446,6 +503,7 @@
 					return $this->data[$key];
 				}
 			}
+
 			return '';
 		}
 
@@ -453,6 +511,7 @@
 		 * Reverse combines the view element $element together with the
 		 * separator provided by $separator.
 		 *
+		 * @access protected
 		 * @param string $key The key of the data which to combine
 		 * @param string $separator The string which separates the pieces
 		 * @return string The string of combined elements, or an empty string if the element was not an array
@@ -465,15 +524,17 @@
 					return $this->data[$key];
 				}
 			}
+
 			return '';
 		}
 
 		/**
 		 * Initializes the templating engine
 		 *
+		 * @static
+		 * @access public
 		 * @param array $config The configuration array
 		 * @return void
-
 		 */
 		static public function __init($config)
 		{
@@ -527,16 +588,25 @@
 		}
 
 		/**
-		 * Check whether or not a particular view file exists.
+		 * Check whether or not a particular view file exists relative to the
+		 * view root.
 		 *
+		 * @static
+		 * @access public
 		 * @param string $view_file The relative path to the view file to check
+		 * @return boolean TRUE if the view file is readable, FALSE otherwise
 		 */
 		static public function exists($view_file)
 		{
-			if (strpos(self::$viewRoot, $view_file) !== 0) {
+			if ($view_file[0] !== '/' && $view_file[0] !== '\\') {
 				$view_file = implode(DIRECTORY_SEPARATOR, array(
 					self::$viewRoot,
-					ltrim($view_file, '/\\')
+					$view_file
+				));
+			} else {
+				$view_file = implode(DIRECTORY_SEPARATOR, array(
+					$_SERVER['DOCUMENT_ROOT'],
+					$view_file
 				));
 			}
 

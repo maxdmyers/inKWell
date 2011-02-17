@@ -444,7 +444,7 @@
 					}
 				}
 
-				if ($match) {
+				if ($match !== FALSE) {
 
 					$file = implode(DIRECTORY_SEPARATOR, array(
 						$_SERVER['DOCUMENT_ROOT'],   // Document Root

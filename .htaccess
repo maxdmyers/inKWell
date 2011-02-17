@@ -20,15 +20,15 @@
 ## Forbid reading of certain files directly                                   ##
 ################################################################################
 
-	<Files .htaccess>
+	<FilesMatch ^\.(.*)>
 		order allow,deny
 		deny from all
-	</Files>
+	</FilesMatch>
 
-	<Files sess_*>
+	<FilesMatch sess_(.*)>
 		order allow,deny
 		deny from all
-	</Files>
+	</FilesMatch>
 
 ################################################################################
 ## Enable Rewrite                                                             ##

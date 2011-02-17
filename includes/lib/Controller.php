@@ -28,38 +28,113 @@
 		const MSG_TYPE_ALERT              = 'alert';
 		const MSG_TYPE_SUCCESS            = 'success';
 
-		// Instiated controllers have a localized view
+		/**
+		 * The controller's view object
+		 *
+		 * @access protected
+		 * @var View
+		 */
+		protected $view = NULL;
 
-		protected      $view                     = NULL;
 
+		/**
+		 * The path from which relative controllers are loaded
+		 *
+		 * @static
+		 * @access private
+		 * @var string|fDirectory
+		 */
+		static private $controllerRoot = NULL;
 
-		static private $controllerRoot           = NULL;
-		static private $basePath                 = NULL;
+		/**
+		 * The path to the controllers within a section
+		 *
+		 * @static
+		 * @access private
+		 * @var string|fDirectory
+		 */
+		static private $basePath = NULL;
 
-		// Handlers for common errors
+		/**
+		 * An array of error handlers used with triggerError()
+		 *
+		 * @static
+		 * @access private
+		 * @array
+		 */
+		static private $errors = array();
 
-		static private $errors                   = array();
+		/**
+		 * The default request format for standard requests
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $defaultRequestFormat = NULL;
 
-		// Request Format Configuration
-
-		static private $defaultRequestFormat     = NULL;
+		/**
+		 * The default request format for AJAX requests
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
 		static private $defaultAjaxRequestFormat = NULL;
 
-		// Site sections
+		/**
+		 * An array of available site sections and related data
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $siteSections = array();
 
-		static private $siteSections             = array();
-		static private $baseURL                  = NULL;
-		static private $requestPath              = NULL;
+		/**
+		 * The cached baseURL for the request, based on sitesections
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $baseURL = NULL;
 
-		// State information
+		/**
+		 * The request path for the request as sent by the client
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $requestPath = NULL;
 
-		static private $requestFormat            = NULL;
-		static private $typeHeadersRegistered    = FALSE;
+		/**
+		 * The current request format as sent by the client
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $requestFormat = NULL;
+
+		/**
+		 * Whether or not Content-Type headers were sent
+		 *
+		 * @static
+		 * @access private
+		 * @var boolean
+		 */
+		static private $typeHeadersRegistered = FALSE;
 
 		/**
 		 * Builds a new controller by assigning it a local view and running
-		 * prepare if it exists.
+		 * prepare if it exists.  Only static methods on controllers can
+		 * instantiate a new controller object, and all standard __construct()
+		 * functionality should be moved to prepare().
 		 *
+		 * @final
+		 * @access protected
 		 * @param void
 		 * @return void
 		 */
@@ -75,8 +150,10 @@
 		}
 
 		/**
-		 * Prepares a new controller
+		 * Prepares a new controller by establishing any shared object
+		 * information
 		 *
+		 * @access protected
 		 * @param void
 		 * @return void
 		 */
@@ -131,6 +208,8 @@
 		 * Matches whether or not a given class name is a potential
 		 * Controller
 		 *
+		 * @static
+		 * @access public
 		 * @param string $class The name of the class to check
 		 * @return boolean TRUE if it matches, FALSE otherwise
 		 */
@@ -142,8 +221,10 @@
 		 * Initializes the global controller namely by establishing error
 		 * handlers, headers, and messages.
 		 *
+		 * @static
+		 * @access public
 		 * @param array $config The configuration array
-		 * @return void
+		 * @return boolean TRUE if the initialization succeeds, FALSE otherwise
 		 */
 		static public function __init($config)
 		{
@@ -247,6 +328,8 @@
 		 * Determines whether or not we should accept the request based on
 		 * the mime type accepted by the user agent.
 		 *
+		 * @static
+		 * @access protected
 		 * @param array $types An array of acceptable mime types
 		 * @return mixed The method will trigger a 'not_acceptable' error on failure, will return the best type upon success.
 		 */
@@ -261,6 +344,8 @@
 		 * Determines whether or not we should accept the request based on
 		 * the languages accepted by the user agent.
 		 *
+		 * @static
+		 * @access protected
 		 * @param array $language An array of acceptable languages
 		 * @return mixed The method will trigger a 'not_accepted' error on failure, will return the best type upon success.
 		 */
@@ -276,6 +361,8 @@
 		 * the current request method is not in the list of allowed methods,
 		 * the method will trigger the error 'not_allowed'
 		 *
+		 * @static
+		 * @access protected
 		 * @param array $methods An array of allowed request methods
 		 * @return boolean TRUE if the current request method is in the array, FALSE otherwise
 		 */
@@ -297,6 +384,8 @@
 		/**
 		 * Redirect to a controller target.
 		 *
+		 * @static
+		 * @access protected
 		 * @param string $target an inKWell target to redirect to
 		 * @param array $query an associative array containing parameters => values
 		 * @return mixed
@@ -309,6 +398,8 @@
 		/**
 		 * Trigger an error if a function fails uniquely.
 		 *
+		 * @static
+		 * @access protected
 		 * @param mixed $value The value to check.  If this matches the current iw::$failureToken the provided error will be triggered
 		 * @param string $error The name of the error to trigger upon failure, defaults to 'not_found'
 		 * @return mixed The original value upon success
@@ -326,6 +417,8 @@
 		 * target need not exist.  You can wrap this function in ::demand()
 		 * in order to require it.
 		 *
+		 * @static
+		 * @access protected
 		 * @param string $target An inKWell target to execute
 		 * @param mixed Additional parameters to pass to the callback
 		 * @return mixed The return of the callback, if valid, an inKWell failure token otherwise.
@@ -346,6 +439,8 @@
 		 * file need not exist.  You can wrap this function in ::demand() in
 		 * order to require it.
 		 *
+		 * @static
+		 * @access protected
 		 * @param string|fFile $file The file to delegate control to
 		 * @return mixed The return of the included file, if accessible, an inKWell failure token otherwise
 		 */
@@ -366,6 +461,8 @@
 		/**
 		 * Determines the base URL from the server's request URI
 		 *
+		 * @static
+		 * @access protected
 		 * @param void
 		 * @return string The Base URL
 		 */
@@ -398,6 +495,8 @@
 		/**
 		 * Determines the internal request path (i.e. without a baseURL)
 		 *
+		 * @static
+		 * @access protected
 		 * @param void
 		 * @return string The internal request path
 		 */
@@ -413,6 +512,8 @@
 		 * Determines the base path of the controller from the controller root
 		 * and base URL.
 		 *
+		 * @static
+		 * @access protected
 		 * @param string $sub_directory An optional subdirectory to append
 		 * @return fDirectory The full base path
 		 */
@@ -430,6 +531,9 @@
 		/**
 		 * Determines the request format for the resource
 		 *
+		 * @static
+		 * @access protected
+		 * @param void
 		 * @return string The request format, i.e. 'html', 'xml', 'json', etc...
 		 */
 		static protected function getRequestFormat()
@@ -459,6 +563,8 @@
 		/**
 		 * Gets the current directly accessed action
 		 *
+		 * @static
+		 * @access protected
 		 * @param void
 		 * @return string The current directly accessed action
 		 */
@@ -470,6 +576,8 @@
 		/**
 		 * Gets the current directly accessed entry
 		 *
+		 * @static
+		 * @access protected
 		 * @param void
 		 * @return string The current directly accessed entry
 		 */
@@ -481,6 +589,8 @@
 		/**
 		 * A quick way to check against the current base URL
 		 *
+		 * @static
+		 * @access protected
 		 * @param string $base_url The base URL to check against
 		 * @return boolean TRUE if the base URL matched the current base URL, FALSE otherwise
 		 */
@@ -492,6 +602,8 @@
 		/**
 		 * A quick way to check against the current request format
 		 *
+		 * @static
+		 * @access protected
 		 * @param string $format The format to check for
 		 * @return boolean TRUE if the format matches the current request format, FALSE otherwise
 		 */
@@ -504,6 +616,8 @@
 		 * Determines whether or not a particular class is the entry class
 		 * being used by the router.
 		 *
+		 * @static
+		 * @access protected
 		 * @param string $class The class to check against the router
 		 * @return void
 		 */
@@ -516,6 +630,8 @@
 		 * Determines whether or not a particular method is the action being
 		 * used by the router.
 		 *
+		 * @static
+		 * @access protected
 		 * @param string $method The method name to check against the router
 		 * @return void
 		 */
@@ -528,6 +644,8 @@
 		 * Determines whether or not a particular class and method is the
 		 * entry and action for the router.
 		 *
+		 * @static
+		 * @access protected
 		 * @param string $class The class to check against the router
 		 * @param string $method The method name to check against the router
 		 * @return void
@@ -542,7 +660,9 @@
 		 * 500 Internal Server Error header will be sent.  Otherwise headers
 		 * will be matched against any set error headers or the defaults.  If
 		 * no handler is set a hard error will be triggered.
-		 *sd
+		 *
+		 * @static
+		 * @access protected
 		 * @param string $error The error to be triggered.
 		 * @param string $message_type The type of message to display
 		 * @param string $message The message to be displayed
@@ -589,6 +709,8 @@
 		 * on the screen, this should not be called except by extended error
 		 * handlers or by Controller::triggerError()
 		 *
+		 * @static
+		 * @access protected
 		 * @param string $error The error being sent.
 		 * @param string $message The message to output with it.
 		 * @return void The function exits the script.
@@ -612,6 +734,8 @@
 		/**
 		 * Sets error information for the Controller
 		 *
+		 * @static
+		 * @access protected
 		 * @param string $error The error to set a handler for
 		 * @param string $handler An inKWell target to execute if the error is triggered
 		 * @param string $header The HTTP header to output if the error is triggered

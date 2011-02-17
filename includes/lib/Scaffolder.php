@@ -204,7 +204,7 @@
 		static public function writeClass($file, $class, $parent_class, $template_vars = array())
 		{
 			return file_put_contents($file,
-				'<?php' . "\n\n" . self::makeClass($class, $parent_class, $template_vars, TRUE)
+				'<?php' . "\n" . self::makeClass($class, $parent_class, $template_vars, TRUE)
 			);
 		}
 

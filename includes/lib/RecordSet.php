@@ -16,6 +16,8 @@
 		 * Matches whether or not a given class name is a potential
 		 * RecordSet
 		 *
+		 * @static
+		 * @access public
 		 * @param string $class The name of the class to check
 		 * @return boolean TRUE if it matches, FALSE otherwise
 		 */
@@ -31,6 +33,8 @@
 		/**
 		 * Initializes all static class information for the RecordSet
 		 *
+		 * @static
+		 * @access public
 		 * @param array $config The configuration array
 		 * @return boolean TRUE if initialization succeeds, FALSE otherwise
 		 */
@@ -40,24 +44,25 @@
 		}
 
 		/**
-		 * Dynamically defines a RecordSet if the provided class is the
-		 * pluralized version of an ActiveRecord class.
+		 * Dynamically scaffolds a Record Set
 		 *
+		 * @static
+		 * @access public
 		 * @param string $record_set_class The Class name to dynamically define
 		 * @return boolean TRUE if a recordset was dynamically defined, FALSE otherwise
 		 */
 		static public function __make($record_set)
 		{
-			if ($record_class = ActiveRecord::classFromRecordSet($record_set)) {
+			$record_class = ActiveRecord::classFromRecordSet($record_set);
 
-				Scaffolder::makeClass($record_set, __CLASS__, array(
-					'active_record' => $record_class
-				));
+			Scaffolder::makeClass($record_set, __CLASS__, array(
+				'active_record' => $record_class
+			));
 
-				if (class_exists($record_set, FALSE)) {
-					return TRUE;
-				}
+			if (class_exists($record_set, FALSE)) {
+				return TRUE;
 			}
+
 			return FALSE;
 		}
 
