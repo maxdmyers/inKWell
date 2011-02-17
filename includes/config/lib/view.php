@@ -3,8 +3,8 @@
 	return iw::createConfig('Library', array(
 
 		// The directory relative to $_SERVER['DOCUMENT_ROOT'] in which views
-		// are stored.  Using the set() or add() method on a view will prepend
-		// this directory.
+		// are stored.  Using the set() or add() method with a relative
+		// directory will prepend this directory.
 		//
 		// Example :
 		// Code    : $controller->view->add('content', 'pages/home.html')
