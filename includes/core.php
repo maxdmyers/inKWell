@@ -1,21 +1,15 @@
 <?php
 
 	/**
-	 * The inKWell interface is used to determine whether or not a class will
-	 * support the following methods:
-	 *
-	 *  __init()
-	 *  __match()
-	 */
-
-	interface inkwell {}
-
-	/**
 	 * IW is the core inKWell class responsible for all shared functionality
 	 * of all it's components.  It is a purely static class and is not meant
 	 * to be instantiated or extended.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
+	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
+	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 *
+	 * @package inKWell
 	 */
 	class iw
 	{
@@ -38,6 +32,11 @@
 		/**
 		 * Constructing an iw object is not allowed, this is purely for
 		 * namespacing and static controls.
+		 *
+		 * @final
+		 * @access private
+		 * @param void
+		 * @return void
 		 */
 		final private function __construct()
 		{
@@ -48,6 +47,8 @@
 		 * match the specified $type provided by the user for later use with
          * iw::getConfigsByType()
 		 *
+		 * @static
+		 * @access public
 		 * @param string $type The configuration type
 		 * @return array The configuration array
 		 */
@@ -64,6 +65,8 @@
 		 * Configuration files should be valid PHP scripts which return
 		 * it's local configuration options (for include).
 		 *
+		 * @static
+		 * @access public
 		 * @param string $directory The directory containing the configuration elements
 		 * @param boolean $quiet Whether or not to output information
 		 * @param array The configuration array which was built
@@ -138,6 +141,8 @@
 		/**
 		 * Writes a full configuration array out to a particular file.
 		 *
+		 * @static
+		 * @access public
 		 * @param array $config The configuration array
 		 * @param string $file The file to write to
 		 * @param boolean $quiet Whether or not to output information
@@ -165,7 +170,9 @@
 		/**
 		 * Initializes the inKWell system with a configuration
 		 *
-		 * @param string|fFile $config_file The location of the config file
+		 * @static
+		 * @access public
+		 * @param string $config_file The location of the config file
 		 * @return void
 		 */
 		static public function init($config_file = NULL)
@@ -173,14 +180,6 @@
 
 			if (!$config_file) {
 				$config_file = realpath(self::DEFAULT_CONFIG_FILE);
-
-			} elseif ($config_file instanceof fFile) {
-				$config_file = $config_file->getPath();
-
-			} elseif (!is_string($config_file)) {
-				throw new fProgrammerException(
-					'Configuration file must be passed as a string or fFile object'
-				);
 			}
 
 			if (is_readable($config_file)) {
@@ -219,6 +218,8 @@
 		 * Get configuration information. If no $config_element is specified
 		 * the full inKwell configuration is returned.
 		 *
+		 * @static
+		 * @access public
 		 * @param string $config_element The configuration element to get
 		 * @param array The configuration array for the requested element
 		 */
@@ -243,6 +244,8 @@
 		/**
 		 * Get all the configurations matching a certain type.
 		 *
+		 * @static
+		 * @access public
 		 * @param string $type The configuration type
 		 * @return array An array of all the configurations matching the type
 		 */
@@ -267,7 +270,10 @@
 		 * directory does not exist, it will create it with owner and group
 		 * writable permissions.
 		 *
+		 * @static
+		 * @access public
 		 * @param string|fDirectory $sub_directory The optional sub directory to return.
+		 * @return fDirectory The writable directory object
 		 */
 		static public function getWriteDirectory($sub_directory = NULL)
 		{
@@ -317,9 +323,11 @@
 		 * Creates a target identifier from an entry and action.  If the entry
 		 * consists of the term 'link' then the action is treated as a URL.
 		 *
-		 * @param string $entry The class representing the entry
-		 * @param string $method The method representing the action
-		 * @return string An inKWell target string
+		 * @static
+		 * @access public
+		 * @param string $entry A string representation of an entry type
+		 * @param string $action A string representation of an action supported by the entry
+		 * @return string An inKWell target
 		 */
 		static public function makeTarget($entry, $action)
 		{
@@ -333,16 +341,18 @@
 		/**
 		 * Get a link to to a controller target
 		 *
+		 * @static
+		 * @access public
 		 * @param string $target an inKWell target to redirect to
 		 * @param array $query an associative array containing parameters => values
-		 * @return void
+		 * @return string The appropriate URL for the provided parameters
 		 */
 		static public function makeLink($target, $query = array())
 		{
 			if (!is_callable($target)) {
 
 				$query = (count($query))
-					? '?' . http_build_query($query)
+					? '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986)
 					: NULL;
 
 				if (strpos($target, '/') === 0 && Moor::getActiveProxyURI()) {
@@ -368,6 +378,8 @@
 		 * Creates a unique failure token which can then be checked with
 		 * checkFailureToken().
 		 *
+		 * @static
+		 * @access public
 		 * @param void
 		 * @return string A unique failure token for immediate use
 		 */
@@ -391,9 +403,11 @@
 		 * The inKWell conditional autoloader which allows for auto loading
 		 * based on dynamic class name matches.
 		 *
+		 * @static
+		 * @access public
 		 * @param string $class The class to be loaded
 		 * @param array $loaders An array of test => target autoloaders
-		 * @return mixed Whether or not the class was successfully loaded and initialized
+		 * @return boolean Whether or not the class was successfully loaded and initialized
 		 */
 		static public function loadClass($class, array $loaders = array())
 		{
@@ -472,6 +486,8 @@
 		 * Initializes a class by calling it's __init() method if it has one
 		 * and returning its return value.
 		 *
+		 * @static
+		 * @access protected
 		 * @param string $class The class to initialize
 		 * @return mixed The return value of the __init function, usually boolean
 		 */
@@ -515,3 +531,13 @@
 		}
 
 	}
+
+	/**
+	 * The inKWell interface is used to determine whether or not a class will
+	 * support the following methods:
+	 *
+	 *  __init()
+	 *  __match()
+	 */
+
+	interface inkwell {}
