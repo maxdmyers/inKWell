@@ -45,7 +45,7 @@
 		/**
 		 * Creates a configuration array, and sets the config type element to
 		 * match the specified $type provided by the user for later use with
-         * iw::getConfigsByType()
+		 * iw::getConfigsByType()
 		 *
 		 * @static
 		 * @access public
