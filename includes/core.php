@@ -195,7 +195,7 @@
 			}
 
 			self::$writeDirectory = implode(DIRECTORY_SEPARATOR, array(
-				$_SERVER['DOCUMENT_ROOT'],
+				APPLICATION_ROOT,
 				trim(
 					isset($config['inkwell']['write_directory'])
 					? $config['inkwell']['write_directory']
@@ -478,7 +478,7 @@
 				if ($match !== FALSE) {
 
 					$file = implode(DIRECTORY_SEPARATOR, array(
-						$_SERVER['DOCUMENT_ROOT'],   // Document Root
+						APPLICATION_ROOT,
 						trim($target, '/\\'),        // Target directory
 						$class . '.php'              // Class name as PHP file
 					));

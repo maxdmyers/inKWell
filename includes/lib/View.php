@@ -161,8 +161,8 @@
 
 		/**
 		 * Loads a view file.  If the file begins with a '/' it will be looked
-		 * for relative to $_SERVER['DOCUMENT_ROOT'].  If the file does not it
-		 * will be relative to the configured view root.  If the first parameter
+		 * for relative to APPLICATION_ROOT.  If the file does not it will be
+		 * relative to the configured view root.  If the first parameter
 		 * may be an array of files, of which, the first one to exist will be
 		 * used.
 		 *
@@ -617,7 +617,7 @@
 		{
 
 			self::$viewRoot = implode(DIRECTORY_SEPARATOR, array(
-				$_SERVER['DOCUMENT_ROOT'],
+				APPLICATION_ROOT,
 				trim(
 					isset($config['view_root'])
 					? $config['view_root']
@@ -682,7 +682,7 @@
 				));
 			} else {
 				$view_file = implode(DIRECTORY_SEPARATOR, array(
-					$_SERVER['DOCUMENT_ROOT'],
+					APPLICATION_ROOT,
 					$view_file
 				));
 			}

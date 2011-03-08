@@ -1,4 +1,3 @@
-
 	/**
 	 * The <%= $class %> is an active record and model representing a single
 	 * <%= fGrammar::humanize($class) %> record.

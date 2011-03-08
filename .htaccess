@@ -39,7 +39,7 @@
 		RewriteBase   /
 
 		RewriteCond	%{DOCUMENT_ROOT}/%{REQUEST_URI} !-f
-		RewriteRule	^.*$ includes/init.php [NS,QSA]
+		RewriteRule	^.*$ /index.php?__rewrite=1 [NS,QSA]
 	</IfModule>
 
 

@@ -230,7 +230,7 @@
 		{
 
 			self::$controllerRoot = implode(DIRECTORY_SEPARATOR, array(
-				$_SERVER['DOCUMENT_ROOT'],
+				APPLICATION_ROOT,
 				trim(
 					isset($config['controller_root'])
 					? $config['controller_root']

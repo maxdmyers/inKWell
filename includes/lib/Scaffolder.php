@@ -40,7 +40,7 @@
 			}
 
 			self::setScaffoldingRoot(implode(DIRECTORY_SEPARATOR, array(
-				$_SERVER['DOCUMENT_ROOT'],
+				APPLICATION_ROOT,
 				trim(
 					isset($config['scaffolding_root'])
 					? $config['scaffolding_root']

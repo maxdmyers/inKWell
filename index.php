@@ -1,15 +1,28 @@
 <?php
 
-	// Change to our includes directory and run init
+	$include_directory = 'includes';
 
-	if ($_SERVER['REQUEST_URI'] == '/' || empty($_SERVER['REQUEST_URI'])) {
-		header('HTTP/1.1 302 Moved Temporarily');
-		header('Location: /index.php' . $_SERVER['REQUEST_URI']);
+	// Check for rewrite if it's not set, prep some $_SERVER variables
+
+	if (!isset($_GET['__rewrite'])) {
+		if ($_SERVER['REQUEST_URI'] == '/' || empty($_SERVER['REQUEST_URI'])) {
+			$_SERVER['PATH_INFO']   = '/';
+			$_SERVER['REQUEST_URI'] = $_SERVER['PHP_SELF'];
+		}
 	}
 
-	chdir(implode(DIRECTORY_SEPARATOR, array(
-		dirname(__FILE__),
-		'includes'
-	)));
+	// Step back until we find our includes directory (should be 1 at most)
+
+	while (!is_dir($include_directory)) {
+		$include_directory = '..' . DIRECTORY_SEPARATOR . $include_directory;
+	}
+
+	// Change to our includes directory
+
+	define('APPLICATION_ROOT', realpath(dirname($include_directory)));
+
+	chdir($include_directory);
+
+	// Boostrap!
 
 	require 'init.php';

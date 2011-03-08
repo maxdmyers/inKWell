@@ -1,4 +1,3 @@
-
 	/**
 	 * The <%= $class %>, a standard controller class.
 	 *
