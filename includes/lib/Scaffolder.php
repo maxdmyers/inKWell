@@ -15,7 +15,6 @@
 		const DEFAULT_SCAFFOLDING_ROOT = 'scaffolding';
 		const DYNAMIC_SCAFFOLD_METHOD  = '__make';
 		const FINAL_SCAFFOLD_METHOD    = '__scaffold';
-		const VARIABLE_REGEX           = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
 
 		/**
 		 * The directory containing scaffolding templates
@@ -160,12 +159,11 @@
 		 */
 		static public function makeClass($class, $parent_class, $support_vars = array(), $scaffolding = FALSE)
 		{
-			$is_safe  = (
-				preg_match('#' . self::VARIABLE_REGEX . '#', $class) &&
-				preg_match('#' . self::VARIABLE_REGEX . '#', $parent_class)
-			);
-
-			if ($is_safe && extract($support_vars) == sizeof($support_vars)) {
+			if (
+				self::isEvalSafe($class)
+				&& self::isEvalSafe($parent_class)
+				&& extract($support_vars) == sizeof($support_vars)
+			) {
 
 				$scaffolding_template = implode(DIRECTORY_SEPARATOR, array(
 					self::$scaffoldingRoot,
@@ -175,7 +173,8 @@
 
 				if (!is_readable($scaffolding_template)) {
 					throw new fProgrammerException(
-						'Scaffolder cannot make class %s, no template found', $class
+						'Scaffolder cannot make class %s, no template found',
+						$class
 					);
 				} else {
 					ob_start();
@@ -187,7 +186,7 @@
 
 			} else {
 				throw new fProgrammerException(
-					'Scaffolder detected insecure or invalid class or variable names'
+					'Scaffolder detected invalid class or variable names'
 				);
 			}
 		}
@@ -204,7 +203,7 @@
 		static public function writeClass($file, $class, $parent_class, $template_vars = array())
 		{
 			return file_put_contents($file,
-				'<?php' . "\n" . self::makeClass($class, $parent_class, $template_vars, TRUE)
+				'<?php' . "\n\n" . self::makeClass($class, $parent_class, $template_vars, TRUE)
 			);
 		}
 

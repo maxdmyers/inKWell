@@ -212,20 +212,26 @@
 		/**
 		 * Adds string content to a view element, such that when the element
 		 * is placed the content is directly outputted.  In short, this is
-		 * for non-data elements which do not have template files.
+		 * for non-data elements which do not have template files.  If the
+		 * second parameter is NULL content will be loaded directly into the
+		 * view.
 		 *
 		 * @access public
-		 * @param string $element The name of the element
-		 * @param string $content An optional string of content to consume
+		 * @param string $element The name of the element, or content for primary element
+		 * @param string $content Content to consume for a specific element
 		 * @return View The view object to allow for method chaining
 		 */
-		public function digest($element, $content)
+		public function digest($element, $content = NULL)
 		{
-			$view         = new View();
-			$view->isFood = TRUE;
-
-			$view->load($content);
-			$this->add($element, $view);
+			if ($content === NULL) {
+				$this->isFood = TRUE;
+				$this->load($element);
+			} else {
+				$view         = new self();
+				$view->isFood = TRUE;
+				$view->load($content);
+				$this->add($element, $view);
+			}
 
 			return $this;
 		}
@@ -357,6 +363,77 @@
 				throw new fProgrammerException (
 					'Data referenced by %s does not exist.', $key
 				);
+			}
+		}
+
+		/**
+		 * Iterates over an element and outputs a provided partial or callable
+		 * emitter for each child element.  If the emitter is a callback it
+		 * can accept up to two arguments, the first being the child element
+		 * during each call, and the second being the current view.  If the
+		 * emitter is an array, the key is used as the child element variable
+		 * within the partial, while the value is the view partial.
+		 *
+		 * Examples:
+		 *
+		 * $this->repeat('users', array('user' => 'partials/user.php'));
+		 *
+		 * $this->repeat('users', function($user, $this){
+		 *		echo $user->prepareName();
+		 * })
+		 *
+		 * @acces protected
+		 * @param string $key The key of the data which to repeat
+		 * @param array|callback $emitter The function or partial which will be emitted
+		 * @return View The view object to allow for method chaining
+		 */
+		protected function repeat($key, $emitter)
+		{
+			if (array_key_exists($key, $this->data)) {
+				if (
+					$this->data[$key] instanceof Traversable
+					|| !is_array($this->data[$key])
+				) {
+
+					if (is_callable($emitter)) {
+
+						foreach ($this->data[$key] as $value) {
+							$emitter($value, $this);
+						}
+
+					} elseif (is_array($emitter)) {
+
+						$element = array_key($emitter);
+
+						if (!iw::isEvalSafe($element)) {
+							throw new fProgrammerException (
+								'Array emitter key must be valid variable name.'
+							);
+						}
+
+						$partial = reset($emitter);
+
+						if (!self::exists($partial)) {
+							throw new fProgrammerException (
+								'The partial %s is unreadable',
+								$partial
+							);
+						}
+
+						foreach ($this->data[$key] as $$element) {
+							include $partial;
+						}
+
+					} else {
+						throw new fProgrammerException (
+							'Invalid data type for emitter, must be %s',
+							fGrammar::joinArray(array(
+								'a callback',
+								'an array'
+							),  'or')
+						);
+					}
+				}
 			}
 		}
 

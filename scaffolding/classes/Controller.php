@@ -1,6 +1,6 @@
 
 	/**
-	 * The <%= $class %>
+	 * The <%= $class %>, a standard controller class.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 */
@@ -11,6 +11,7 @@
 		/**
 		 * Prepares a new <%= $class %> for running actions.
 		 *
+		 * @access protected
 		 * @param string void
 		 * @return void
 		 */
@@ -26,8 +27,10 @@
 		/**
 		 * Initializes all static class information for the <%= $class %> class
 		 *
+		 * @static
+		 * @access public
 		 * @param array $config The configuration array
-		 * @return boolean TRUE if initialization succeeds, FALSE otherwise
+		 * @return boolean TRUE if the initialization succeeds, FALSE otherwise
 		 */
 		static public function __init(array $config = array())
 		{
@@ -38,4 +41,5 @@
 
 			return TRUE;
 		}
+
 	}
