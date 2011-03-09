@@ -2,8 +2,8 @@
 
 	return iw::createConfig('Library', array(
 
-		// The directory relative to $_SERVER['DOCUMENT_ROOT'] in which
-		// user defined controllers are stored.
+		// The directory relative to APPLICATION_ROOT in which user defined
+		// controllers are stored.
 
 		'controller_root'             => 'user/controllers',
 

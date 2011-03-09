@@ -42,7 +42,7 @@
 
 		foreach ($config['inkwell']['interfaces'] as $interface_directory) {
 			$available_interfaces = glob(implode(DIRECTORY_SEPARATOR, array(
-				$_SERVER['DOCUMENT_ROOT'],
+				APPLICATION_ROOT,
 				$interface_directory,
 				'*.php'
 			)));

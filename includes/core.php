@@ -14,14 +14,16 @@
 	class iw
 	{
 
-		const DEFAULT_CONFIG_DIR           = 'config';
-		const DEFAULT_CONFIG_FILE          = 'config.php';
+		const DEFAULT_CONFIG_DIR      = 'config';
+		const DEFAULT_CONFIG_FILE     = 'config.php';
 
-		const INITIALIZATION_METHOD        = '__init';
-		const MATCH_CLASS_METHOD           = '__match';
-		const CONFIG_TYPE_ELEMENT          = '__type';
+		const INITIALIZATION_METHOD   = '__init';
+		const MATCH_CLASS_METHOD      = '__match';
+		const CONFIG_TYPE_ELEMENT     = '__type';
 
-		const DEFAULT_WRITE_DIRECTORY      = 'writable';
+		const DEFAULT_WRITE_DIRECTORY = 'writable';
+
+		const VARIABLE_REGEX          = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
 
 		static private $config             = array();
 		static private $writeDirectory     = NULL;
@@ -193,7 +195,7 @@
 			}
 
 			self::$writeDirectory = implode(DIRECTORY_SEPARATOR, array(
-				$_SERVER['DOCUMENT_ROOT'],
+				APPLICATION_ROOT,
 				trim(
 					isset($config['inkwell']['write_directory'])
 					? $config['inkwell']['write_directory']
@@ -391,12 +393,27 @@
 		/**
 		 * Checks the unique failure token against the stored value
 		 *
+		 * @static
+		 * @access public
 		 * @param string $failure_token The failure token to check
 		 * @return boolean TRUE if the failure token matches, FALSE otherwise
 		 */
 		static public function checkFailureToken($failure_token)
 		{
 			return (self::$failureToken === $failure_token);
+		}
+
+		/**
+		 * Checks whether or not a variable name is eval() safe
+		 *
+		 * @static
+		 * @access public
+		 * @param string $variable The variable name to check
+		 * @return boolean TRUE if the variable name is eval() safe, FALSE otherwise
+		 */
+		static public function isEvalSafe($variable)
+		{
+			return preg_match('#' . self::VARIABLE_REGEX . '#', $variable);
 		}
 
 		/**
@@ -461,7 +478,7 @@
 				if ($match !== FALSE) {
 
 					$file = implode(DIRECTORY_SEPARATOR, array(
-						$_SERVER['DOCUMENT_ROOT'],   // Document Root
+						APPLICATION_ROOT,
 						trim($target, '/\\'),        // Target directory
 						$class . '.php'              // Class name as PHP file
 					));

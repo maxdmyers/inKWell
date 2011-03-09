@@ -8,11 +8,11 @@
 
 	{
 
-		// Custom Object Methods
-
 		/**
 		 * Initializes all static class information for the <%= $class %> model
 		 *
+		 * @static
+		 * @access public
 		 * @param array $config The configuration array
 		 * @return void
 		 */
@@ -24,6 +24,9 @@
 		/**
 		 * Gets the record name for the <%= $class %> class
 		 *
+		 * @static
+		 * @access public
+		 * @param void
 		 * @return string The custom or default record translation
 		 */
 		static public function getRecordName()
@@ -34,6 +37,9 @@
 		/**
 		 * Gets the record table name for the <%= $class %> class
 		 *
+		 * @static
+		 * @access public
+		 * @param void
 		 * @return string The custom or default record table translation
 		 */
 		static public function getRecordTable()
@@ -44,6 +50,9 @@
 		/**
 		 * Gets the record set name for the <%= $class %> class
 		 *
+		 * @static
+		 * @access public
+		 * @param void
 		 * @return string The custom or default record set translation
 		 */
 		static public function getRecordSet()
@@ -54,6 +63,9 @@
 		/**
 		 * Gets the entry name for the <%= $class %> class
 		 *
+		 * @static
+		 * @access public
+		 * @param void
 		 * @return string The custom or default entry translation
 		 */
 		static public function getEntry()
@@ -64,6 +76,9 @@
 		/**
 		 * Gets the order for the <%= $class %> class
 		 *
+		 * @static
+		 * @access public
+		 * @param void
 		 * @return array The default sort array
 		 */
 		static public function getOrder()
@@ -75,6 +90,9 @@
 		 * Determines whether the record class only serves as a relationship,
 		 * i.e. a many to many table.
 		 *
+		 * @static
+		 * @access public
+		 * @param void
 		 * @return boolean TRUE if it is a relationship, FALSE otherwise
 		 */
 		static public function isRelationship()
@@ -87,6 +105,8 @@
 		 * identifier is optional, but if is provided acts as an additional
 		 * check against the validity of the record.
 		 *
+		 * @static
+		 * @access public
 		 * @param $slug A primary key string representation or "slug" string
 		 * @param $identifier The identifier as provided as an extension to the slug
 		 * @return fActiveRecord The active record matching the slug
@@ -96,28 +116,18 @@
 			return parent::createFromSlug(__CLASS__, $slug, $identifier);
 		}
 
-<% if (!$scaffolding) { %>
 		/**
-		 * Allows for a dynamically created active record to be scaffolded.
+		 * Creates a new <%= $class %> from a provided resource key.
 		 *
-		 * @param string $file
-		 * @return void
+		 * @static
+		 * @access public
+		 * @param string $resource_key A JSON encoded primary key
+		 * @return fActiveRecord The active record matching the resource key
+		 *
 		 */
-		static public function __scaffold($file = NULL) {
-
-			if (!$file) {
-				$file = implode(DIRECTORY_SEPARATOR, array(
-					$_SERVER['DOCUMENT_ROOT'], // document_root
-					'models',                  // path
-					__CLASS__ . '.php'         // file
-				));
-			}
-
-			Scaffolder::writeClass($file, __CLASS__, '<%= $parent_class %>');
-
+		static public function createFromResourceKey($resource_key)
+		{
+			return parent::createFromResourceKey(__CLASS__, $resource_key);
 		}
-<% } %>
-
-		// Custom Class Methods
 
 	}

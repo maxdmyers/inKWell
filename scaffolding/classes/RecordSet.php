@@ -11,22 +11,28 @@
 		/**
 		 * Initializes the <%= $class %> Record Set
 		 *
+		 * @static
+		 * @access public
 		 * @param array $config The configuration array
-		 * @return void
+		 * @return boolean TRUE if the initialization succeeds, FALSE otherwise
 		 */
 		static public function __init($config)
 		{
+			return TRUE;
 		}
 
 		/**
-		 * Builds a recordset using an array of where conditions and ordering
+		 * Builds a recordset using an arrays of where conditions and ordering
 		 * information.
 		 *
-		 * @param array $wheres
-		 * @param array $ordering
-		 * @param integer $limit
-		 * @param integer $page
-		 * @return
+		 * @see fRecordSet::build()
+		 * @static
+		 * @access public
+		 * @param array $wheres An array of where clauses
+		 * @param array $ordering An array of order clauses
+		 * @param integer $limit A limit to the number of records returned
+		 * @param integer $page The page of records to return if limited
+		 * @return <%= $class %> The resulting Record Set
 		 */
 		static public function build(array $wheres = array(), array $ordering = array(), $limit = NULL, $page = NULL)
 		{
@@ -39,38 +45,18 @@
 		}
 
 		/**
+		 * Builds a recordset using an SQL statement.
 		 *
+		 * @see fRecordSet::buildFromSQL()
+		 * @static
+		 * @access public
+		 * @param string $sql The SQL statement to build the recordset from
+		 * @param string $no_limit_sql An SQL statement that counts all records
+		 * @return <%= $class %> The resulting Record Set
 		 */
 		static public function buildFromSQL($sql, $no_limit_sql)
 		{
 			return parent::build('<%= $active_record %>', $sql, $no_limit_sql);
 		}
-
-<% if (!$scaffolding) { %>
-		/**
-		 * Allows for a dynamically created record set to be scaffolded.
-		 *
-		 * @param string $file
-		 * @return void
-		 */
-		static public function __scaffold($file = NULL) {
-
-			if (!$file) {
-				$file = implode(DIRECTORY_SEPARATOR, array(
-					$_SERVER['DOCUMENT_ROOT'], // document_root
-					'models', 'sets',          // path
-					__CLASS__ . '.php'         // file
-				));
-			}
-
-			Scaffolder::writeClass($file, __CLASS__, '<%= $parent_class %>', array(
-				'active_record'     => '<%= $active_record %>'
-			));
-		}
-<% } %>
-
-		// Custom Object Methods
-
-		// Custom Class Methods
 
 	}
