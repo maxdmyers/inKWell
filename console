@@ -1,6 +1,154 @@
 #!/usr/bin/php -q
 <?php
 
+	define('APPLICATION_ROOT', realpath(dirname(__FILE__)));
+
+	$_SERVER['DOCUMENT_ROOT']  = (isset($argv[1]))
+		? realpath($argv[1])
+		: dirname(__FILE__);
+
+	$_SERVER['REQUEST_URI']    = '/';
+	$_SERVER['REQUEST_METHOD'] = 'GET';
+	$_SERVER['REMOTE_ADDR']    = '127.0.0.1';
+	$_SERVER['SERVER_NAME']    = 'localhost';
+
+	////////////////////////////////////////////////////////////////////////////
+	// The following block of code is unique to inKWell, if you want to use
+	// this terminal for something else, delete it.
+	////////////////////////////////////////////////////////////////////////////
+
+	chdir(implode(DIRECTORY_SEPARATOR, array(
+		dirname(__FILE__),
+		'includes'
+	)));
+
+	require 'init.php';
+
+	// Set some basics regardless of configuration
+
+	fCore::enableErrorHandling('html');
+	fCore::enableExceptionHandling('html');
+
+	////////////////////////////////////////////////////////////////////////////
+	// End inKWell Specific Code
+	////////////////////////////////////////////////////////////////////////////
+
+	$___stdin   = fopen('php://stdin', 'r');
+	$___depth   = 0;
+	$___line    = 0;
+	$___code    = '\?';
+	$___command = '';
+
+	echo PHP_EOL;
+	echo 'Welcome to the inKWell Console, you can begin typing PHP or try:';
+	echo PHP_EOL;
+	echo PHP_EOL;
+
+	do {
+
+		$___code = trim($___code);
+
+		if ($___code && $___code[0] == '\\') {
+			switch ($___trigger = substr($___code, 0, 2)) {
+				case '\q':
+					$___called_quit = TRUE;
+					exit();
+					break;
+				case '\c':
+				case '\e':
+				case '\?':
+				case '\>':
+				default:
+					switch ($___trigger) {
+						case '\c':
+							passthru('clear');
+							break;
+						case '\?':
+							echo '\q - Quit the Program'         . PHP_EOL;
+							echo '\c - Clear the Screen'         . PHP_EOL;
+							echo '\e - Execute a System Command' . PHP_EOL;
+							echo '\> - Change Directory'         . PHP_EOL;
+							echo '\? - Display this Message'     . PHP_EOL;
+							echo PHP_EOL;
+							break;
+						case '\e':
+							if (!($___exec = trim(substr($___code, 2)))) {
+								echo 'Please enter a Command: ';
+								$___exec = trim(fgets($___stdin));
+							}
+							passthru($___exec);
+							break;
+						case '\>':
+							if (!($___directory = trim(substr($___code, 2)))) {
+								echo 'Please enter a Directory: ';
+								$___directory = trim(fgets($___stdin));
+							}
+							chdir(trim($___directory, '\'"'));
+							break;
+					}
+
+					$___code    = '';
+					$___line--;
+
+					break;
+			}
+		}
+
+		$___command  .= $___code . PHP_EOL;
+
+		foreach (token_get_all('<?php ' . $___code) as $___token) {
+			if (!is_array($___token)) {
+				switch ($___token) {
+					case '{':
+					case '(':
+						$___depth++;
+						break;
+					case '}':
+					case ')':
+						$___depth--;
+						break;
+				}
+			}
+		}
+
+		if ($___depth <= 0) {
+
+			$___depth = 0;
+			$___line  = 0;
+
+			if ($___command && ___check($___command)) {
+
+				ob_start();
+
+				fCore::startErrorCapture();
+				try {
+					eval($___command);
+				} catch (fException $___e) {
+					echo 'Exception:  ' . $___e->getMessage();
+				}
+
+				if(is_array($errors = fCore::stopErrorCapture())) {
+					foreach ($errors as $error) {
+						echo $error['type'] . ':  ' . $error['string'];
+					}
+				}
+
+				$___output  = ob_get_clean();
+
+				if($___output) {
+					echo $___output;
+					echo PHP_EOL;
+				}
+			}
+
+			$___command = '';
+		}
+
+		$___line++;
+		echo '[' . getcwd() . '][' . sprintf('%02s', $___line) . ']# ';
+
+	} while(($___code = fgets($___stdin)));
+
 	/**
 	 * Register as a shutdown function to ensure that any fatal errors or
 	 * uncaught exceptions do not terminate the shell.  This function
@@ -24,7 +172,6 @@
 
 	register_shutdown_function('___respawn');
 
-
 	/**
 	 * Check syntax and other validity aspects of PHP source code.
 	 *
@@ -42,7 +189,6 @@
 		if (stripos($syntax_check, 'No syntax errors') === FALSE) {
 			return FALSE;
 		}
-
 
 		foreach (($tokens = token_get_all($source)) as $i => $token) {
 
@@ -81,7 +227,7 @@
 
 							if (!class_exists($t)) {
 								echo sprintf(
-									'Error:  Class %s does not exist.%s',
+									'Error:  Class %s does not exist.',
 									$t
 								) . PHP_EOL;
 								return FALSE;
@@ -117,106 +263,3 @@
 
 		return TRUE;
 	}
-
-
-	// Establish fake server parameters
-
-	define('APPLICATION_ROOT', realpath(dirname(__FILE__)));
-
-	$_SERVER['DOCUMENT_ROOT']  = (isset($argv[1]))
-		? realpath(APPLICATION_ROOT . DIRECTORY_SEPARATOR . $argv[1])
-		: dirname(__FILE__);
-
-	$_SERVER['REQUEST_URI']    = '/';
-	$_SERVER['REQUEST_METHOD'] = 'GET';
-	$_SERVER['REMOTE_ADDR']    = '127.0.0.1';
-	$_SERVER['SERVER_NAME']    = 'localhost';
-
-	// Change to our includes directory and run init
-
-	chdir(implode(DIRECTORY_SEPARATOR, array(
-		dirname(__FILE__),
-		'includes'
-	)));
-
-	require 'init.php';
-
-	// Set some basics regardless of configuration
-
-	fCore::enableErrorHandling('html');
-	fCore::enableExceptionHandling('html');
-
-	// Output prompt and process commands as they come
-
-	$___stdin   = fopen('php://stdin', 'r');
-	$___depth   = 0;
-	$___line    = 1;
-	$___command = '';
-
-	do {
-
-		$___command  = trim($___command);
-
-		if ($___command) {
-
-			$___command   .= PHP_EOL;
-			$___par_count  = substr_count($___command, '(');
-			$___par_count -= substr_count($___command, ')');
-			$___brc_count  = substr_count($___command, '{');
-			$___brc_count -= substr_count($___command, '}');
-			$___depth      = $___par_count + $___brc_count;
-	
-			if ($___depth <= 0) {
-				$___depth = 0;
-				$___line  = 1;
-
-				if (___check($___command)) {
-
-					ob_start();
-
-					fCore::startErrorCapture();
-					try {
-						eval($___command);
-					} catch (fException $___e) {
-						echo 'Exception:  ' . $___e->getMessage();
-					}
-
-					if(is_array($errors = fCore::stopErrorCapture())) {
-						foreach ($errors as $error) {
-							echo $error['type'] . ':  ' . $error['string'];
-						}
-					}
-
-					$___command = '';
-					$___output  = ob_get_clean();
-
-					if($___output) {
-						echo $___output;
-						echo PHP_EOL;
-					}
-				} else {
-					$___command = '';
-				}
-
-			} else {
-
-				$___line++;
-
-				switch (trim($___command)) {
-					case 'exit':
-					case 'quit':
-						$___called_quit = TRUE;
-						exit();
-						break;
-					case 'clear':
-						passthru('clear');
-						$___command = '';
-						break;
-				}
-			}
-		}
-
-		echo '[' . getcwd() . '][' . sprintf('%02s', $___line) . ']# ';
-
-	} while(($___command .= fgets($___stdin)));
-

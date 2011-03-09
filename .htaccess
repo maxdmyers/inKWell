@@ -39,7 +39,7 @@
 		RewriteBase   /
 
 		RewriteCond	%{DOCUMENT_ROOT}/%{REQUEST_URI} !-f
-		RewriteRule	^.*$ /index.php?__rewrite=1 [NS,QSA]
+		RewriteRule	^.*$ %{DOCUMENT_ROOT}/index.php?__rewrite=1 [NS,QSA]
 	</IfModule>
 
 

@@ -1024,6 +1024,10 @@
 						$password_column
 					)));
 
+					if (strtolower(php_sapi_name()) == 'cli') {
+						$confirmation = $values[$password_column];
+					}
+
 					if ($confirmation == $values[$password_column]) {
 
 						$values[$password_column] = fCryptography::hashPassword(
