@@ -33,9 +33,7 @@
 	 */
 	function ___check($string)
 	{
-
-		$source      = '<?php ' . $string;
-
+		$source       = '<?php ' . $string;
 		$syntax_check = shell_exec(sprintf(
 			'echo %s | php -l',
 			escapeshellarg($source)
@@ -156,24 +154,16 @@
 
 		if ($___command) {
 
-			$___echar    = substr($___command, strlen($___command) - 1);
-			$___command .= PHP_EOL;
-
-			switch ($___echar) {
-				case '{':
-					$___depth++;
-					break;
-				case '}':
-					$___depth--;
-					if ($___depth < 0) {
-						$___depth = 0;
-					}
-					break;
-			}
-
-			if ($___depth == 0 && ($___echar == '}' || $___echar == ';')) {
-
-				$___line = 1;
+			$___command   .= PHP_EOL;
+			$___par_count  = substr_count($___command, '(');
+			$___par_count -= substr_count($___command, ')');
+			$___brc_count  = substr_count($___command, '{');
+			$___brc_count -= substr_count($___command, '}');
+			$___depth      = $___par_count + $___brc_count;
+	
+			if ($___depth <= 0) {
+				$___depth = 0;
+				$___line  = 1;
 
 				if (___check($___command)) {
 
