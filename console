@@ -33,6 +33,8 @@
 	// End inKWell Specific Code
 	////////////////////////////////////////////////////////////////////////////
 
+	register_shutdown_function('___respawn');
+
 	$___stdin   = fopen('php://stdin', 'r');
 	$___depth   = 0;
 	$___line    = 0;
@@ -52,6 +54,7 @@
 			switch ($___trigger = substr($___code, 0, 2)) {
 				case '\q':
 					$___called_quit = TRUE;
+				case '\r':
 					exit();
 					break;
 				case '\c':
@@ -64,9 +67,10 @@
 							passthru('clear');
 							break;
 						case '\?':
-							echo '\q - Quit the Program'         . PHP_EOL;
 							echo '\c - Clear the Screen'         . PHP_EOL;
 							echo '\e - Execute a System Command' . PHP_EOL;
+							echo '\q - Quit the Program'         . PHP_EOL;
+							echo '\r - Reset the Program'        . PHP_EOL;
 							echo '\> - Change Directory'         . PHP_EOL;
 							echo '\? - Display this Message'     . PHP_EOL;
 							echo PHP_EOL;
@@ -94,8 +98,6 @@
 			}
 		}
 
-		$___command  .= $___code . PHP_EOL;
-
 		foreach (token_get_all('<?php ' . $___code) as $___token) {
 			if (!is_array($___token)) {
 				switch ($___token) {
@@ -109,6 +111,10 @@
 						break;
 				}
 			}
+		}
+
+		if ($___code) {
+			$___command  .= $___code . PHP_EOL;
 		}
 
 		if ($___depth <= 0) {
@@ -168,10 +174,6 @@
 		}
 	}
 
-	// Register the respawn shutdown function
-
-	register_shutdown_function('___respawn');
-
 	/**
 	 * Check syntax and other validity aspects of PHP source code.
 	 *
@@ -180,7 +182,7 @@
 	 */
 	function ___check($string)
 	{
-		$source       = '<?php ' . $string;
+		$source       = trim('<?php ' . $string);
 		$syntax_check = shell_exec(sprintf(
 			'echo %s | php -l',
 			escapeshellarg($source)
