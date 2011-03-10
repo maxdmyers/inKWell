@@ -35,3 +35,40 @@ the base framework, while everything else is an extension.
 
 If you'd like to learn how to  use inKWell or a bit more about its design, you
 can visit our wiki pages here: http://github.com/dotink/inKWell/wiki
+
+## Installation
+
+Installing inKWell should be pretty straightfoward, begin by unzipping or
+cloning all the files and folders at the base of its directory structure into
+your `DOCUMENT_ROOT`.
+
+Once extracted you may wish to rename or move a few files as need be.
+
+### Apache with mod_rewrite
+
+If you have `.htaccess` files enabled your site should already be working, 100%
+configured with clean URLs
+
+### Apache with CGI / No .htaccess
+
+If you are using apache with CGI or you do not have access to `.htaccess` or it
+is not enabled, you can usually work with a local `php.ini` file instead.  By
+default this file is located in `.user.ini` which is the default location for
+PHP's distributed CGI as of version 5.3.
+
+Contact your hosting provider if you are on an earlier version and move it to
+their supported filepath.  Rewrite rules, will likely not be supported unless
+they can add them to your virtual host configuration.
+
+### NGINX
+
+NGINX works with PHP's distributed CGI or independently set up fastcgi install
+depending on the platform.  For Windows users on 5.3 or later, the `.user.ini`
+file will suffice for PHP configuration.
+
+For other users, reference the global `php.ini` file or contact your hosting
+provider for the needed location and move the `.user.ini` file to it.
+
+Configuration of NGINX itself along with rewrite rules can be done by copying
+all or most of the directives from the provided `nginx.conf.dist` file and
+editing it where need be.
