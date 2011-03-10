@@ -58,6 +58,28 @@
 		}
 	}
 
+	// Initialize Date and Time Information, this has to be before any
+	// time related functions.
+
+	if (isset($config['inkwell']['default_timezone'])) {
+		fTimestamp::setDefaultTimezone(
+			$config['inkwell']['default_timezone']
+		);
+	} else {
+		throw new fProgrammerException(
+			'Please configure your timezone'
+		);
+	}
+
+	if (
+		isset($config['inkwell']['date_formats'])    &&
+	    is_array($config['inkwell']['date_formats'])
+	) {
+		foreach ($config['inkwell']['date_formats'] as $name => $format) {
+			fTimestamp::defineFormat($name, $format);
+		}
+	}
+
 	// Initialize the Session
 
 	fSession::setPath(
@@ -156,23 +178,6 @@
 				$database_password,
 				$database_host
 			), $database_name, $database_role);
-		}
-	}
-
-	// Initialize Date and Time Information
-
-	if (isset($config['constants']['default_timezone'])) {
-		fTimestamp::setDefaultTimezone(
-			$config['constants']['default_timezone']
-		);
-	}
-
-	if (
-		isset($config['inkwell']['date_formats'])    &&
-	    is_array($config['inkwell']['date_formats'])
-	) {
-		foreach ($config['inkwell']['date_formats'] as $name => $format) {
-			fTimestamp::defineFormat($name, $format);
 		}
 	}
 
