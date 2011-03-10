@@ -98,6 +98,16 @@
 
 		foreach ($config['database']['databases'] as $name => $settings) {
 
+			$database_target = explode('::', $name);
+
+			$database_name   = !empty($database_target[0])
+				? $database_target[0]
+				: NULL;
+
+			$database_role   = isset($database_target[1])
+				? $database_target[1]
+				: 'both';
+
 			if (!is_array($settings)) {
 				throw new fProgrammerException (
 					'Database settings must be configured as an array.'
@@ -122,10 +132,6 @@
 				? $settings['host']
 				: NULL;
 
-			$database_role = (isset($settings['role']))
-				? $settings['role']
-				: 'both';
-
 			if (is_array($database_host) && count($database_host)) {
 
 				$target = iw::makeTarget('iw', 'database_host['. $name . ']');
@@ -149,7 +155,7 @@
 				$database_user,
 				$database_password,
 				$database_host
-			), $name, $database_role);
+			), $database_name, $database_role);
 		}
 	}
 

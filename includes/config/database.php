@@ -11,8 +11,12 @@
 			// is possible to add independent databases and then configure
 			// ActiveRecords/models to use those databases using the 'database'
 			// configuration element in their independent configurations.
+			//
+			// Database names are reflected by the keys an optionally can have
+			// a '::role' string appended to them, example: 'default::both'.
+			// If the role is ommitted the default role is both.
 
-			'default'      => array(
+			'default::both'      => array(
 
 				// The database types used/allowed by inKWell reflect whatever
 				// is currently supported by Flourish, examples at the time of
