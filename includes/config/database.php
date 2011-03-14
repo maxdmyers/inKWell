@@ -2,7 +2,7 @@
 
 	return iw::createConfig('Core', array(
 
-		'disabled'         => FALSE,
+		'disabled'         => TRUE,
 
 		'databases'        => array(
 
@@ -12,25 +12,30 @@
 			// ActiveRecords/models to use those databases using the 'database'
 			// configuration element in their independent configurations.
 			//
-			// Database names are reflected by the keys an optionally can have
+			// Database names are reflected by the keys and optionally can have
 			// a '::role' string appended to them, example: 'default::both'.
 			// If the role is ommitted the default role is both.
+			//
+			// For more information about roles, please see Flourish's
+			// fORM Documentation.
 
 			'default::both'      => array(
 
 				// The database types used/allowed by inKWell reflect whatever
 				// is currently supported by Flourish, examples at the time of
 				// creating this file include: db2, mssql, mysql, oracle,
-				// postgresql, and sqlite
+				// postgresql, and sqlite.
+				//
+				// Both the type and name are required and should be a string
+				// value.
 
-				'type'     => 'mysql',
-
-				'name'     => 'inkwell',
+				'type'     => NULL,
+				'name'     => NULL,
 
 				// Authentication information if required
 
-				'user'     => 'root',
-				'password' => 'dotink',
+				'user'     => NULL,
+				'password' => NULL,
 
 				// If the host parameter is configured as an array then inKWell
 				// will select a random host to pull data from.  This can be
@@ -40,6 +45,10 @@
 				// the data will be reflected instantly to them.  Replication
 				// between databases must be handled elsewhere, and is presumed
 				// to be for the most part on-the-fly.
+				//
+				// You can specify ports with each host in standard syntax:
+				//
+				// <address>:<port>
 
 				'host'     => array('127.0.0.1'),
 
