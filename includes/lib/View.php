@@ -199,9 +199,6 @@
 				$element = self::PRIMARY_VIEW_ELEMENT;
 			}
 
-			// Digested elements are views whose primary element is content to
-			// be echoed instead of a file to be included.
-
 			if ($this->isFood) {
 				echo $this->get($element);
 			} else {
@@ -303,13 +300,13 @@
 		 * Optionally the data can be destroyed after being pulled and will no
 		 * longer be accessible through future calls.
 		 *
-		 * @access protected
+		 * @access public
 		 * @param string $key The key of the data to try an pull
 		 * @param mixed $default The default value if the key is not found
 		 * @param boolean $destructive Whether or not to destroy the data
 		 * @return mixed The pulled data from the data storage array
 		 */
-		protected function pull($key, $default = NULL, $destructive = FALSE)
+		public function pull($key, $default = NULL, $destructive = FALSE)
 		{
 			if (array_key_exists($key, $this->data)) {
 
@@ -335,13 +332,13 @@
 		 * the data can be destroyed.  Please note, that if the data is not
 		 * an array this becomes functionally equivalent to pull.
 		 *
-		 * @access protected
+		 * @access public
 		 * @param string $key The key of the data from which to pop a value
 		 * @param mixed $default The default value if the key is not found
 		 * @param boolean $destructive Whether or not to destroy the data
 		 * @return mixed The peeled data from the end of the data storage array
 		 */
-		protected function peel($key, $default = NULL, $destructive = FALSE)
+		public function peel($key, $default = NULL, $destructive = FALSE)
 		{
 			if (array_key_exists($key, $this->data)) {
 				if (is_array($this->data[$key])) {
@@ -382,17 +379,17 @@
 		 *		echo $user->prepareName();
 		 * })
 		 *
-		 * @acces protected
+		 * @acces public
 		 * @param string $key The key of the data which to repeat
 		 * @param array|callback $emitter The function or partial which will be emitted
 		 * @return View The view object to allow for method chaining
 		 */
-		protected function repeat($key, $emitter)
+		public function repeat($key, $emitter)
 		{
 			if (array_key_exists($key, $this->data)) {
 				if (
 					$this->data[$key] instanceof Traversable
-					|| !is_array($this->data[$key])
+					|| is_array($this->data[$key])
 				) {
 
 					if (is_callable($emitter)) {
@@ -444,11 +441,11 @@
 		 * or not the value identified by the element/key is contained in the
 		 * array.
 		 *
-		 * @access protected
+		 * @access public
 		 * @param array $matches An array of key (data element) to value (to match against) pairs.
 		 * @return boolean TRUE if the data element identified by the key matches or is contained in the value.
 		 */
-		protected function check(array $matches)
+		public function check(array $matches)
 		{
 			foreach ($matches as $key => $active_value) {
 				$match = FALSE;
@@ -472,12 +469,12 @@
 		 * by the keys of $matches contains (if array) or is equal to their
 		 * respective value in $matches.
 		 *
-		 * @access protected
+		 * @access public
 		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
 		 * @param boolean $as_attribute How to return the resulting selected if all matches are valid
 		 * @return string 'selected' or 'selected="selected"' upon matching
 		 */
-		protected function selectOn(array $matches, $as_attribute = FALSE)
+		public function selectOn(array $matches, $as_attribute = FALSE)
 		{
 			if ($this->check($matches)) {
 				return ($as_attribute) ? 'selected="selected"' : 'selected';
@@ -491,12 +488,12 @@
 		 * the keys of $matches contains (if array) or is equal to their
 		 * respective value in $matches.
 		 *
-		 * @access protected
+		 * @access public
 		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
 		 * @param boolean $as_attribute How to return the resulting disabled if all matches are valid
 		 * @return string 'disabled' or 'disabled="disabled"' upon matching
 		 */
-		protected function disableOn(array $matches, $as_attribute = FALSE)
+		public function disableOn(array $matches, $as_attribute = FALSE)
 		{
 			if ($this->check($matches)) {
 				return ($as_attribute) ? 'disabled="disabled"' : 'disabled';
@@ -510,11 +507,11 @@
 		 * by the keys of $matches contains (if array) or is equal to their
 		 * respective value in $matches.
 		 *
-		 * @access protected
+		 * @access public
 		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
 		 * @return string 'highlighted' (for use as class) upon matching, an empty string if not
 		 */
-		protected function highlightOn(array $matches)
+		public function highlightOn(array $matches)
 		{
 			if ($this->check($matches)) {
 				return 'highlighted';
@@ -527,12 +524,12 @@
 		 * Determines position information about $current_value in the array or
 		 * iterator identified by $key in the data storage area.
 		 *
-		 * @access protected
+		 * @access public
 		 * @param string $key The key of the iterator in the data storage area
 		 * @param mixed $current_value The the current value in the outter loop
 		 * @return string A space separated string of position information (first/last and even/odd)
 		 */
-		protected function positionIn($key, $current_value)
+		public function positionIn($key, $current_value)
 		{
 			$position_info = array();
 
@@ -567,12 +564,12 @@
 		 * Combines the view element $element together with the separate
 		 * provided by $separator.
 		 *
-		 * @access protected
+		 * @access public
 		 * @param string $element The name of the element to combine
 		 * @param string $separator The string which separates the pieces
 		 * @return string The string of combined elements, or an empty string if the element was not an array
 		 */
-		protected function combine($key, $separator = ' :: ') {
+		public function combine($key, $separator = ' :: ') {
 			if (array_key_exists($key, $this->data)) {
 				if (is_array($this->data[$key])) {
 					return implode($separator, $this->data[$key]);
@@ -588,12 +585,12 @@
 		 * Reverse combines the view element $element together with the
 		 * separator provided by $separator.
 		 *
-		 * @access protected
+		 * @access public
 		 * @param string $key The key of the data which to combine
 		 * @param string $separator The string which separates the pieces
 		 * @return string The string of combined elements, or an empty string if the element was not an array
 		 */
-		protected function rcombine($key, $separator = ' :: ') {
+		public function rcombine($key, $separator = ' :: ') {
 			if (array_key_exists($key, $this->data)) {
 				if (is_array($this->data[$key])) {
 					return implode($separator, array_reverse($this->data[$key]));
