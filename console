@@ -174,7 +174,7 @@
 				fCore::startErrorCapture();
 
 				try {
-					eval($___command);
+					@eval($___command);
 				} catch (Exception $___e) {
 					echo 'Exception:  ' . $___e->getMessage();
 				}
@@ -240,10 +240,10 @@
 
 		$syntax_check = shell_exec(sprintf(
 			'echo %s | php -l',
-			escapeshellarg($source)
+			escapeshellarg(trim($source))
 		));
 
-		if (stripos($syntax_check, 'Parse Error') !== FALSE) {
+		if (stripos($syntax_check, 'Parse error') !== FALSE) {
 			return FALSE;
 		}
 
