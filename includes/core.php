@@ -26,11 +26,59 @@
 		const REGEX_VARIABLE          = '/[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/';
 		const REGEX_ABS_PATH          = '#^(/|\\\\|[a-z]:(\\\\|/)|\\\\|//|\./|\.\\\\)#i';
 
-		static private $config             = array();
-		static private $writeDirectory     = NULL;
-		static private $staticALMatches    = array();
+		/**
+		 * The cached configuration array
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $config = array();
+
+		/**
+		 * The write directory location
+		 *
+		 * @static
+		 * @access private
+		 * @var string|fDirectory
+		 */
+		static private $writeDirectory = NULL;
+
+		/**
+		 * Cached static auto-loader matches
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $staticALMatches = array();
+
+		/**
+		 * Index of classes which have been initialized
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
 		static private $initializedClasses = array();
-		static private $failureToken       = NULL;
+
+		/**
+		 * The stored failure token
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $failureToken = NULL;
+
+		/**
+		 * Index of configured databases
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $databases = array();
 
 		/**
 		 * Constructing an iw object is not allowed, this is purely for
@@ -44,6 +92,66 @@
 		final private function __construct()
 		{
 		}
+
+		/**
+		 * Adds a database to the database index for retrieval with
+		 * getDatabase() method.
+		 *
+		 * @static
+		 * @access public
+		 * @param fDatabase $db The database object
+		 * @param string $db_name The name of the database
+		 * @param string $db_role The role of the database
+		 * @return void
+		 */
+		static public function addDatabase(fDatabase $db, $db_name, $db_role)
+		{
+			if (!in_array($db_role, array('read', 'write', 'both'))) {
+				throw new fProgrammerException (
+					'Cannot add database %s, invalid role %s',
+					$db_name,
+					$db_role
+				);
+			}
+		
+			if ($db_role == 'read' || $db_role == 'both') {
+				self::$databases[$db_name]['read'] = $db;
+			}
+			
+			if ($db_role == 'write' || $db_role == 'both') {
+				self::$databases[$db_name]['write'] = $db;
+			}
+		}
+		
+		/**
+		 * Gets a database from the stored index of databases.
+		 *
+		 * @static
+		 * @access public
+		 * @param string $db_name The database name
+		 * @param string $db_role The database role, default 'either'
+		 * @return fDatabase The database matching the name and role
+		 */
+		static public function getDatabase($db_name, $db_role = 'either')
+		{
+			if ($db_role == 'either' || $db_role == 'write') {
+				if (isset(self::$databases[$db_name]['write'])) {
+					return self::$databases[$db_name]['write'];
+				}
+			}
+			
+			if ($db_role == 'either' || $db_role == 'read') {
+				if (isset(self::$databases[$db_name]['read'])) {
+					return self::$databases[$db_name]['read'];
+				}
+			}
+
+			throw new fNotFoundException (
+				'Could not find database %s with role %s',
+				$db_name,
+				$db_role
+			);
+		}		
 
 		/**
 		 * Creates a configuration array, and sets the config type element to

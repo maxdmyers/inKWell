@@ -170,14 +170,16 @@
 					$database_host = $stored_host;
 				}
 			}
-
-			fORMDatabase::attach(new fDatabase(
+			
+			iw::addDatabase($db = new fDatabase(
 				$settings['type'],
 				$settings['name'],
 				$database_user,
 				$database_password,
 				$database_host
 			), $database_name, $database_role);
+
+			fORMDatabase::attach($db, $database_name, $database_role);
 		}
 	}
 

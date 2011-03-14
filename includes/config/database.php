@@ -2,7 +2,7 @@
 
 	return iw::createConfig('Core', array(
 
-		'disabled'         => TRUE,
+		'disabled'         => FALSE,
 
 		'databases'        => array(
 
@@ -23,14 +23,14 @@
 				// creating this file include: db2, mssql, mysql, oracle,
 				// postgresql, and sqlite
 
-				'type'     => '',
+				'type'     => 'mysql',
 
-				'name'     => '',
+				'name'     => 'inkwell',
 
 				// Authentication information if required
 
-				'user'     => '',
-				'password' => '',
+				'user'     => 'root',
+				'password' => 'dotink',
 
 				// If the host parameter is configured as an array then inKWell
 				// will select a random host to pull data from.  This can be
