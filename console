@@ -243,9 +243,10 @@
 
 		ob_start();
 
-		passthru(sprintf('php -d %s -l %s 2>&1',
+		passthru(sprintf('php -d %s -l %s %s',
 			escapeshellarg('error_reporting=E_PARSE'),
-			escapeshellarg($file)
+			escapeshellarg($file),
+			fCore::checkOS('windows') ? NULL : '2>&1'
 		), $return);
 
 		$syntax_check = ob_get_clean();
