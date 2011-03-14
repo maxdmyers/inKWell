@@ -26,6 +26,7 @@
 		if ($config['inkwell']['display_errors']) {
 			fCore::enableErrorHandling('html');
 			fCore::enableExceptionHandling('html');
+			ini_set('display_errors', 1);
 		} elseif (isset($config['inkwell']['error_email_to'])) {
 			$admin_email = $config['inkwell']['error_email_to'];
 			fCore::enableErrorHandling($admin_email);
@@ -171,12 +172,19 @@
 				}
 			}
 			
+			$host_parts    = explode(':', $database_host, 2);
+			$database_host = $host_parts[0];
+			$database_port = (isset($host_parts[1]))
+				? $host_parts[1]
+				: NULL;
+			
 			iw::addDatabase($db = new fDatabase(
 				$settings['type'],
 				$settings['name'],
 				$database_user,
 				$database_password,
-				$database_host
+				$database_host,
+				$database_port
 			), $database_name, $database_role);
 
 			fORMDatabase::attach($db, $database_name, $database_role);

@@ -1,6 +1,10 @@
 #!/usr/bin/php -q
 <?php
 
+	// Fix some output buffering bugs
+
+	@ob_end_clean();
+
 	define('APPLICATION_ROOT', realpath(dirname(__FILE__)));
 
 	$_SERVER['DOCUMENT_ROOT']  = (isset($argv[1]))
@@ -11,11 +15,6 @@
 	$_SERVER['REQUEST_METHOD'] = 'GET';
 	$_SERVER['REMOTE_ADDR']    = '127.0.0.1';
 	$_SERVER['SERVER_NAME']    = 'localhost';
-
-	////////////////////////////////////////////////////////////////////////////
-	// The following block of code is unique to inKWell, if you want to use
-	// this terminal for something else, delete it.
-	////////////////////////////////////////////////////////////////////////////
 
 	chdir(implode(DIRECTORY_SEPARATOR, array(
 		dirname(__FILE__),
@@ -32,9 +31,16 @@
 	$___dbconf   = iw::getConfig('database');
 	$___database = ___use_db('default');
 
-	////////////////////////////////////////////////////////////////////////////
-	// End inKWell Specific Code
-	////////////////////////////////////////////////////////////////////////////
+	echo PHP_EOL;
+
+	@exec('php -v', $___garbage, $___php);
+
+	if ($___php !== 0) {
+		echo PHP_EOL;
+		echo 'Please add the PHP executable to your path.';
+		echo PHP_EOL;
+		exit();
+	}
 
 	register_shutdown_function('___respawn');
 
@@ -44,7 +50,6 @@
 	$___code      = '\?';
 	$___command   = '';
 
-	echo PHP_EOL;
 	echo 'Welcome to the inKWell Console, you can begin typing PHP or try:';
 	echo PHP_EOL;
 
@@ -76,7 +81,7 @@
 							break;
 						case '\c':
 							if (fCore::checkOS('windows')) {
-								passthru('cls');
+								system('cls');
 							} else {
 								passthru('clear');
 							}
@@ -90,9 +95,9 @@
 							break;
 						case '\u':
 							if (!($___db_select = trim(substr($___code, 2)))) {
-								echo 'Please enter a database name: ';
+								echo 'Enter the database name: ';
 								$___db_name = trim(fgets($___stdin));
-								echo 'Please enter a role [either]: ';
+								echo 'Enter a role (read, write, [either]): ';
 								$___db_role = trim(fgets($___stdin));
 								if (!$___db_role) {
 									$___db_role = 'either';
@@ -131,11 +136,12 @@
 							break;
 					}
 
-					$___code    = '';
+					$___code = '';
 					$___line--;
 
 					break;
 			}
+
 		}
 
 		foreach (token_get_all('<?php ' . $___code) as $___token) {
@@ -165,21 +171,21 @@
 			if ($___command && ___check($___command)) {
 
 				ob_start();
-
 				fCore::startErrorCapture();
+
 				try {
 					eval($___command);
-				} catch (fException $___e) {
+				} catch (Exception $___e) {
 					echo 'Exception:  ' . $___e->getMessage();
 				}
+
+				$___output  = ob_get_clean();
 
 				if(is_array($errors = fCore::stopErrorCapture())) {
 					foreach ($errors as $error) {
 						echo $error['type'] . ':  ' . $error['string'];
 					}
 				}
-
-				$___output  = ob_get_clean();
 
 				if($___output) {
 					echo $___output;
@@ -191,7 +197,9 @@
 		}
 
 		$___line++;
+
 		echo '[' . getcwd() . '][' . sprintf('%02s', $___line) . ']# ';
+		flush();
 
 	} while(($___code = fgets($___stdin)));
 
@@ -210,7 +218,11 @@
 
 		if (!isset($GLOBALS['___called_quit'])) {
 			echo "Resetting...\n";
-			passthru(__FILE__);
+			if (fCore::checkOS('windows')) {
+				passthru('php ' . __FILE__);
+			} else {
+				passthru(__FILE__);
+			}
 		}
 	}
 
@@ -222,13 +234,16 @@
 	 */
 	function ___check($string)
 	{
-		$source       = trim('<?php ' . $string);
+		$source  = '<?php ';
+		$source .= 'date_default_timezone_set("America/Los_Angeles");';
+		$source .= $string;
+
 		$syntax_check = shell_exec(sprintf(
 			'echo %s | php -l',
 			escapeshellarg($source)
 		));
 
-		if (stripos($syntax_check, 'No syntax errors') === FALSE) {
+		if (stripos($syntax_check, 'Parse Error') !== FALSE) {
 			return FALSE;
 		}
 
@@ -325,9 +340,14 @@
 			echo '   \u <database_name> [<database_role> = either]' . PHP_EOL;
 			echo PHP_EOL;	
 		} else {
-			$result = $db->query($sql);
-			foreach($result as $record) {
-				fCore::expose($record);
+			try {
+				$result = $db->query($sql);
+				foreach($result as $record) {
+					fCore::expose($record);
+				}
+			} catch (Exception $e) {
+				echo 'Exception: ' . $e->getMessage();
+				echo PHP_EOL;
 			}
 		}
 	}
