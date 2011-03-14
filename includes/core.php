@@ -23,7 +23,8 @@
 
 		const DEFAULT_WRITE_DIRECTORY = 'writable';
 
-		const VARIABLE_REGEX          = '[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*';
+		const REGEX_VARIABLE          = '/[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/';
+		const REGEX_ABS_PATH          = '#^(/|\\\\|[a-z]:(\\\\|/)|\\\\|//|\./|\.\\\\)#i';
 
 		static private $config             = array();
 		static private $writeDirectory     = NULL;
@@ -401,19 +402,6 @@
 		static public function checkFailureToken($failure_token)
 		{
 			return (self::$failureToken === $failure_token);
-		}
-
-		/**
-		 * Checks whether or not a variable name is eval() safe
-		 *
-		 * @static
-		 * @access public
-		 * @param string $variable The variable name to check
-		 * @return boolean TRUE if the variable name is eval() safe, FALSE otherwise
-		 */
-		static public function isEvalSafe($variable)
-		{
-			return preg_match('#' . self::VARIABLE_REGEX . '#', $variable);
 		}
 
 		/**

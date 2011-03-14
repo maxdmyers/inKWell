@@ -400,9 +400,9 @@
 
 					} elseif (is_array($emitter)) {
 
-						$element = array_key($emitter);
+						$element = key($emitter);
 
-						if (!iw::isEvalSafe($element)) {
+						if (!preg_match(iw::REGEX_VARIABLE, $element)) {
 							throw new fProgrammerException (
 								'Array emitter key must be valid variable name.'
 							);
@@ -418,7 +418,14 @@
 						}
 
 						foreach ($this->data[$key] as $$element) {
-							include $partial;
+							if (!preg_match(iw::REGEX_ABS_PATH, $partial)) {
+								include implode(DIRECTORY_SEPARATOR, array(
+									self::$viewRoot,
+									$partial
+								));
+							} else {
+								include $partial;
+							}
 						}
 
 					} else {

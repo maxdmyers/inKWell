@@ -159,10 +159,11 @@
 		 */
 		static public function makeClass($class, $parent_class, $support_vars = array(), $scaffolding = FALSE)
 		{
+			
 			if (
-				self::isEvalSafe($class)
-				&& self::isEvalSafe($parent_class)
-				&& extract($support_vars) == sizeof($support_vars)
+				extract($support_vars) == sizeof($support_vars)
+				&& preg_match(iw::REGEX_VARIABLE, $class)
+				&& preg_match(iw::REGEX_VARIABLE, $parent_class)
 			) {
 
 				$scaffolding_template = implode(DIRECTORY_SEPARATOR, array(
