@@ -242,10 +242,10 @@
 		file_put_contents($file, $source);
 
 		if (fCore::checkOS('windows')) {
-			$syntax_check = shell_exec(sprintf('php -d %s -l %s',
+			$syntax_check = trim(shell_exec(sprintf('php -d %s -l %s',
 				escapeshellarg('error_reporting=E_PARSE'),
 				escapeshellarg($file)
-			));
+			)));
 		} else {
 			ob_start();
 
@@ -254,10 +254,10 @@
 				escapeshellarg($file)
 			), $return);
 
-			$syntax_check = ob_get_clean();
+			$syntax_check = trim(ob_get_clean());
 		}
 
-		list($syntax_check) = explode("\n", $syntax_check);
+		list($syntax_check) = preg_split('/[\r\n]+/', $syntax_check);
 
 		if (stripos($syntax_check, 'Parse error') !== FALSE) {
 			echo str_replace($file, 'parsed input', $syntax_check);
