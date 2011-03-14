@@ -75,7 +75,11 @@
 							passthru($___exec);
 							break;
 						case '\c':
-							passthru('clear');
+							if (fCore::checkOS('windows')) {
+								passthru('cls');
+							} else {
+								passthru('clear');
+							}
 							break;
 						case '\s':
 							if (!($___sql = trim(substr($___code, 2)))) {
