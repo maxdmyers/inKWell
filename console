@@ -241,15 +241,21 @@
 
 		file_put_contents($file, $source);
 
-		ob_start();
+		if (fCore::checkOS('windows')) {
+			$syntax_check = shell_exec(sprintf('php -d %s -l %s',
+				escapeshellarg('error_reporting=E_PARSE'),
+				escapeshellarg($file)
+			));
+		} else {
+			ob_start();
 
-		passthru(sprintf('php -d %s -l %s %s',
-			escapeshellarg('error_reporting=E_PARSE'),
-			escapeshellarg($file),
-			fCore::checkOS('windows') ? NULL : '2>&1'
-		), $return);
+			passthru(sprintf('php -d %s -l %s 2>&1',
+				escapeshellarg('error_reporting=E_PARSE'),
+				escapeshellarg($file)
+			), $return);
 
-		$syntax_check = ob_get_clean();
+			$syntax_check = ob_get_clean();
+		}
 
 		list($syntax_check) = explode("\n", $syntax_check);
 
