@@ -232,21 +232,28 @@
 	 * @param string $string A string of PHP source code without an open tag
 	 * @return boolean TRUE if code appears valid, FALSE otherwise
 	 */
-	function ___check($string)
+	function ___check($source)
 	{
-		$source  = '<?php ';
-		$source .= 'date_default_timezone_set("America/Los_Angeles");';
-		$source .= $string;
 
-		$syntax_check = shell_exec(sprintf(
-			'echo %s | php -l',
-			escapeshellarg(trim($source))
-		));
+		$source  = '<?php ' . trim($source);
+		$tmp_dir = iw::getWriteDirectory('.tmp');
+		$file    = $tmp_dir . '.console_command';
+
+		file_put_contents($file, $source);
+
+		$syntax_check = trim(shell_exec(sprintf('php -d %s -l %s',
+			escapeshellarg('error_reporting=E_PARSE'),
+			escapeshellarg($file)
+		)));
+		
+		list($syntax_check) = explode("\n", $syntax_check);
 
 		if (stripos($syntax_check, 'Parse error') !== FALSE) {
+			echo str_replace($file, 'parsed input', $syntax_check);
+			echo PHP_EOL;
 			return FALSE;
 		}
-
+		
 		foreach (($tokens = token_get_all($source)) as $i => $token) {
 
 			if (is_array($token)) {
