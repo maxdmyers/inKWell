@@ -241,11 +241,15 @@
 
 		file_put_contents($file, $source);
 
-		$syntax_check = trim(shell_exec(sprintf('php -d %s -l %s',
+		ob_start();
+
+		passthru(sprintf('php -d %s -l %s 2>&1',
 			escapeshellarg('error_reporting=E_PARSE'),
 			escapeshellarg($file)
-		)));
-		
+		), $return);
+
+		$syntax_check = ob_get_clean();
+
 		list($syntax_check) = explode("\n", $syntax_check);
 
 		if (stripos($syntax_check, 'Parse error') !== FALSE) {
@@ -253,7 +257,7 @@
 			echo PHP_EOL;
 			return FALSE;
 		}
-		
+
 		foreach (($tokens = token_get_all($source)) as $i => $token) {
 
 			if (is_array($token)) {
@@ -327,7 +331,7 @@
 
 		return TRUE;
 	}
-	
+
 	/**
 	 * Runs an SQL query on a provided database.  The function will dump
 	 * the rows returned in the result using fCore::expose();
@@ -345,7 +349,7 @@
 			echo '  - Select a different database using:'           . PHP_EOL;
 			echo                                                      PHP_EOL;
 			echo '   \u <database_name> [<database_role> = either]' . PHP_EOL;
-			echo PHP_EOL;	
+			echo PHP_EOL;
 		} else {
 			try {
 				$result = $db->query($sql);
@@ -358,7 +362,7 @@
 			}
 		}
 	}
-	
+
 	/**
 	 * Gracefully attempts to get and return a selected database
 	 *
@@ -371,6 +375,6 @@
 		try {
 			return iw::getDatabase($database, $role);
 		} catch (fNotFoundException $e) {
-			return NULL;		
+			return NULL;
 		}
 	}
