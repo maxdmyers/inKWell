@@ -41,10 +41,18 @@
 
 		$___loaded_ini  = file_get_contents($___loaded_ini);
 		$___console     = file($___console);
-		$___user_ini    = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . '.user.ini';
+		$___user_ini    = implode(DIRECTORY_SEPARATOR, array(
+			$_SERVER['DOCUMENT_ROOT'],
+			'.user.ini'
+		));
 
 		if (!is_readable($___user_ini)) {
-			$___user_ini = APPLICATION_ROOT . DIRECTORY_SEPARATOR . '.user.ini';
+
+			$___user_ini = implode(DIRECTORY_SEPARATOR, array(
+				APPLICATION_ROOT,
+				'.user.ini'
+			));
+
 			if (!is_readable($___user_ini)) {
 				echo 'Please restore the .user.ini to ' . APPLICATION_ROOT;
 				echo PHP_EOL;
@@ -61,7 +69,10 @@
 		$___console[0] = '#!/usr/bin/php -c ' . $___target_ini . ' -q' . "\n";
 		$___console    = implode($___console);
 
-		if (file_put_contents($___target_ini, $___loaded_ini . PHP_EOL . $___user_ini)) {
+		if (file_put_contents($___target_ini, implode(PHP_EOL, array(
+			$___loaded_ini,
+			$___user_ini
+		))) {
 			echo 'Successfully restored php.ini.';
 			echo PHP_EOL;
 		} else {
@@ -74,7 +85,7 @@
 			echo 'Successfully modified console to target php.ini';
 			echo PHP_EOL;
 		} else {
-			echo 'Failed modifying console to target php.ini, please modify this script.';
+			echo 'Failed modifying console to target php.ini.';
 			echo PHP_EOL;
 			exit();
 		}
