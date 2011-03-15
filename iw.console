@@ -60,7 +60,7 @@
 
 		$___console[0] = '#!/usr/bin/php -c ' . $___target_ini . ' -q' . "\n";
 		$___console    = implode($___console);
-		
+
 		if (file_put_contents($___target_ini, $___loaded_ini . PHP_EOL . $___user_ini)) {
 			echo 'Successfully restored php.ini.';
 			echo PHP_EOL;
@@ -68,7 +68,7 @@
 			echo 'Failed to restore php.ini, please recreate manually';
 			echo PHP_EOL;
 			exit();
-		}			
+		}
 
 		if (file_put_contents(realpath(__FILE__), $___console)) {
 			echo 'Successfully modified console to target php.ini';

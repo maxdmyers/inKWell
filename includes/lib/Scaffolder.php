@@ -159,7 +159,7 @@
 		 */
 		static public function makeClass($class, $parent_class, $support_vars = array(), $scaffolding = FALSE)
 		{
-			
+
 			if (
 				extract($support_vars) == sizeof($support_vars)
 				&& preg_match(iw::REGEX_VARIABLE, $class)
