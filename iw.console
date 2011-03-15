@@ -1,7 +1,7 @@
-#!C:\webstack\php\php.exe -d register_globals=Off -d short_open_tag=Off -d asp_tags=On -d display_errors=On -d magic_quotes_gpc=Off -q
+#!/usr/bin/php -q
 <?php
 
-	// Fix some output buffering bugs
+	// Fix some output buffering bugs and clear the screen
 
 	@ob_end_clean();
 
@@ -22,6 +22,65 @@
 	)));
 
 	require 'init.php';
+
+	$___loaded_ini = realpath(php_ini_loaded_file());
+	$___console    = realpath(__FILE__);
+	$___target_ini = dirname($___console) . DIRECTORY_SEPARATOR . 'php.ini';
+
+	if (!is_file($___target_ini) && !is_file($___loaded_ini)) {
+
+		echo 'Your php.ini file is missing, we will try to get it back.';
+		echo PHP_EOL;
+		@unlink($___target_ini);
+		passthru('php -q ' . $___console);
+		exit();
+
+	}
+
+	if ($___loaded_ini !== $___target_ini) {
+
+		$___loaded_ini  = file_get_contents($___loaded_ini);
+		$___console     = file($___console);
+		$___user_ini    = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . '.user.ini';
+
+		if (!is_readable($___user_ini)) {
+			$___user_ini = APPLICTION_ROOT . DIRECTORY_SEPARATOR . '.user.ini';
+			if (!is_readable($___user_ini)) {
+				echo 'Please restore the .user.ini to ' . APPLICTION_ROOT;
+				echo PHP_EOL;
+				exit();
+			}
+		}
+
+		echo 'Copying system php.ini and making alterations...';
+		echo PHP_EOL;
+
+		$___user_ini = file_get_contents($___user_ini);
+
+
+		$___console[0] = '#!/usr/bin/php -c ' . $___target_ini . ' -q' . "\n";
+		$___console    = implode($___console);
+		
+		if (file_put_contents($___target_ini, $___loaded_ini . PHP_EOL . $___user_ini)) {
+			echo 'Successfully restored php.ini.';
+			echo PHP_EOL;
+		} else {
+			echo 'Failed to restore php.ini, please recreate manually';
+			echo PHP_EOL;
+			exit();
+		}			
+
+		if (file_put_contents(realpath(__FILE__), $___console)) {
+			echo 'Successfully modified console to target php.ini';
+			echo PHP_EOL;
+		} else {
+			echo 'Failed modifying console to target php.ini, please modify this script.';
+			echo PHP_EOL;
+			exit();
+		}
+
+		exit();
+	}
 
 	// Set some basics regardless of configuration
 
@@ -80,11 +139,7 @@
 							passthru($___exec);
 							break;
 						case '\c':
-							if (fCore::checkOS('windows')) {
-								system('cls');
-							} else {
-								passthru('clear');
-							}
+							___clear_screen();
 							break;
 						case '\s':
 							if (!($___sql = trim(substr($___code, 2)))) {
@@ -385,3 +440,19 @@
 			return NULL;
 		}
 	}
+
+	/**
+	 * Clear the screen
+	 *
+	 * @param void
+	 * @return void
+	 */
+	function ___clear_screen()
+	{
+		if (fCore::checkOS('windows')) {
+			system('cls');
+		} else {
+			passthru('clear');
+		}
+	}
+
