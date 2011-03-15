@@ -44,9 +44,9 @@
 		$___user_ini    = $_SERVER['DOCUMENT_ROOT'] . DIRECTORY_SEPARATOR . '.user.ini';
 
 		if (!is_readable($___user_ini)) {
-			$___user_ini = APPLICTION_ROOT . DIRECTORY_SEPARATOR . '.user.ini';
+			$___user_ini = APPLICATION_ROOT . DIRECTORY_SEPARATOR . '.user.ini';
 			if (!is_readable($___user_ini)) {
-				echo 'Please restore the .user.ini to ' . APPLICTION_ROOT;
+				echo 'Please restore the .user.ini to ' . APPLICATION_ROOT;
 				echo PHP_EOL;
 				exit();
 			}
