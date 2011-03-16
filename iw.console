@@ -72,7 +72,7 @@
 		if (file_put_contents($___target_ini, implode(PHP_EOL, array(
 			$___loaded_ini,
 			$___user_ini
-		))) {
+		)))) {
 			echo 'Successfully restored php.ini.';
 			echo PHP_EOL;
 		} else {
