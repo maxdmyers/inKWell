@@ -1,9 +1,5 @@
 <?php
 
-	$router = Moor::setRequestParamPattern('[A-Za-z0-9_-]+');
-
-	// TODO: check for cached routes with specificity and load those
-
 	// Register all of our custom routes first
 
 	foreach (iw::getConfig('routes') as $route => $target) {
@@ -72,5 +68,3 @@
 	foreach ($ordered_routes as $route => $specificity) {
 		Moor::route($route, $routes[$route]['target']);
 	}
-
-	$router->run();

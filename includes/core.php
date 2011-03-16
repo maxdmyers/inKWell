@@ -14,8 +14,7 @@
 	class iw
 	{
 
-		const DEFAULT_CONFIG_DIR      = 'config';
-		const DEFAULT_CONFIG_FILE     = 'config.php';
+		const DEFAULT_CONFIG          = 'config';
 
 		const INITIALIZATION_METHOD   = '__init';
 		const MATCH_CLASS_METHOD      = '__match';
@@ -113,16 +112,16 @@
 					$db_role
 				);
 			}
-		
+
 			if ($db_role == 'read' || $db_role == 'both') {
 				self::$databases[$db_name]['read'] = $db;
 			}
-			
+
 			if ($db_role == 'write' || $db_role == 'both') {
 				self::$databases[$db_name]['write'] = $db;
 			}
 		}
-		
+
 		/**
 		 * Gets a database from the stored index of databases.
 		 *
@@ -139,7 +138,7 @@
 					return self::$databases[$db_name]['write'];
 				}
 			}
-			
+
 			if ($db_role == 'either' || $db_role == 'read') {
 				if (isset(self::$databases[$db_name]['read'])) {
 					return self::$databases[$db_name]['read'];
@@ -151,7 +150,7 @@
 				$db_name,
 				$db_role
 			);
-		}		
+		}
 
 		/**
 		 * Creates a configuration array, and sets the config type element to
@@ -178,7 +177,7 @@
 		 *
 		 * @static
 		 * @access public
-		 * @param string $directory The directory containing the configuration elements
+		 * @param string|fDirectory $directory The directory containing the configuration elements
 		 * @param boolean $quiet Whether or not to output information
 		 * @param array The configuration array which was built
 		 */
@@ -191,60 +190,59 @@
 			}
 
 			if ($directory instanceof fDirectory) {
+
 				$directory = $directory->getPath();
 
 			} elseif (!is_dir($directory) || !is_readable($directory)) {
-				throw new fProgrammerException (
-					'Unable to build configuration, directory %s is not readable.',
+				throw new Exception (sprintf(
+					'Cannot built configuration, directory %s is unreadable.',
 					$directory
-				);
-
-			} else {
-
-				$current_working_directory = getcwd();
-
-				chdir($directory);
-
-				// Loads each PHP file into a configuration element named after
-				// the file.  We check to see if the CONFIG_TYPE_ELEMENT is set
-				// to ensure configurations are added to their respective
-				// type in the $config['types'] array.
-
-				foreach (glob("*.php") as $config_file) {
-
-					$config_element = pathinfo($config_file, PATHINFO_FILENAME);
-
-					if (!$quiet) {
-						echo "Loading config data for $config_element...\n";
-					}
-
-					$current_config = include($config_file);
-
-					if (isset($current_config[self::CONFIG_TYPE_ELEMENT])) {
-						$type = $current_config[self::CONFIG_TYPE_ELEMENT];
-						unset($current_config[self::CONFIG_TYPE_ELEMENT]);
-					} else {
-						$type = $config_element;
-					}
-
-					$config['types'][$type][] = $config_element;
-					$config[$config_element]  = $current_config;
-				}
-
-				// Ensures we recusively scan all directories and merge all
-				// configurations.  Directory names do not play a role in the
-				// configuration key name.
-
-				foreach (glob("*", GLOB_ONLYDIR) as $sub_directory) {
-					$config = array_merge_recursive(
-						$config,
-						self::buildConfig($sub_directory, $quiet)
-					);
-				}
-
-				chdir($current_working_directory);
+				));
 
 			}
+
+			$current_working_directory = getcwd();
+
+			chdir($directory);
+
+			// Loads each PHP file into a configuration element named after
+			// the file.  We check to see if the CONFIG_TYPE_ELEMENT is set
+			// to ensure configurations are added to their respective
+			// type in the $config['types'] array.
+
+			foreach (glob("*.php") as $config_file) {
+
+				$config_element = pathinfo($config_file, PATHINFO_FILENAME);
+
+				if (!$quiet) {
+					echo "Loading config data for $config_element...\n";
+				}
+
+				$current_config = include($config_file);
+
+				if (isset($current_config[self::CONFIG_TYPE_ELEMENT])) {
+					$type = $current_config[self::CONFIG_TYPE_ELEMENT];
+					unset($current_config[self::CONFIG_TYPE_ELEMENT]);
+				} else {
+					$type = $config_element;
+				}
+
+				$config['types'][$type][] = $config_element;
+				$config[$config_element]  = $current_config;
+			}
+
+			// Ensures we recusively scan all directories and merge all
+			// configurations.  Directory names do not play a role in the
+			// configuration key name.
+
+			foreach (glob("*", GLOB_ONLYDIR) as $sub_directory) {
+				$config = array_merge_recursive(
+					$config,
+					self::buildConfig($sub_directory, $quiet)
+				);
+			}
+
+			chdir($current_working_directory);
 
 			return $config;
 		}
@@ -262,7 +260,7 @@
 		static public function writeConfig(array $config, $file = NULL, $quiet = FALSE)
 		{
 			if (!$file) {
-				$file = self::DEFAULT_CONFIG_FILE;
+				$file = self::DEFAULT_CONFIG . '.php';
 			}
 
 			if (!$quiet) {
@@ -283,25 +281,27 @@
 		 *
 		 * @static
 		 * @access public
-		 * @param string $config_file The location of the config file
+		 * @param string $configuration The name of the configuration to use
 		 * @return void
 		 */
-		static public function init($config_file = NULL)
+		static public function init($configuration = NULL)
 		{
 
-			if (!$config_file) {
-				$config_file = realpath(self::DEFAULT_CONFIG_FILE);
+			if (!$configuration) {
+				$configuration = self::DEFAULT_CONFIG;
 			}
 
-			if (is_readable($config_file)) {
-				$config = @unserialize(file_get_contents($config_file));
-			} else {
-				$config = FALSE;
-			}
+			$file   = realpath($configuration . '.php');
+
+			$config = (is_readable($file))
+				? @unserialize(file_get_contents($file))
+				: NULL;
 
 			if (!$config) {
-				$config = @self::buildConfig(NULL, $config_file, TRUE);
+				$config = @self::buildConfig($configuration, TRUE);
 			}
+
+			self::$config = $config;
 
 			self::$writeDirectory = implode(DIRECTORY_SEPARATOR, array(
 				APPLICATION_ROOT,
@@ -322,7 +322,202 @@
 				spl_autoload_register('iw::loadClass');
 			}
 
-			return (self::$config = $config);
+			// Initialize Error Reporting
+
+			if (isset($config['inkwell']['error_level'])) {
+				error_reporting($config['inkwell']['error_level']);
+			}
+
+			if (isset($config['inkwell']['display_errors'])) {
+				if ($config['inkwell']['display_errors']) {
+					fCore::enableErrorHandling('html');
+					fCore::enableExceptionHandling('html');
+					ini_set('display_errors', 1);
+				} elseif (isset($config['inkwell']['error_email_to'])) {
+					$admin_email = $config['inkwell']['error_email_to'];
+					fCore::enableErrorHandling($admin_email);
+					fCore::enableExceptionHandling($admin_email);
+					ini_set('display_errors', 0);
+				} else {
+					ini_set('display_errors', 0);
+				}
+			}
+
+			// Include any interfaces
+
+			if (isset($config['inkwell']['interfaces'])) {
+
+				$interface_directories = $config['inkwell']['interfaces'];
+
+				foreach ($interface_directories as $interface_directory) {
+					$files = glob(implode(DIRECTORY_SEPARATOR, array(
+						APPLICATION_ROOT,
+						$interface_directory,
+						'*.php'
+					)));
+
+					foreach ($files as $file) {
+
+						$interface = pathinfo($file, PATHINFO_FILENAME);
+
+						if (!interface_exists($interface, FALSE)) {
+							include $file;
+						}
+					}
+				}
+			}
+
+			// Initialize Date and Time Information, this has to be before any
+			// time related functions.
+
+			if (isset($config['inkwell']['default_timezone'])) {
+				fTimestamp::setDefaultTimezone(
+					$config['inkwell']['default_timezone']
+				);
+			} else {
+				throw new fProgrammerException(
+					'Please configure your timezone'
+				);
+			}
+
+			if (
+				isset($config['inkwell']['date_formats'])    &&
+				is_array($config['inkwell']['date_formats'])
+			) {
+				$date_formats = $config['inkwell']['date_formats'];
+				foreach ($date_formats as $name => $format) {
+					fTimestamp::defineFormat($name, $format);
+				}
+			}
+
+			// Initialize the Session
+
+			fSession::setPath(
+				iw::getWriteDirectory(implode(DIRECTORY_SEPARATOR, array(
+					'.tmp',
+					'sessions'
+				)))
+			);
+
+			$session_length = (isset($config['inkwell']['session_length']))
+				? $config['inkwell']['session_length']
+				: '30 minutes';
+
+			if (
+				isset($config['inkwell']['persistent_session']) &&
+				$config['inkwell']['persistent_sessions']
+			) {
+				fSession::enablePersistence();
+				fSession::setLength($session_length, $session_length);
+			} else {
+				fSession::setLength($session_length);
+			}
+			fSession::open();
+
+			// Initialize the Databases
+
+			if (
+				isset($config['database']['disabled'])  &&
+				!$config['database']['disabled']        &&
+				isset($config['database']['databases'])
+			)  {
+
+				if (!is_array($config['database']['databases'])) {
+					throw new fProgrammerException (
+						'Databases must be configured as an array.'
+					);
+				}
+
+				$databases = $config['database']['databases'];
+
+				foreach ($databases as $name => $settings) {
+
+					$database_target = explode('::', $name);
+
+					$database_entry   = !empty($database_target[0])
+						? $database_target[0]
+						: NULL;
+
+					$database_role   = isset($database_target[1])
+						? $database_target[1]
+						: 'both';
+
+					if (!is_array($settings)) {
+						throw new fProgrammerException (
+							'Database settings must be configured as an array.'
+						);
+					}
+
+					$database_type = (isset($settings['type']))
+						? $settings['type']
+						: NULL;
+
+					$database_name = (isset($settings['name']))
+						? $settings['name']
+						: NULL;
+
+
+					if (!isset($database_type) || !isset($database_name)) {
+						throw new fProgrammerException (
+							'Database support requires a type and name.'
+						);
+					}
+
+					$database_user = (isset($settings['user']))
+						? $settings['user']
+						: NULL;
+
+					$database_password = (isset($settings['password']))
+						? $settings['password']
+						: NULL;
+
+					$database_hosts = (isset($settings['hosts']))
+						? $settings['hosts']
+						: NULL;
+
+					if (is_array($database_hosts) && count($database_hosts)) {
+
+						$target = iw::makeTarget('iw', 'db_host['. $name . ']');
+
+						if (!($stored_host = fSession::get($target, NULL))) {
+
+							$host_index    = array_rand($database_hosts);
+							$database_host = $database_hosts[$host_index];
+
+							fSession::set($target, $database_host);
+
+						} else {
+
+							$database_host = $stored_host;
+						}
+					}
+
+					$host_parts    = explode(':', $database_host, 2);
+					$database_host = $host_parts[0];
+					$database_port = (isset($host_parts[1]))
+						? $host_parts[1]
+						: NULL;
+
+					iw::addDatabase($db = new fDatabase(
+						$database_type,
+						$database_name,
+						$database_user,
+						$database_password,
+						$database_host,
+						$database_port
+					), $database_entry, $database_role);
+
+					fORMDatabase::attach($db, $database_entry, $database_role);
+				}
+			}
+
+			// Load the Scaffolder if we have a configuration for it
+
+			if (isset($config['scaffolder'])) {
+				iw::loadClass('Scaffolder');
+			}
+
+			return self::$config;
 		}
 
 		/**
