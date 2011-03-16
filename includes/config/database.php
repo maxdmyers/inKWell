@@ -19,7 +19,7 @@
 			// For more information about roles, please see Flourish's
 			// fORM Documentation.
 
-			'default::both'      => array(
+			'default::both' => array(
 
 				// The database types used/allowed by inKWell reflect whatever
 				// is currently supported by Flourish, examples at the time of
@@ -29,8 +29,8 @@
 				// Both the type and name are required and should be a string
 				// value.
 
-				'type'     => NULL,
-				'name'     => NULL,
+				'type' => NULL,
+				'name' => NULL,
 
 				// Authentication information if required
 
@@ -50,7 +50,7 @@
 				//
 				// <address>:<port>
 
-				'host'     => array('127.0.0.1'),
+				'hosts' => array('127.0.0.1'),
 
 			),
 		),
