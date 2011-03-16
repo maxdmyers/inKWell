@@ -21,8 +21,10 @@
 
 	$config = iw::init(CONFIGURATION);
 
-	// If we are running via command line interface, return here as we do not
-	// need any routing.
+	/**
+	 * If we are running via command line interface, return here as we do not
+	 * need any routing.
+	 */
 
 	if (strtolower(php_sapi_name()) == 'cli') {
 		return;
@@ -33,6 +35,5 @@
 	 */
 
 	include 'routing.php';
-
 	Moor::setRequestParamPattern('[A-Za-z0-9_-]+');
 	Moor::run();
