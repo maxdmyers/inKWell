@@ -5,7 +5,13 @@
 		'table'            => 'auth.users',
 		'id_column'        => 'username',
 		'password_columns' => array('login_password'),
-		'fixed_columns'    => array('date_created', 'date_last_accessed'),
+
+		'fixed_columns'    => array(
+			'date_created',
+			'date_last_accessed',
+			'last_acccessed_from'
+		),
+
 		'order'            => array(
 			'id'           => 'asc'
 		),
@@ -15,10 +21,10 @@
 		// minutes.
 
 		'max_login_attempts' => '5/15 minutes',
-		
+
 		// Allows users to log in via any of their registered e-mail addresses
 		// instead of their username
-		
+
 		'allow_email_login'  => TRUE
 
 	));

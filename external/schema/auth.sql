@@ -6,7 +6,8 @@ CREATE TABLE auth.users (
 	login_password varchar(512) NOT NULL,
 	status varchar(16) NOT NULL DEFAULT 'Active' CHECK(status IN('Active', 'Inactive', 'Disabled')),
 	date_created timestamp DEFAULT CURRENT_TIMESTAMP,
-	date_last_accessed timestamp DEFAULT NULL
+	date_last_accessed timestamp DEFAULT NULL,
+	last_acccessed_from varchar(16) NOT NULL
 );
 
 CREATE TABLE auth.user_email_addresses (
@@ -18,6 +19,14 @@ CREATE TABLE auth.user_public_keys (
 	id serial PRIMARY KEY,
 	user_id integer NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE ON UPDATE CASCADE,
 	public_key varchar(4096) NOT NULL
+);
+
+CREATE TABLE auth.user_sessions (
+	id varchar(32) PRIMARY KEY,
+	user_id integer NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+	last_activity timestamp NOT NULL,
+	remote_address varchar(16) NOT NULL,
+	rebuild_acl boolean DEFAULT TRUE
 );
 
 CREATE TABLE auth.roles (
@@ -57,7 +66,7 @@ CREATE TABLE auth.role_permissions (
 );
 
 CREATE TABLE auth.login_attempts (
-	user_id int NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+	user_id int REFERENCES auth.users(id) ON DELETE CASCADE ON UPDATE CASCADE,
 	remote_address varchar(45) NOT NULL, /* Supports IPv6 and possible IPv4 tunneling representation */
 	date_occurred timestamp DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY (user_id, remote_address, date_occurred)
