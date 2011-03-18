@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [ -n "$1" ]; then
+
+	extension=$1
+
+	if [ -n "$2" ]; then
+		package_store=$2
+	else
+		package_store=$HOME
+	fi
+
+	orig_path=`pwd`
+	temp_path="/tmp/$extension-`git rev-parse HEAD`"
+	if [ -d $temp_path ]; then
+		rm -rf $temp_path
+	fi
+	mkdir $temp_path
+	git diff --no-prefix --diff-filter=A master > $temp_path/make
+	cd $temp_path
+	patch -p0 < make
+	rm make
+	zip -r $extension ./*
+	cp $extension.zip $package_store
+	cd $orig_path
+	rm -rf $temp_path
+else
+	echo 'Usage: iw-gitpkg <package_name> [<target_directory>]'
+fi
