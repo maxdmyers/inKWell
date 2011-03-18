@@ -1,5 +1,4 @@
 <?php
-
 	/**
 	 * The PagesController is used in two ways, firstly any other controller
 	 * use it to build a page and embed it's view within, secondly it is able
@@ -7,24 +6,39 @@
 	 * wrapper for other controller views. Additionally:
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
+	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
+	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 *
+	 * @package inKWell::Extensions::PagesController
 	 */
 	class PagesController extends Controller
 	{
 
-		const DEFAULT_PAGES_ROOT     = 'pages';
+		const DEFAULT_PAGES_ROOT = 'pages';
 
-		static private   $pagePath   = NULL;
+		/**
+		 * The page path as determined by the configured pages root and
+		 * the site section.
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $pagePath = NULL;
 
 		/**
 		 * Prepares the page
 		 *
-		 * @param string $view The view to render if you so choose to support multiple views per format
+		 * @access protected
+		 * @param void
 		 * @return void
 		 */
 		protected function prepare()
 		{
 
 			$section = self::getBaseURL();
+			$scripts = '/user/scripts/';
+			$styles  = '/user/styles/';
 
 			parent::prepare();
 
@@ -32,19 +46,13 @@
 
 				case 'html':
 					$this->view
-						-> add  ('styles',  '/user/styles/common.css')
-						-> add  ('scripts', '/user/scripts/common.js')
-						-> add  ('styles',  '/user/styles/'  . $section . '/common.css')
-						-> add  ('scripts', '/user/scripts/' . $section . '/common.js')
+						-> add  ('styles',  $styles  . 'common.css')
+						-> add  ('scripts', $scripts . 'common.js')
+						-> add  ('styles',  $styles  . $section . '/common.css')
+						-> add  ('scripts', $scripts . $section . '/common.js')
 						-> add  ('header',  $section . '/pages/header.php')
 						-> add  ('footer',  $section . '/pages/footer.php')
 						-> push ('classes', $section);
-					break;
-
-				case 'json':
-					break;
-
-				case  'xml':
 					break;
 			}
 
@@ -53,7 +61,9 @@
 		/**
 		 * Initializes the PagesController
 		 *
-		 * @param void
+		 * @static
+		 * @access public
+		 * @param array $config The configuration array
 		 * @return void
 		 */
 		static public function __init($config)
@@ -64,6 +74,8 @@
 				? $config['pages_root']
 				: self::DEFAULT_PAGES_ROOT
 			);
+
+			return TRUE;
 		}
 
 		/**
@@ -101,7 +113,10 @@
 		 */
 		static protected function notFound()
 		{
-			$file = self::$pagePath . DIRECTORY_SEPARATOR . 'not_found.php';
+			$file = implode(DIRECTORY_SEPARATOR, array(
+				self::$pagePath,
+				'not_found.php'
+			));
 
 			if (is_readable($file)) {
 				self::delegate($file);
@@ -122,7 +137,10 @@
 		 */
 		static protected function notAuthorized()
 		{
-			$file = self::$pagePath . DIRECTORY_SEPARATOR . 'not_authorized.php';
+			$file = implode(DIRECTORY_SEPARATOR, array(
+				self::$pagePath,
+				'not_authorized.php'
+			));
 
 			if (is_readable($file)) {
 				self::delegate($file);
@@ -143,7 +161,10 @@
 		 */
 		static protected function forbidden()
 		{
-			$file = self::$pagePath . DIRECTORY_SEPARATOR . 'forbidden.php';
+			$file = implode(DIRECTORY_SEPARATOR, array(
+				self::$pagePath,
+				'forbidden.php'
+			));
 
 			if (is_readable($file)) {
 				self::delegate($file);
