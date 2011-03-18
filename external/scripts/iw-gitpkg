@@ -18,9 +18,9 @@ if [ -n "$1" ]; then
 	mkdir $temp_path
 	git diff --no-prefix --diff-filter=A master > $temp_path/make
 	cd $temp_path
-	patch -p0 < make
+	git apply --whitespace=nowarn < make
 	rm make
-	zip -r $extension ./*
+	zip -r $extension.zip .
 	cp $extension.zip $package_store
 	cd $orig_path
 	rm -rf $temp_path
