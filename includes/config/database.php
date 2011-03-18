@@ -2,9 +2,8 @@
 
 	return iw::createConfig('Core', array(
 
-		'disabled'         => TRUE,
-
-		'databases'        => array(
+		'disabled'  => TRUE,
+		'databases' => array(
 
 			// Multiple databases can be configured.  If database support is
 			// enabled above the default database is always 'default', but it
@@ -51,7 +50,6 @@
 				// <address>:<port>
 
 				'hosts' => array('127.0.0.1'),
-
 			),
 		),
 	));
