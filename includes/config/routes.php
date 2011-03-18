@@ -21,7 +21,7 @@
 
 			echo '<h1>User Roles</h1>';
 			fCore::expose(
-				User::retrieveLoggedIn()->buildAuthRoles()->call('getName')
+				User::retrieveLoggedIn()->buildRoles()->call('getName')
 			);
 
 			echo '<h1>User ACL</h1>';
@@ -31,8 +31,11 @@
 
 			echo '<h1>Check Permissions</h1>';
 			fCore::expose(
-				User::checkACL(2, 'users')
+				User::checkACL(PERM_UPDATE, 'users')
 			);
 
+			echo '<h1>Revoke Permission</h1>';
+			$role = new Role(3);
+			$role->revokePermission(PERM_UPDATE, 'users');
 		}
 	));

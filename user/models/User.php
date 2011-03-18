@@ -10,12 +10,13 @@
 	 *
 	 * @package inKWell::Extensions::Auth
 	 */
-	class User extends ActiveRecord
+	class User extends AuthRecord
 	{
 
 		const INVALID_LOGIN_MSG                = 'Username and/or password are invalid.';
 		const INVALID_SESSION_MSG              = 'You have been logged out for security reasons.';
 		const MAX_LOGIN_ATTEMPTS_MSG           = 'You have attempted to login too many times, please try again in %s.';
+
 		const REGEX_MAX_LOGIN_ATTEMPTS         = '/(\d+)(\s*\/\s*(\d+)(\s*(days|hours|minutes|seconds)?)?)?/';
 
 		const MAX_LOGIN_ATTEMPTS               = 5;
@@ -88,86 +89,17 @@
 		}
 
 		/**
-		 * Override the associateAuthRoles method in order to trigger
+		 * Override the associateRoles method in order to trigger
 		 * rebuilding teh ACL.
 		 *
 		 * @access public
 		 * @param array|fRecordSet $record_set A recordset to associate with
 		 * @return void
 		 */
-		public function associateAuthRoles()
+		public function associateRoles()
 		{
-			$this->rebuildACL();
+			self::rebuildACL($this);
 			$this->__call(__FUNCTION__, func_get_args());
-		}
-
-		/**
-		 * Rebuilds or request a rebuild of a user's ACL.
-		 *
-		 * @access private
-		 * @param UserSession $user_session The user session to rebuild for
-		 * @return void
-		 */
-		public function rebuildACL(UserSession $user_session = NULL)
-		{
-			if (!$user_session) {
-				if ($user = self::retrieveLoggedIn()) {
-					$database     = fORMDatabase::retrieve('UserSession');
-					$record_table = parent::getRecordTable('UserSession');
-
-					try {
-						$database->query(
-							'UPDATE %r SET rebuild_acl=TRUE WHERE user_id=%i',
-							$record_table,
-							$user->getId()
-						);
-					} catch (fSQLException $e) {
-						echo $e->getMessage();
-					}
-				}
-				return;
-			}
-
-			$acls        = array();
-			$user        = $user_session->createUser();
-			$auth_roles  = $user->buildAuthRoles();
-			$permissions = $user->buildUserPermissions();
-
-			foreach ($auth_roles as $auth_role) {
-				$auth_role_permissions = $auth_role->buildAuthRolePermissions();
-				foreach ($auth_role_permissions as $permission) {
-					$record_type  = $permission->getType();
-					$resource_key = $permission->getKey();
-					$field        = $permission->getField();
-					if (isset($acls[$record_type][$resource_key][$field])) {
-						$acl = &$acls[$record_type][$resource_key][$field];
-						$acl = $acl | intval($permission->getBitValue());
-					} else {
-						$acls[$record_type][$resource_key][$field] = intval(
-							$permission->getBitValue()
-						);
-					}
-				}
-			}
-
-			foreach ($permissions as $permission) {
-				$record_type  = $permission->getType();
-				$resource_key = $permission->getKey();
-				$field        = $permission->getField();
-				if (isset($acls[$record_type][$resource_key][$field])) {
-					$acl = &$acls[$record_type][$resource_key][$field];
-					$acl = $acl | intval($permission->getBitValue());
-				} else {
-					$acls[$record_type][$resource_key][$field] = intval(
-						$permission->getBitValue()
-					);
-				}
-			}
-
-			fAuthorization::setUserACLs($acls);
-			$user_session->setRebuildAcl(FALSE);
-			$user_session->setId(session_id());
-			$user_session->store();
 		}
 
 		/**
@@ -348,7 +280,7 @@
 		 * @access public
 		 * @param string $username The provided username or e-mail
 		 * @param string $password The provided password
-		 * @return void
+		 * @return User The authorized User record
 		 */
 		static public function authorize($username, $password)
 		{
@@ -407,16 +339,15 @@
 						self::$maxLoginAttemptsTime
 					)
 				);
-			} else {
-
-				// Add the Login Attempt
-
-				$user_login_attempt = new LoginAttempt();
-				$user_login_attempt->setUserId($user_id);
-				$user_login_attempt->setRemoteAddress($_SERVER['REMOTE_ADDR']);
-				$user_login_attempt->store();
-				sleep(1);
 			}
+
+			// Add the Login Attempt
+
+			$login_attempt = new LoginAttempt();
+			$login_attempt->setUserId($user_id);
+			$login_attempt->setRemoteAddress($_SERVER['REMOTE_ADDR']);
+			$login_attempt->store();
+			sleep(1);
 
 			$login_success = ($user && ($hash = $user->getLoginPassword()))
 				? fCryptography::checkPasswordHash($password, $hash)
@@ -431,13 +362,13 @@
 			}
 
 			// Successful Login:
-			//
-			// Remove All Login Attempts, Set the Date Accessed, and Establish
-			// Permissions
 
+			self::$logged_in_user = $user;
 			$login_attempts->call('delete');
 
-			// Load or create the user session
+			// Load or create the user session.  This is loaded prior to
+			// our user token as that will regenerate our session id.
+
 			try {
 				$user_session = new UserSession(session_id());
 			} catch (fNotFoundException $e) {
@@ -455,10 +386,17 @@
 			// the ACL.  This will store the user session with the
 			// new ID.
 
+			$user_session->setId(session_id());
+			$user_session->setUserId($user->getId());
 			$user_session->setLastActivity(new fTimestamp());
 			$user_session->setRemoteAddress($_SERVER['REMOTE_ADDR']);
-			$user_session->setUserId($user->getId());
-			$user->rebuildACL($user_session);
+			$user_session->store();
+
+			// Set our logged in user
+
+			User::rebuildACL();
+
+			return self::$logged_in_user;
 		}
 
 		/**
@@ -474,12 +412,10 @@
 		{
 			try {
 				$user_session = new UserSession(session_id());
-			} catch (fNotFoundException $e) {
 				$user_session->delete();
-			}
+			} catch (fNotFoundException $e) {}
 
-			fAuthorization::destroyUserInfo();
-			return TRUE;
+			return fAuthorization::destroyUserInfo();
 		}
 
 		/**
@@ -492,36 +428,35 @@
 		 */
 		static public function retrieveLoggedIn()
 		{
-			if (self::$logged_in_user == NULL) {
-				$token = fAuthorization::getUserToken();
-				if ($token !== NULL) {
-					try {
+			$token = (self::$logged_in_user === NULL)
+				? fAuthorization::getUserToken()
+				: NULL;
 
-						self::$logged_in_user = new User($token);
+			if ($token !== NULL) {
+				try {
 
-						// Update their session
+					self::$logged_in_user = new User($token);
 
-						$user_session = new UserSession(session_id());
-						$user_address = $user_session->getRemoteAddress();
-						$user_session->setLastActivity(new fTimestamp());
+					// Update their session
 
-						if ($user_address != $_SERVER['REMOTE_ADDR']) {
-							self::$logged_in_user = NULL;
-							throw new fValidationException(
-								fText::compose(self::INVALID_SESSION_MSG)
-							);
-						}
+					$user_session = new UserSession(session_id());
+					$user_address = $user_session->getRemoteAddress();
+					$user_session->setLastActivity(new fTimestamp());
 
-						if ($user_session->getRebuildAcl()) {
-							self::$logged_in_user->rebuildACL($user_session);
-						} else {
-							$user_session->store();
-						}
-
-					} catch (fNotFoundException $e) {
+					if ($user_address != $_SERVER['REMOTE_ADDR']) {
 						self::$logged_in_user = NULL;
+						throw new fValidationException(
+							fText::compose(self::INVALID_SESSION_MSG)
+						);
 					}
-				}
+
+					if ($user_session->getRebuildAcl()) {
+						self::$logged_in_user->rebuildACL($user_session);
+					} else {
+						$user_session->store();
+					}
+
+				} catch (fNotFoundException $e) {}
 			}
 
 			return self::$logged_in_user;
@@ -584,5 +519,76 @@
 
 			return FALSE;
 		}
+
+		/**
+		 * Rebuild or request a rebuild of a user's ACL.
+		 *
+		 * @static
+		 * @access private
+		 * @param User $user The user to mark as requiring rebuild
+		 * @return void
+		 */
+		static private function rebuildACL(User $user = NULL)
+		{
+			if ($user) {
+				$database     = fORMDatabase::retrieve('UserSession');
+				$record_table = parent::getRecordTable('UserSession');
+				try {
+					$database->query(
+						'UPDATE %r SET rebuild_acl=TRUE WHERE user_id=%i',
+						$record_table,
+						$user->getId()
+					);
+					return TRUE;
+				} catch (fSQLException $e) {
+					return FALSE;
+				}
+			}
+
+			$acls         = array();
+			$user_session = new UserSession(session_id());
+			$user         = self::retrieveLoggedIn();
+			$roles        = $user->buildRoles();
+			$permissions  = $user->buildUserPermissions();
+
+			foreach ($roles as $role) {
+				$role_permissions = $role->buildRolePermissions();
+				foreach ($role_permissions as $permission) {
+					$record_type  = $permission->getType();
+					$resource_key = $permission->getKey();
+					$field        = $permission->getField();
+					if (isset($acls[$record_type][$resource_key][$field])) {
+						$acl = &$acls[$record_type][$resource_key][$field];
+						$acl = $acl | intval($permission->getBitValue());
+					} else {
+						$acls[$record_type][$resource_key][$field] = intval(
+							$permission->getBitValue()
+						);
+					}
+				}
+			}
+
+			foreach ($permissions as $permission) {
+				$record_type  = $permission->getType();
+				$resource_key = $permission->getKey();
+				$field        = $permission->getField();
+				if (isset($acls[$record_type][$resource_key][$field])) {
+					$acl = &$acls[$record_type][$resource_key][$field];
+					$acl = $acl | intval($permission->getBitValue());
+				} else {
+					$acls[$record_type][$resource_key][$field] = intval(
+						$permission->getBitValue()
+					);
+				}
+			}
+
+			fAuthorization::setUserACLs($acls);
+			$user_session->setId(session_id());
+			$user_session->setRebuildAcl(FALSE);
+			$user_session->store();
+
+			return TRUE;
+		}
+
 
 	}

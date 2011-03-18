@@ -75,8 +75,6 @@ CREATE TABLE auth.login_attempts (
 
 /* DEFAULT DATA */
 
-INSERT INTO auth.roles (name) VALUES('Everyone');
-INSERT INTO auth.roles (name) VALUES('User');
 INSERT INTO auth.roles (name) VALUES('Administrator');
 
 INSERT INTO auth.actions (name) VALUES ('create');
@@ -84,14 +82,6 @@ INSERT INTO auth.actions (name) VALUES ('remove');
 INSERT INTO auth.actions (name) VALUES ('update');
 INSERT INTO auth.actions (name) VALUES ('manage');
 INSERT INTO auth.actions (name) VALUES ('select');
-
-INSERT INTO auth.role_permissions (role_id, type, key, field, bit_value) VALUES(
-	(SELECT id FROM auth.roles WHERE name = 'Everyone'),
-	NULL,
-	NULL,
-	NULL,
-	POW(2, (SELECT id FROM auth.actions WHERE name = 'select'))
-);
 
 INSERT INTO auth.role_permissions (role_id, type, key, field, bit_value) VALUES(
 	(SELECT id FROM auth.roles WHERE name = 'Administrator'),
