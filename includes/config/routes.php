@@ -9,5 +9,30 @@
 	 */
 
 	return iw::createConfig('Core', array(
+		'/' => function(){
 
+			User::authorize('inkwell', 'dotink');
+
+			echo '<h1>Session ID</h1>';
+			fCore::expose(session_id());
+
+			echo '<h1>User Sessions</h1>';
+			fCore::expose(UserSessions::build());
+
+			echo '<h1>User Roles</h1>';
+			fCore::expose(
+				User::retrieveLoggedIn()->buildAuthRoles()->call('getName')
+			);
+
+			echo '<h1>User ACL</h1>';
+			fCore::expose(
+				fauthorization::getUserACLs()
+			);
+
+			echo '<h1>Check Permissions</h1>';
+			fCore::expose(
+				User::checkACL(2, 'users')
+			);
+
+		}
 	));

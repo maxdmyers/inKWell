@@ -4,7 +4,10 @@
 
 		'table'            => 'auth.users',
 		'id_column'        => 'username',
-		'password_columns' => array('login_password'),
+
+		'password_columns' => array(
+			'login_password'
+		),
 
 		'fixed_columns'    => array(
 			'date_created',

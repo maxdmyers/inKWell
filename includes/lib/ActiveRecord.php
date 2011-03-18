@@ -1009,43 +1009,39 @@
 		 */
 		static public function validatePasswordColumns($object, &$values, &$old_values, &$related_records, &$cache, &$validation_messages)
 		{
-			$record_class     = get_class($object);
-			$password_columns = self::getInfo($record_class, 'password_columns');
+			$record_class = get_class($object);
+			$columns      = self::getInfo($record_class, 'password_columns');
 
-			foreach ($password_columns as $password_column) {
+			foreach ($columns as $column) {
 
 				if (
-					!empty($values[$password_column])     &&
-					!empty($old_values[$password_column])
+					!empty($values[$column])     &&
+					!empty($old_values[$column])
 				) {
 
-					$confirmation = fRequest::get(implode('-', array(
-						'confirm',
-						$password_column
-					)));
+					$confirmation = fRequest::get('confirm-' . $column);
 
 					if (strtolower(php_sapi_name()) == 'cli') {
-						$confirmation = $values[$password_column];
+						$confirmation = $values[$column];
 					}
 
-					if ($confirmation == $values[$password_column]) {
+					if ($confirmation == $values[$column]) {
 
-						$values[$password_column] = fCryptography::hashPassword(
-							$values[$password_column]
+						$values[$column] = fCryptography::hashPassword(
+							$values[$column]
 						);
 
 					} else {
 						$validation_messages[] = fText::compose(
-							'post',
 							'%s: Does not match confirmation field',
-							fGrammar::humanize($password_column)
+							fGrammar::humanize($column)
 						);
 					}
 
-				} elseif (!empty($old_values[$password_column])) {
+				} elseif (!empty($old_values[$column])) {
 
-					$values[$password_column] = end(
-						$old_values[$password_column]
+					$values[$column] = end(
+						$old_values[$column]
 					);
 
 				}
