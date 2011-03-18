@@ -20,7 +20,7 @@ if [ -n "$1" ]; then
 	cd $temp_path
 	patch -p0 < make
 	rm make
-	zip -r $extension .gitignore *
+	zip -r $extension.zip .
 	cp $extension.zip $package_store
 	cd $orig_path
 	rm -rf $temp_path
