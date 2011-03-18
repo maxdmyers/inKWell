@@ -7,7 +7,7 @@ CREATE TABLE auth.users (
 	status varchar(16) NOT NULL DEFAULT 'Active' CHECK(status IN('Active', 'Inactive', 'Disabled')),
 	date_created timestamp DEFAULT CURRENT_TIMESTAMP,
 	date_last_accessed timestamp DEFAULT NULL,
-	last_acccessed_from varchar(16) NOT NULL
+	last_accessed_from varchar(16) NOT NULL
 );
 
 CREATE TABLE auth.user_email_addresses (
