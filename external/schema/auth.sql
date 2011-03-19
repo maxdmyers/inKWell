@@ -4,7 +4,7 @@ CREATE TABLE auth.users (
 	id serial PRIMARY KEY,
 	username varchar(64) NOT NULL UNIQUE,
 	login_password varchar(512) NOT NULL,
-	status varchar(16) NOT NULL DEFAULT 'Active' CHECK(status IN('Active', 'Inactive', 'Disabled')),
+	status varchar(16) NOT NULL DEFAULT 'Active' CHECK(status IN('Active', 'Inactive', 'System', 'Disabled')),
 	date_created timestamp DEFAULT CURRENT_TIMESTAMP,
 	date_last_accessed timestamp DEFAULT NULL,
 	last_accessed_from varchar(16) NOT NULL

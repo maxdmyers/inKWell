@@ -284,10 +284,10 @@
 		 */
 		static public function authorize($username, $password)
 		{
-			$user    = NULL;
-			$users   = Users::build(array(
+			$user  = NULL;
+			$users = Users::build(array(
 				'username=' => $username,
-				'status<>'  => 'Disabled'
+				'status<>'  => array('Disabled', 'System')
 			));
 
 			if (count($users)) {
