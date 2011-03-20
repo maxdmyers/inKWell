@@ -521,24 +521,36 @@
 		}
 
 		/**
-		 * Get configuration information. If no $config_element is specified
-		 * the full inKwell configuration is returned.
+		 * Get configuration information. If no $element is specified
+		 * the full inKwell configuration is returned.  You can specify
+		 * multiple sub_elements as multiple parameters.
 		 *
 		 * @static
 		 * @access public
-		 * @param string $config_element The configuration element to get
+		 * @param string $element The configuration element to get
+		 * @param string $sub_element The sub element to get
 		 * @param array The configuration array for the requested element
 		 */
-		static public function getConfig($config_element = NULL)
+		static public function getConfig($element = NULL, $sub_element = NULL)
 		{
 			$config = self::$config;
 
-			if ($config_element !== NULL) {
+			if ($element !== NULL) {
 
-				$config_element = strtolower($config_element);
+				$element = strtolower($element);
 
-				if (isset($config[$config_element])) {
-					$config = $config[$config_element];
+				if (isset($config[$element])) {
+					$config = $config[$element];
+					$params = func_get_args();
+
+					foreach (array_slice($params, 1) as $sub_element) {
+						if (isset($config[$sub_element])) {
+							$config = $config[$sub_element];
+						} else {
+							return NULL;
+						}
+					}
+
 				} else {
 					$config = array();
 				}
@@ -555,14 +567,27 @@
 		 * @param string $type The configuration type
 		 * @return array An array of all the configurations matching the type
 		 */
-		static public function getConfigsByType($type)
+		static public function getConfigsByType($type, $sub_element = NULL)
 		{
 			$type    = strtolower($type);
 			$configs = array();
 
 			if (isset(self::$config['types'][$type])) {
-				foreach (self::$config['types'][$type] as $config_element) {
-					$configs[$config_element] = self::$config[$config_element];
+				foreach (self::$config['types'][$type] as $element) {
+					if ($sub_element !== NULL) {
+
+						$params       = func_get_args();
+						$sub_elements = array_slice($params, 1);
+
+						array_unshift($sub_elements, $element);
+
+						$configs[$element] = call_user_func_array(
+							'iw::getConfig',
+							$sub_elements
+						);
+					} else {
+						$configs[$element] = self::$config[$element];
+					}
 				}
 			}
 
