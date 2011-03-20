@@ -215,19 +215,20 @@
 
 					$slug = implode(self::$fieldSeparator, $pkey);
 
-					if ($identify === TRUE) {
-						$slug = implode('/', array(
-							$slug,
-							fURL::makeFriendly(
-								$this->__toString(),
-								NULL,
-								self::$wordSeparator
-							)
-						));
-					}
 				}
 
 				$this->slug = $slug;
+			}
+
+			if ($identify === TRUE) {
+				return implode('/', array(
+					$this->slug,
+					fURL::makeFriendly(
+						$this->__toString(),
+						NULL,
+						self::$wordSeparator
+					)
+				));
 			}
 
 			return $this->slug;
