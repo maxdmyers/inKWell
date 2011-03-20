@@ -263,7 +263,10 @@
 			}
 
 			if ($identify === TRUE) {
-				$this->resourceKey['identifier'] = (string) $this;
+				return fJSON::encode(array_merge(
+					$this->resourceKey,
+					array((string) $this)
+				));
 			}
 
 			return fJSON::encode($this->resourceKey);
