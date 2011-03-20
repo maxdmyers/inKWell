@@ -560,11 +560,14 @@
 		}
 
 		/**
-		 * Get all the configurations matching a certain type.
+		 * Get all the configurations matching a certain type.  If one or more
+		 * sub elements are defined as additional parameters the returned array
+		 * will contain only the specific information for each config element.
 		 *
 		 * @static
 		 * @access public
 		 * @param string $type The configuration type
+		 * @param string $sub_element The sub element to get
 		 * @return array An array of all the configurations matching the type
 		 */
 		static public function getConfigsByType($type, $sub_element = NULL)
