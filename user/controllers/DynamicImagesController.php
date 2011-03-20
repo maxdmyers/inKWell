@@ -265,4 +265,78 @@
 
 			return $image->view;
 		}
+
+		/**
+		 * Resets cached images by deleting them if relevant information such as
+		 * primary key values, slug column values, or the image path.
+		 *
+		 * @static
+		 * @access public
+		 * @param fActiveRecord The active record object
+		 * @param array $values The new column values being set
+		 * @param array $old_values The original column values
+		 * @param array $related The related records array for the record
+		 * @param array $cache The cache array for the record
+		 * @return void
+		 */
+		static public function resetCache($object, &$values, &$old_values, &$related_records, &$cache)
+		{
+			$record_class     = get_class($object);
+			$entry            = ActiveRecord::getEntry($record_class);
+			$image_columns    = iw::getConfig($entry, 'image_columns');
+
+			// If we don't have any configured image columns, just returned
+
+			if (!$image_columns) {
+				return;
+			}
+
+			$schema           = fORMSchema::retrieve($record_class);
+			$pkey_columns     = $schema->getKeys('primary');
+			$slug_column      = iw::getConfig($entry, 'slug_column');
+			$changed_columns  = array_keys($old_values);
+
+			$relevant_columns = array_merge(
+				($slug_column)   ? array($slug_column) : array(),
+				($image_columns) ? $image_columns : array(),
+				($pkey_columns)  ? $pkey_columns : array()
+			);
+
+			if (count(array_intersect($relevant_columns, $changed_columns))) {
+				if ($slug_column) {
+					if (isset($old_values[$slug_column][0])) {
+						$erase_target = $old_values[$slug_column][0];
+					}
+				} elseif (count($pkey_columns)) {
+					foreach ($pkey_columns as $pkey_column) {
+						if (isset($old_values[$pkey_column][0])) {
+							$erase_target_parts[] = fURL::makeFriendly(
+								$old_values[$pkey_column][0]
+							);
+						} else {
+							$erase_target_parts[] = fURL::makeFriendl(
+								$values[$pkey_column]
+							);
+						}
+					}
+					$erase_target = implode('(.+)', $erase_target_parts);
+				}
+
+				$erase_target    = '#' . $erase_target . '\#(.*)#';
+
+				foreach ($image_columns as $image_column) {
+					$cache_dir = iw::getWriteDirectory(
+						implode(DIRECTORY_SEPARATOR, array(
+							rtrim('/\\', self::$cacheDirectory),
+							$entry,
+							$image_column
+						))
+					);
+
+					foreach($cache_dir->scan($erase_target) as $cache_file) {
+						$cache_file->delete();
+					}
+				}
+			}
+		}
 	}
