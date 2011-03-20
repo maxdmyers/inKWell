@@ -1009,7 +1009,32 @@
 		 */
 		static public function validateSlugColumn($object, &$values, &$old_values, &$related_records, &$cache, &$validation_messages)
 		{
-			// TODO: Implement method
+			$record_class = get_class($object);
+			$slug_column  = self::getInfo($record_class, 'slug_column');
+			$url_friendly = fURL::makeFriendly($values[$slug_column]);
+
+			if ($values[$slug_column] == $url_friendly) {
+				return;
+			}
+
+			$invalid_characters = array_diff(
+				str_split(strtolower($values[$slug_column])),
+				str_split($url_friendly)
+			);
+
+			if (($i = array_search(' ', $invalid_characters)) !== FALSE) {
+				unset($invalid_characters[$i]);
+				$invalid_characters[] = 'spaces';
+			}
+
+			if(count($invalid_characters)) {
+				$message  = fGrammar::humanize($slug_column) . ': ';
+				$message .= 'Cannot contain ' . fGrammar::joinArray(
+					$invalid_characters,
+					'or'
+				);
+				$validation_messages[] = $message;
+			}
 		}
 
 		/**
