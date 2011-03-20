@@ -208,7 +208,7 @@
 			// Loads each PHP file into a configuration element named after
 			// the file.  We check to see if the CONFIG_TYPE_ELEMENT is set
 			// to ensure configurations are added to their respective
-			// type in the $config['types'] array.
+			// type in the $config['__types'] array.
 
 			foreach (glob("*.php") as $config_file) {
 
@@ -227,7 +227,7 @@
 					$type = $config_element;
 				}
 
-				$config['types'][$type][] = $config_element;
+				$config['__types'][$type][] = $config_element;
 				$config[$config_element]  = $current_config;
 			}
 
@@ -517,6 +517,29 @@
 				iw::loadClass('Scaffolder');
 			}
 
+			// All other configurations have the following special properties
+			//
+			// 'class'   => Signifies which class the configuration maps to
+			// 'preload' => Signifies that the class should be preloaded
+			//
+			foreach (self::$config as $element => $config) {
+
+				$core = self::$config['__types']['core'];
+
+				if ($element !== '__types' && !in_array($element, $core)) {
+					if (isset($config['class'])) {
+						fGrammar::addCamelUnderscoreRule(
+							$config['$class'],
+							$element
+						);
+					}
+
+					if (isset($config['preload']) && $config['preload']) {
+						iw::loadClass(fGrammar::camelize($element, TRUE));
+					}
+				}
+			}
+
 			return self::$config;
 		}
 
@@ -575,8 +598,8 @@
 			$type    = strtolower($type);
 			$configs = array();
 
-			if (isset(self::$config['types'][$type])) {
-				foreach (self::$config['types'][$type] as $element) {
+			if (isset(self::$config['__types'][$type])) {
+				foreach (self::$config['__types'][$type] as $element) {
 					if ($sub_element !== NULL) {
 
 						$params       = func_get_args();
