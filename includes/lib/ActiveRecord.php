@@ -265,7 +265,7 @@
 			if ($identify === TRUE) {
 				return fJSON::encode(array_merge(
 					$this->resourceKey,
-					array((string) $this)
+					array('identifier' => (string) $this)
 				));
 			}
 
