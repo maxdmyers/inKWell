@@ -978,13 +978,13 @@
 			$changed_columns = array_keys($old_values);
 
 			if (in_array($slug_column, $changed_columns)) {
-				$this->slug = NULL;
+				$object->slug = NULL;
 			}
 
 			if (count(array_intersect($pkey_columns, $changed_columns))) {
-				$this->resourceKey = NULL;
-				if ($this->slug) {
-					$this->slug = NULL;
+				$object->resourceKey = NULL;
+				if ($object->slug) {
+					$object->slug = NULL;
 				}
 			}
 		}
