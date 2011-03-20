@@ -1023,7 +1023,10 @@
 			);
 
 			if (($i = array_search(' ', $invalid_characters)) !== FALSE) {
-				unset($invalid_characters[$i]);
+				$invalid_characters   = array_diff(
+					$invalid_characters,
+					array(' ')
+				);
 				$invalid_characters[] = 'spaces';
 			}
 
