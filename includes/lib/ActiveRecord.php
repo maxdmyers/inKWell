@@ -951,7 +951,7 @@
 		}
 
 		/**
-		 * Resets somme cached information such as the slug and resource keys
+		 * Resets some cached information such as the slug and resource keys
 		 * in the event related information such as primary key values has
 		 * changed.
 		 *
@@ -964,10 +964,23 @@
 		 * @param array $cache The cache array for the record
 		 * @return void
 		 */
-
 		static public function resetCache($object, &$values, &$old_values, &$related_records, &$cache)
 		{
-			// TODO: Implement method
+			$record_class    = get_class($object);
+			$slug_column     = self::getInfo($record_class, 'slug_column');
+			$pkey_columns    = self::getInfo($record_class, 'pkey_columns');
+			$changed_columns = array_keys($old_values);
+
+			if (in_array($slug_column, $changed_columns)) {
+				$this->slug = NULL;
+			}
+
+			if (count(array_intersect($pkey_columns, $changed_columns))) {
+				$this->resourceKey = NULL;
+				if ($this->slug) {
+					$this->slug = NULL;
+				}
+			}
 		}
 
 		/**
