@@ -9,9 +9,13 @@
 
 		// An array of valid output formats, default is jpg and png only
 
-		'valid_formats'   => array(
+		'valid_formats' => array(
 			'jpg', 'png'
 		),
+
+		// The image quality for cached images, default is 95
+
+		'image_quality' => 95,
 
 		// Routes which allow for accessing the image via URL
 

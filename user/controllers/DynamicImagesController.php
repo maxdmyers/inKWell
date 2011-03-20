@@ -15,7 +15,14 @@
 	class DynamicImagesController extends Controller
 	{
 		const DEFAULT_CACHE_DIRECTORY = 'cache/images';
+		const DEFAULT_IMAGE_QUALITY   = 95;
 
+		/**
+		 * Whether or not the request result has been cached
+		 *
+		 * @access private
+		 * @var boolean
+		 */
 		private $cached = FALSE;
 
 		/**
@@ -26,6 +33,15 @@
 		 * @var string|fDirectory
 		 */
 		static private $cacheDirectory = NULL;
+
+		/**
+		 * The image quality to save cached images with
+		 *
+		 * @static
+		 * @access private
+		 * @var integer
+		 */
+		static private $imageQuality = NULL;
 
 		/**
 		 * An array of valid request formats
@@ -61,24 +77,34 @@
 			}
 
 			$record_class = ActiveRecord::classFromEntry($entry);
-			$record       = ActiveRecord::createFromSlug($slug);
+			$record       = ActiveRecord::createFromSlug($record_class, $slug);
+			$base_name    = $slug .'#' . md5(fURL::get());
+
 			$cache_path   = implode(DIRECTORY_SEPARATOR, array(
-				self::$cacheDirectory,
-				$entry,
+				self::$cacheDirectory . $entry,
 				fGrammar::pluralize($column),
-				iw::makeTarget($slug, md5(fURL::get()))
+				$base_name . '.' . $format
 			));
+
+			try {
+				$cache_directory = dirname($cache_path);
+				$cache_directory = new fDirectory($cache_directory);
+			} catch (fValidationException $e) {
+				fDirectory::create($cache_directory);
+			}
 
 			try {
 				$this->view   = new fImage($cache_path);
 				$this->cached = TRUE;
-			} catch (fException $e) {
-				$method     = 'get' . fGrammar::camelize($column, TRUE);
-
-				//TODO: should be loading up and copying the image to the cache
-				//TODO: path, and returning that one.
-
-				$this->view = new fImage($record->$method());
+			} catch (fValidationException $e) {
+				$method       = 'get' . fGrammar::camelize($column, TRUE);
+				$image        = new fImage($record->$method());
+				$image        = $image->duplicate($cache_directory, TRUE);
+				$this->view   = $image->rename(implode('.', array(
+					$base_name,
+					$image->getExtension()
+				)), TRUE);
+				$this->cached = FALSE;
 			}
 		}
 
@@ -100,6 +126,10 @@
 			self::$validFormats   = (isset($config['valid_formats']))
 				? $config['valid_formats']
 				: array('jpg', 'png');
+
+			self::$imageQuality   = (isset($config['image_quality']))
+				? $config['image_quality']
+				: self::DEFAULT_IMAGE_QUALITY;
 
 			return TRUE;
 		}
@@ -127,6 +157,52 @@
 				? $format
 				: self::getRequestFormat();
 
+			try {
+				$image = new self($entry, $slug, $column, $format);
+			} catch (fException $e) {
+				if (self::checkEntry(__CLASS__)) {
+					self::triggerError('not_found');
+				} else {
+					throw $e;
+				}
+			}
+
+			if (!$image->cached) {
+				if (
+					(!$width && !height)
+					|| $width  > $image->view->getWidth()
+					|| $height > $image->view->getHeight()
+				) {
+					if (self::checkEntry(__CLASS__)) {
+						self::triggerError('not_found');
+					} else {
+						throw new fProgrammerException(
+							'Cannot scaled to specified width and/or height'
+						);
+					}
+				}
+
+				if (!$width) {
+					$ratio  = $image->view->getHeight() / $height;
+					$width  = $image->view->getWidth()  * ratio;
+				} elseif (!$height) {
+					$ratio  = $image->view->getWidth()  / $width;
+					$height = $image->view->getHeight() * $ratio;
+				}
+				$image->view->resize(intval($width), intval($height));
+				if ($format == 'jpg') {
+					$image->view->saveChanges($format, self::$imageQuality, TRUE);
+				} else {
+					$image->view->saveChanges($format, TRUE);
+				}
+			}
+
+			if (self::checkEntryAction(__CLASS__, __FUNCTION__)) {
+				ob_end_clean();
+				$image->view->output(TRUE);
+			}
+
+			return $image->view;
 		}
 
 		/**
@@ -150,11 +226,11 @@
 				? $format
 				: self::getRequestFormat();
 
-			$percent = ($percent < 1)
-				? $percent * 100
+			$percent = ($percent <= 100 || $percent > 1)
+				? $percent / 100
 				: $percent;
 
-			if ($percent > 100) {
+			if ($percent > 1) {
 				if (self::checkEntryAction(__CLASS__, __FUNCTION__)) {
 					self::triggerError('not_found');
 				} else {
@@ -164,22 +240,29 @@
 				}
 			}
 
-			self::validateFormat($format);
-
 			try {
 				$image = new self($entry, $slug, $column, $format);
 			} catch (fException $e) {
 				if (self::checkEntry(__CLASS__)) {
-					self::trigger('not_found');
+					self::triggerError('not_found');
 				} else {
 					throw $e;
 				}
 			}
 
 			if (!$image->cached) {
-				//TODO: Resize the image accordingly and save it
+				$width  = $image->view->getWidth()  * $percent;
+				$height = $image->view->getHeight() * $percent;
+
+				$image->view->resize(intval($width), intval($height));
+				$image->view->saveChanges($format, self::$imageQuality, TRUE);
 			}
 
-			//TODO: Output the image
+			if (self::checkEntryAction(__CLASS__, __FUNCTION__)) {
+				ob_end_clean();
+				$image->view->output(TRUE);
+			}
+
+			return $image->view;
 		}
 	}
