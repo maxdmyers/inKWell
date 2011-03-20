@@ -131,6 +131,12 @@
 				? $config['image_quality']
 				: self::DEFAULT_IMAGE_QUALITY;
 
+			fORM::registerHookCallback(
+				'*',
+				'post::store()',
+				iw::makeTarget(__CLASS__, 'resetCache')
+			);
+
 			return TRUE;
 		}
 
@@ -281,9 +287,10 @@
 		 */
 		static public function resetCache($object, &$values, &$old_values, &$related_records, &$cache)
 		{
-			$record_class     = get_class($object);
-			$entry            = ActiveRecord::getEntry($record_class);
-			$image_columns    = iw::getConfig($entry, 'image_columns');
+			$record_class  = get_class($object);
+			$record_name   = ActiveRecord::getRecordName($record_class);
+			var_dump($record_name);
+			$image_columns = iw::getConfig($record_name, 'image_columns');
 
 			// If we don't have any configured image columns, just returned
 
@@ -295,6 +302,11 @@
 			$pkey_columns     = $schema->getKeys('primary');
 			$slug_column      = iw::getConfig($entry, 'slug_column');
 			$changed_columns  = array_keys($old_values);
+
+			var_dump($pkey_columns);
+			var_dump($slug_column);
+			var_dump($image_columns);
+			var_dump($changed_columns);
 
 			$relevant_columns = array_merge(
 				($slug_column)   ? array($slug_column) : array(),
@@ -333,7 +345,10 @@
 						))
 					);
 
-					foreach($cache_dir->scan($erase_target) as $cache_file) {
+					$cached_files = $cache_dir->scan($erase_target);
+					var_dump($cached_files);
+
+					foreach($cached_files as $cache_file) {
 						$cache_file->delete();
 					}
 				}
