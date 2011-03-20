@@ -289,7 +289,8 @@
 		{
 			$record_class  = get_class($object);
 			$record_name   = ActiveRecord::getRecordName($record_class);
-			var_dump($record_name);
+			$record_table  = ActiveRecord::getRecordTable($record_class);
+			$entry         = ActiveRecord::getEntry($record_class);
 			$image_columns = iw::getConfig($record_name, 'image_columns');
 
 			// If we don't have any configured image columns, just returned
@@ -299,14 +300,9 @@
 			}
 
 			$schema           = fORMSchema::retrieve($record_class);
-			$pkey_columns     = $schema->getKeys('primary');
-			$slug_column      = iw::getConfig($entry, 'slug_column');
+			$pkey_columns     = $schema->getKeys($record_table, 'primary');
+			$slug_column      = iw::getConfig($record_name, 'slug_column');
 			$changed_columns  = array_keys($old_values);
-
-			var_dump($pkey_columns);
-			var_dump($slug_column);
-			var_dump($image_columns);
-			var_dump($changed_columns);
 
 			$relevant_columns = array_merge(
 				($slug_column)   ? array($slug_column) : array(),
@@ -339,12 +335,12 @@
 				foreach ($image_columns as $image_column) {
 					$cache_dir = iw::getWriteDirectory(
 						implode(DIRECTORY_SEPARATOR, array(
-							rtrim('/\\', self::$cacheDirectory),
+							rtrim(self::$cacheDirectory,'/\\'),
 							$entry,
-							$image_column
+							fGrammar::pluralize($image_column)
 						))
 					);
-
+					var_dump($cache_dir);
 					$cached_files = $cache_dir->scan($erase_target);
 					var_dump($cached_files);
 

@@ -2,6 +2,11 @@
 
 	return iw::createConfig('Controller', array(
 
+		// The init method registers a hook callback for clearing classes, so
+		// we preload this.
+
+		'preload' => TRUE,
+
 		// Which directory, relative to the writable folder, to use for caching
 		// images.
 
