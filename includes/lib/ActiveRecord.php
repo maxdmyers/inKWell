@@ -259,14 +259,14 @@
 					'primary_key' => $this->getPrimaryKey()
 				);
 
-				if ($identify === TRUE) {
-					$resource_key['identifier'] = $this->__toString();
-				}
-
-				$this->resourceKey = fJSON::encode($resource_key);
+				$this->resourceKey = $resource_key;
 			}
 
-			return $this->resourceKey;
+			if ($identify === TRUE) {
+				$this->resourceKey['identifier'] = (string) $this;
+			}
+
+			return fJSON::encode($this->resourceKey);
 		}
 
 		/**
