@@ -355,6 +355,12 @@
 
 				}
 
+				fORM::registerHookCallback(
+					'*',
+					'post::store()',
+					iw::makeTarget(__CLASS__, 'resetCache')
+				);
+
 				return TRUE;
 
 			} elseif (!is_subclass_of($record_class, __CLASS__)) {
