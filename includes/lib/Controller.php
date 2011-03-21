@@ -195,7 +195,6 @@
 				fURL::redirect($ssl_domain . $request);
 			}
 
-
 			self::sendHeader();
 
 			$this->view
@@ -338,45 +337,16 @@
 		}
 
 		/**
-		 * Sends the appropriate headers.  Headers will be determined by
-		 * the use of the acceptTypes() method.  If it has not been run prior
-		 * to this method, it will be run with configured default accept types.
+		 * Gets format mime types for selected or all request formats
 		 *
 		 * @static
 		 * @access protected
-		 * @param void
-		 * @return void
+		 * @param string $format The particular format type to get
+		 * @return array The format mime types for the requested format
 		 */
-		static protected function sendHeader()
+		static protected function getFormatTypes($format = NULL)
 		{
-			if (!self::$typeHeadersSent) {
-
-				if (!self::$contentType) {
-					self::acceptTypes();
-				}
-
-				header('Content-Type: ' . self::$contentType);
-				self::$typeHeadersSent = TRUE;
-			}
-		}
-
-		/**
-		 * Determines whether or not we should accept the request based on
-		 * the mime type accepted by the user agent.  If no array or an empty
-		 * array is passed the configured default accept types will be used.
-		 *
-		 * @static
-		 * @access protected
-		 * @param array $accept_types An array of acceptable mime types
-		 * @return mixed The method will trigger a 'not_acceptable' error on failure, will return the best type upon success.
-		 */
-		static protected function acceptTypes(array $accept_types = array())
-		{
-			if (!count($accept_types)) {
-				$accept_types = self::$defaultAcceptTypes;
-			}
-
-			static $format_types = array(
+			$format_types = array(
 
 				'html' => array(
 					'text/html'
@@ -412,29 +382,88 @@
 				)
 			);
 
+			if ($format === NULL) {
+				return $format_types;
+			} elseif (isset($format_types[$format])) {
+				return $format_types[$format];
+			} else {
+				return array();
+			}
+		}
+
+		/**
+		 * Sends the appropriate headers.  Headers will be determined by
+		 * the use of the acceptTypes() method.  If it has not been run prior
+		 * to this method, it will be run with configured default accept types.
+		 *
+		 * @static
+		 * @access protected
+		 * @param array $headers Additional headers aside from content type to send
+		 * @return void
+		 */
+		static protected function sendHeader($headers = array())
+		{
+			if (!self::$typeHeadersSent) {
+
+				if (!self::$contentType) {
+					// The below block implies accepTypes() was never called
+					if ($format = self::getRequestFormat()) {
+						$format_types      = self::getFormatTypes($format);
+						self::$contentType = ($format_types)
+							? array_shift($format_types)
+							: 'text/html';
+					} else {
+						self::acceptTypes();
+					}
+				}
+
+				header('Content-Type: ' . self::$contentType);
+				foreach ($headers as $header => $value) {
+					header($header . ': ' . $value);
+				}
+				self::$typeHeadersSent = TRUE;
+			}
+		}
+
+		/**
+		 * Determines whether or not we should accept the request based on
+		 * the mime type accepted by the user agent.  If no array or an empty
+		 * array is passed the configured default accept types will be used.
+		 *
+		 * @static
+		 * @access protected
+		 * @param array $accept_types An array of acceptable mime types
+		 * @return mixed The method will trigger a 'not_acceptable' error on failure, will return the best type upon success.
+		 */
+		static protected function acceptTypes(array $accept_types = array())
+		{
+			if (!count($accept_types)) {
+				$accept_types = self::$defaultAcceptTypes;
+			}
+
 			// The below mapping is used solely to normalize the request
 			// format to retrieve the above listed format accept types
 
 			switch ($request_format = self::getRequestFormat()) {
 				case 'htm':
 				case 'html':
-					$request_format_types = $format_types['html'];
+					$request_format_types = self::getFormatTypes('html');
 					break;
 				case 'json':
-					$request_format_types = $format_types['json'];
+					$request_format_types = self::getFormatTypes('json');
 					break;
 				case 'xml':
-					$request_format_types = $format_types['xml'];
+					$request_format_types = self::getFormatTypes('xml');
 					break;
 				case 'jpg':
 				case 'jpeg':
-					$request_format_types = $format_types['jpg'];
+					$request_format_types = self::getFormatTypes('jpg');
 					break;
 				case 'gif':
-					$request_format_types = $format_types['gif'];
+					$request_format_types = self::getFormatTypes('gif');
 					break;
 				case 'png':
-					$request_format_types = $format_types['png'];
+					$request_format_types = self::getFormatTypes('png');
 					break;
 				default:
 					$request_format_types = NULL;
@@ -449,7 +478,7 @@
 				$best_type = fRequest::getBestAcceptType($best_accept_types);
 				if ($best_type !== FALSE) {
 					if (!self::$requestFormat) {
-						foreach($format_types as $format => $types) {
+						foreach(self::getFormatTypes() as $format => $types) {
 							if (in_array($best_type, $types)) {
 								self::$requestFormat = $format;
 								break;
