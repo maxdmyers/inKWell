@@ -1,5 +1,5 @@
 {
 	"id"       : <%= fJSON::encode($this->pull('id')) %>,
-	"class"    : <%= fJSON::encode($this->peel('classes'))   %>,
-	"contents" : <%= fJSON::encode($this->pull('contents'))   %>
+	"classes"  : <%= fJSON::encode($this->pull('classes'))   %>,
+	"contents" : <%= fJSON::encode($this->place('contents'))   %>
 }
