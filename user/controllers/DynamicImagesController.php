@@ -205,7 +205,11 @@
 
 			if (self::checkEntryAction(__CLASS__, __FUNCTION__)) {
 				ob_end_clean();
-				$image->view->output(TRUE);
+				self::sendHeader(array(
+					'Content-Length' => $image->view->getSize(),
+					'Cache-Control'  => NULL
+				));
+				$image->view->output(FALSE);
 			}
 
 			return $image->view;
@@ -266,7 +270,11 @@
 
 			if (self::checkEntryAction(__CLASS__, __FUNCTION__)) {
 				ob_end_clean();
-				$image->view->output(TRUE);
+				self::sendHeader(array(
+					'Content-Length' => $image->view->getSize(),
+					'Cache-Control'  => NULL
+				));
+				$image->view->output(FALSE);
 			}
 
 			return $image->view;
