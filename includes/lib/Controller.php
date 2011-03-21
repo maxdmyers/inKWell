@@ -142,7 +142,7 @@
 		 * @access private
 		 * @var boolean
 		 */
-		static private $typeHeadersRegistered = FALSE;
+		static private $typeHeadersSent = FALSE;
 
 		/**
 		 * Builds a new controller by assigning it a local view and running
@@ -340,19 +340,23 @@
 		/**
 		 * Sends the appropriate headers.  Headers will be determined by
 		 * the use of the acceptTypes() method.  If it has not been run prior
-		 * to this method, it will be run with the standard html, json, and
-		 * xml mimetypes.
+		 * to this method, it will be run with configured default accept types.
+		 *
+		 * @static
+		 * @access protected
+		 * @param void
+		 * @return void
 		 */
 		static protected function sendHeader()
 		{
-			if (!self::$typeHeadersRegistered) {
+			if (!self::$typeHeadersSent) {
 
 				if (!self::$contentType) {
 					self::acceptTypes();
 				}
 
 				header('Content-Type: ' . self::$contentType);
-				self::$typeHeadersRegistered = TRUE;
+				self::$typeHeadersSent = TRUE;
 			}
 		}
 
