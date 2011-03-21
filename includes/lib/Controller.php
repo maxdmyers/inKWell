@@ -36,7 +36,6 @@
 		 */
 		protected $view = NULL;
 
-
 		/**
 		 * The path from which relative controllers are loaded
 		 *
@@ -60,9 +59,18 @@
 		 *
 		 * @static
 		 * @access private
-		 * @array
+		 * @var array
 		 */
 		static private $errors = array();
+
+		/**
+		 * A list of default accept mime types
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $defaultAcceptTypes = array();
 
 		/**
 		 * The default request format for standard requests
@@ -119,6 +127,15 @@
 		static private $requestFormat = NULL;
 
 		/**
+		 * The Content-Type to send on sendHeader()
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $contentType = NULL;
+
+		/**
 		 * Whether or not Content-Type headers were sent
 		 *
 		 * @static
@@ -159,7 +176,6 @@
 		 */
 		protected function prepare()
 		{
-			$format  = self::getRequestFormat();
 			$section = self::getBaseURL();
 
 			$title   = (isset(self::$siteSections[$section]['title']))
@@ -179,27 +195,11 @@
 				fURL::redirect($ssl_domain . $request);
 			}
 
-			if (!self::$typeHeadersRegistered) {
 
-				switch($format) {
-					case 'html':
-						$content_type_callback = 'fHTML::sendHeader';
-						break;
-					case 'json':
-						$content_type_callback = 'fJSON::sendHeader';
-						break;
-					case 'xml':
-						$content_type_callback = 'fXML::sendHeader';
-						break;
-				}
-
-				$this->view->onRender($content_type_callback);
-
-				self::$typeHeadersRegistered = TRUE;
-			}
+			self::sendHeader();
 
 			$this->view
-				-> load ($format . '.php')
+				-> load (self::getRequestFormat() . '.php')
 				-> push ('title',   $title);
 		}
 
@@ -248,6 +248,18 @@
 				);
 			}
 
+			// Configure default accept types
+
+			if (isset($config['default_accept_types'])) {
+				self::$defaultAcceptTypes = $config['default_accept_types'];
+			} else {
+				self::$defaultAcceptTypes = array(
+					'text/html',
+					'application/json',
+					'application/xml'
+				);
+			}
+
 			// Configure default request format
 
 			self::$defaultRequestFormat = self::DEFAULT_REQUEST_FORMAT;
@@ -278,7 +290,8 @@
 				if (isset($controller_config['sections'])) {
 					if (!is_array($controller_config['sections'])) {
 						throw new fProgrammerException (
-							'Site sections must be an array of base urls (keys) to titles (values)'
+							'Site sections must be an array of base urls ' .
+							'(keys) to titles (values)'
 						);
 					}
 
@@ -325,19 +338,126 @@
 		}
 
 		/**
+		 * Sends the appropriate headers.  Headers will be determined by
+		 * the use of the acceptTypes() method.  If it has not been run prior
+		 * to this method, it will be run with the standard html, json, and
+		 * xml mimetypes.
+		 */
+		static protected function sendHeader()
+		{
+			if (!self::$typeHeadersRegistered) {
+
+				if (!self::$contentType) {
+					self::acceptTypes();
+				}
+
+				header('Content-Type: ' . self::$contentType);
+				self::$typeHeadersRegistered = TRUE;
+			}
+		}
+
+		/**
 		 * Determines whether or not we should accept the request based on
-		 * the mime type accepted by the user agent.
+		 * the mime type accepted by the user agent.  If no array or an empty
+		 * array is passed the configured default accept types will be used.
 		 *
 		 * @static
 		 * @access protected
-		 * @param array $types An array of acceptable mime types
+		 * @param array $accept_types An array of acceptable mime types
 		 * @return mixed The method will trigger a 'not_acceptable' error on failure, will return the best type upon success.
 		 */
-		static protected function acceptTypes(array $types)
+		static protected function acceptTypes(array $accept_types = array())
 		{
-			return ($best_type = fRequest::getBestAcceptType($types))
-				? $best_type
-				: self::triggerError('not_acceptable');
+			if (!count($accept_types)) {
+				$accept_types = self::$defaultAcceptTypes;
+			}
+
+			static $format_types = array(
+
+				'html' => array(
+					'text/html'
+				),
+
+				'json' => array(
+					'application/json',
+					'application/x-javascript'
+				),
+
+				'xml'  => array(
+					'application/xml'
+				),
+
+				'jpg'  => array(
+					'image/jpeg'
+				),
+
+				'gif'  => array(
+					'image/gif'
+				),
+
+				'png'  => array(
+					'image/png'
+				),
+
+				'css'  => array(
+					'text/css'
+				),
+
+				'js'   => array(
+					'application/x-javascript'
+				)
+			);
+
+			// The below mapping is used solely to normalize the request
+			// format to retrieve the above listed format accept types
+
+			switch ($request_format = self::getRequestFormat()) {
+				case 'htm':
+				case 'html':
+					$request_format_types = $format_types['html'];
+					break;
+				case 'json':
+					$request_format_types = $format_types['json'];
+					break;
+				case 'xml':
+					$request_format_types = $format_types['xml'];
+					break;
+				case 'jpg':
+				case 'jpeg':
+					$request_format_types = $format_types['jpg'];
+					break;
+				case 'gif':
+					$request_format_types = $format_types['gif'];
+					break;
+				case 'png':
+					$request_format_types = $format_types['png'];
+					break;
+				default:
+					$request_format_types = NULL;
+					break;
+			}
+
+			$best_accept_types = ($request_format_types)
+				? array_intersect($accept_types, $request_format_types)
+				: $accept_types;
+
+			if (count($best_accept_types)) {
+				$best_type = fRequest::getBestAcceptType($best_accept_types);
+				if ($best_type !== FALSE) {
+					if (!self::$requestFormat) {
+						foreach($format_types as $format => $types) {
+							if (in_array($best_type, $types)) {
+								self::$requestFormat = $format;
+								break;
+							}
+						}
+					}
+					return (self::$contentType = $best_type);
+				}
+				self::triggerError('not_acceptable');
+			} else {
+				self::triggerError('not_found');
+			}
 		}
 
 		/**
@@ -505,6 +625,7 @@
 			if (self::$requestPath == NULL) {
 				self::getBaseURL();
 			}
+
 			return self::$requestPath;
 		}
 
@@ -529,7 +650,13 @@
 		}
 
 		/**
-		 * Determines the request format for the resource
+		 * Determines the request format for the resource.  The request format
+		 * can be taken is as a get or URL parameter with the simple name
+		 * 'request_format', but must be explicitly set on routes.
+		 *
+		 * If the request format is provided and the HTTP Accept header does
+		 * not accept the appropriate mime-type a not_acceptable error will be
+		 * triggered automatically.
 		 *
 		 * @static
 		 * @access protected
@@ -539,22 +666,15 @@
 		static protected function getRequestFormat()
 		{
 			if (self::$requestFormat === NULL) {
+				$format = fRequest::get('request_format', 'string', NULL);
 
-				if (!fRequest::isAjax()) {
-					$request_format_key     = 'request_format';
-					$default_request_format = self::$defaultRequestFormat;
+				if ($format) {
+					self::$requestFormat = $format;
+				} elseif (fRequest::isAjax()) {
+					self::$requestFormat = self::$defaultAjaxRequestFormat;
 				} else {
-					$request_format_key     = 'ajax_request_format';
-					$default_request_format = self::$defaultAjaxRequestFormat;
+					self::$requestFormat = self::$defaultRequestFormat;
 				}
-
-				if ($format = fRequest::get('request_format', 'string', NULL)) {
-					fSession::set($request_format_key, strtolower($format));
-				} elseif (!fSession::get($request_format_key, NULL)) {
-					fSession::set($request_format_key, $default_request_format);
-				}
-
-				self::$requestFormat = fSession::get($request_format_key);
 			}
 
 			return self::$requestFormat;
@@ -671,16 +791,20 @@
 		 */
 		static protected function triggerError($error, $message_type = NULL, $message = NULL, array $added_headers = array())
 		{
-			$message_type  = ($message_type) ? $message_type : self::MSG_TYPE_ERROR;
+			self::$requestFormat = FALSE;
+			self::acceptTypes();
 
-			$error_info    = array(
+			$message_type = ($message_type)
+				? $message_type
+				: self::MSG_TYPE_ERROR;
+
+			$error_info   = array(
 				'handler' => NULL,
 				'header'  => 'HTTP/1.0 500 Internal Server Error',
 				'message' => 'An Unknown error occurred.'
 			);
 
 			if (isset(self::$errors[$error])) {
-
 				$error_info = array_merge($error_info, self::$errors[$error]);
 				$message    = ($message) ? $message : $error_info['message'];
 
@@ -691,14 +815,12 @@
 				}
 
 				if ($handler = $error_info['handler']) {
-
 					$message = fText::compose($message);
 
 					fMessaging::create($message_type, $handler, $message);
 					self::exec($handler);
 					return;
 				}
-
 			}
 
 			self::triggerHardError($error, $error_info['message']);
@@ -717,17 +839,17 @@
 		 */
 		static protected function triggerHardError($error, $message)
 		{
-			$controller = new Controller();
-			$title      = fText::compose(fGrammar::humanize($error));
-			$message    = fText::compose($message);
+			$self    = new self();
+			$title   = fText::compose(fGrammar::humanize($error));
+			$message = fText::compose($message);
 
-			$controller->view
+			$self->view
 				-> pack   ('id',       $error)
 				-> push   ('classes',  self::MSG_TYPE_ERROR)
 				-> push   ('title',    $title)
 				-> digest ('contents', $message);
 
-			$controller->view->render();
+			$self->view->render();
 			exit();
 		}
 
