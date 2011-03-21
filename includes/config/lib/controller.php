@@ -5,11 +5,19 @@
 		// The directory relative to APPLICATION_ROOT in which user defined
 		// controllers are stored.
 
-		'controller_root'             => 'user/controllers',
+		'controller_root' => 'user/controllers',
+
+		// The default accept types in preferred order.
+
+		'default_accept_types' => array(
+			'text/html',
+			'application/json',
+			'application/xml'
+		),
 
 		// The default request format for standard browser based requests.
 
-		'default_request_format'      => 'html',
+		'default_request_format' => 'html',
 
 		// The default request format for AJAX/XHR browser based requests.
 
@@ -46,36 +54,36 @@
 		// Controller::triggerHardError() with default 500 internal server
 		// error headers and a generic message
 
-		'errors'                 => array(
+		'errors'             => array(
 
-			'not_authorized'     => array(
-				'handler'        => NULL,
-				'header'         => 'HTTP/1.1 401 Not Authorized',
-				'message'        => 'The requested resource requires authorization'
+			'not_authorized' => array(
+				'handler'    => NULL,
+				'header'     => 'HTTP/1.1 401 Not Authorized',
+				'message'    => 'The requested resource requires authorization'
 			),
 
-			'forbidden'          => array(
-				'handler'        => NULL,
-				'header'         => 'HTTP/1.1 403 Forbidden',
-				'message'        => 'You do not have permission to view the requested resource'
+			'forbidden'      => array(
+				'handler'    => NULL,
+				'header'     => 'HTTP/1.1 403 Forbidden',
+				'message'    => 'You do not have permission to view the requested resource'
 			),
 
-			'not_found'          => array(
-				'handler'        => NULL,
-				'header'         => 'HTTP/1.1 404 Not Found',
-				'message'        => 'The requested resource could not be found'
+			'not_found'      => array(
+				'handler'    => NULL,
+				'header'     => 'HTTP/1.1 404 Not Found',
+				'message'    => 'The requested resource could not be found'
 			),
 
-			'not_allowed'        => array(
-				'handler'        => NULL,
-				'header'         => 'HTTP/1.1 405 Method Not Allowed',
-				'message'        => 'The requested resource does not support this method'
+			'not_allowed'    => array(
+				'handler'    => NULL,
+				'header'     => 'HTTP/1.1 405 Method Not Allowed',
+				'message'    => 'The requested resource does not support this method'
 			),
 
-			'not_acceptable'     => array(
-				'handler'        => NULL,
-				'header'         => 'HTTP/1.1 406 Not Acceptable',
-				'message'        => 'The requested resource is not available in your accepted parameters'
+			'not_acceptable' => array(
+				'handler'    => NULL,
+				'header'     => 'HTTP/1.1 406 Not Acceptable',
+				'message'    => 'The requested resource is not available in your accepted parameters'
 			)
 		)
 	));
