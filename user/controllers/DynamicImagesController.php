@@ -340,9 +340,8 @@
 							fGrammar::pluralize($image_column)
 						))
 					);
-					var_dump($cache_dir);
+
 					$cached_files = $cache_dir->scan($erase_target);
-					var_dump($cached_files);
 
 					foreach($cached_files as $cache_file) {
 						$cache_file->delete();
