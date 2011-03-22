@@ -140,33 +140,37 @@
 
 			try {
 
-				if (!($extension = pathinfo($target, PATHINFO_EXTENSION))) {
-					$target .= '.php';
-				}
-
 				$root_directory = rtrim(implode(DIRECTORY_SEPARATOR, array(
 					iw::getRoot(),
 					iw::getRoot(fGrammar::underscorize($builder))
 				)), '/\\');
 
-				$output_file = implode(DIRECTORY_SEPARATOR, array(
-					$root_directory,
-					$target
-				));
+				if (is_string($target)) {
+					$output_file = implode(DIRECTORY_SEPARATOR, array(
+						$root_directory,
+						!($extension = pathinfo($target, PATHINFO_EXTENSION))
+							? $target . '.php'
+							: $target
+					));
+				} else {
+					$output_file = NULL;
+				}
 
 
 				if (
 					preg_match(iw::REGEX_VARIABLE, $builder)
 					&& class_exists($builder)
-					&& is_callable($make_method = iw::makeTarget(
-						$builder,
-						self::DYNAMIC_SCAFFOLD_METHOD
-					))
 				) {
 
-					$class = pathinfo($target, PATHINFO_FILENAME);
+					$make_method = iw::makeTarget(
+						$builder,
+						self::DYNAMIC_SCAFFOLD_METHOD
+					);
 
-					call_user_func($make_method, $class);
+					if (is_callable($make_method)) {
+						$make_target = pathinfo($target, PATHINFO_FILENAME);
+						call_user_func($make_method, $make_target);
+					}
 
 					$build_method = iw::makeTarget(
 						$builder,
@@ -176,9 +180,9 @@
 					if (is_callable($build_method)) {
 						call_user_func(
 							$build_method,
-							$builder,
 							$target,
-							$output_file
+							$output_file,
+							self::$lastScaffoldedCode
 						);
 					} else {
 						$file = fFile::create(
@@ -209,9 +213,10 @@
 		 * @param string $template The template to use for scaffolding
 		 * @param array $support_vars An associative array of variables to import into the template
 		 * @param string $build_class The class from which scaffolding is running
+		 * @param boolean $eval Whether or not the code should be evalulated.
 		 * @return string The code
 		 */
-		static public function make($template, $template_vars = array(), $build_class = NULL)
+		static public function make($template, $template_vars = array(), $build_class = NULL, $eval = TRUE)
 		{
 
 			if (extract($template_vars, EXTR_SKIP) == sizeof($template_vars)) {
@@ -234,9 +239,11 @@
 					include $template;
 					$code = ob_get_clean();
 
-					ob_start();
-					eval($code);
-					ob_end_clean();
+					if ($eval) {
+						ob_start();
+						eval($code);
+						ob_end_clean();
+					}
 
 					$code = '<?php' . "\n\n" . $code;
 
