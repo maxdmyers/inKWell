@@ -3,8 +3,9 @@
 	 * <%= fGrammar::humanize($class) %> record.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
+	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
 	 */
-	class <%= $class %> extends <%= $parent_class %>
+	class <%= self::validateVariable($class) %> extends <%= self::validateVariable($build_class) %>
 
 	{
 
@@ -16,9 +17,9 @@
 		 * @param array $config The configuration array
 		 * @return void
 		 */
-		static public function __init($config)
+		static public function __init(array $config = array(), $element = NULL)
 		{
-			parent::__init($config, __CLASS__);
+			parent::__init($config, $element);
 		}
 
 		/**

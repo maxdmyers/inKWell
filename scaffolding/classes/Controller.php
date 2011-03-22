@@ -2,8 +2,9 @@
 	 * The <%= $class %>, a standard controller class.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
+	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
 	 */
-	class <%= $class %> extends <%= $parent_class %>
+	class <%= self::validateVariable($class) %> extends <%= self::validateVariable($build_class) %>
 
 	{
 
@@ -31,7 +32,7 @@
 		 * @param array $config The configuration array
 		 * @return boolean TRUE if the initialization succeeds, FALSE otherwise
 		 */
-		static public function __init(array $config = array())
+		static public function __init(array $config = array(), $element = NULL)
 		{
 			// All custom initialization goes here, make sure to check any
 			// configuration you're setting up for errors and return FALSE
