@@ -14,7 +14,7 @@
 
 		const DEFAULT_SCAFFOLDING_ROOT = 'scaffolding';
 		const DYNAMIC_SCAFFOLD_METHOD  = '__make';
-		const FINAL_SCAFFOLD_METHOD    = '__scaffold';
+		const FINAL_SCAFFOLD_METHOD    = '__build';
 
 		/**
 		 * The directory containing scaffolding templates
@@ -26,6 +26,33 @@
 		static private $scaffoldingRoot = NULL;
 
 		/**
+		 * Whether or not we are in the process of building
+		 *
+		 * @static
+		 * @access private
+		 * @var boolean
+		 */
+		static private $isBuilding = FALSE;
+
+		/**
+		 * A list of classes to auto-scaffold
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $autoScaffoldClasses = array();
+
+		/**
+		 * Contains the last scaffolded code
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $lastScaffoldedCode = NULL;
+
+		/**
 		 * Initializses the Scaffolder class
 		 *
 		 * @static
@@ -33,28 +60,35 @@
 		 * @param array $config The configuration array
 		 * @return void
 		 */
-		static public function __init(array $config = array())
+		static public function __init(array $config = array(), $element = NULL)
 		{
 			if (isset($config['disabled']) && $config['disabled']) {
 				return FALSE;
 			}
 
-			self::setScaffoldingRoot(implode(DIRECTORY_SEPARATOR, array(
-				APPLICATION_ROOT,
-				trim(
-					isset($config['scaffolding_root'])
-					? $config['scaffolding_root']
+			self::$scaffoldingRoot = implode(DIRECTORY_SEPARATOR, array(
+				iw::getRoot(),
+				($root_directory = iw::getRoot($element))
+					? $root_directory
 					: self::DEFAULT_SCAFFOLDING_ROOT
-					, '/\\'
-				)
-			)));
+			));
 
-			if (isset($config['output_map'])) {
-				if (!is_array($config['output_map'])) {
-					throw new fProgrammerException (
-						'Scaffolder output_map must be configured as an array.'
-					);
+			self::$scaffoldingRoot = new fDirectory(self::$scaffoldingRoot);
+			$register_autoloader   = FALSE;
+
+			foreach (iw::getConfig() as $element => $element_config) {
+				if (isset($element_config['auto_scaffold'])) {
+					if ($element_config['auto_scaffold']) {
+						self::$autoScaffoldClasses[] = fGrammar::camelize(
+							$element,
+							TRUE
+						);
+						$register_autoloader = TRUE;
+					}
 				}
+			}
+
+			if ($register_autoloader) {
 				spl_autoload_register(iw::makeTarget(__CLASS__, 'loadClass'));
 			}
 
@@ -62,22 +96,17 @@
 		}
 
 		/**
-		 * Attempts to load a class via Scaffolder
+		 * Attempts to load a class via Scaffolder, i.e. performs on the fly
+		 * scaffolding.
 		 *
 		 * @static
 		 * @access public
 		 * @param string $class The class to be loaded
-		 * @param array $output_map The output map array of $class => $target members
 		 * @return mixed Whether or not the class was successfully loaded and initialized
 		 */
-		static public function loadClass($class, array $output_map = array())
+		static public function loadClass($class)
 		{
-			if (!count($output_map)) {
-				$config     = iw::getConfig(fGrammar::underscorize(__CLASS__));
-				$output_map = $config['output_map'];
-			}
-
-			foreach ($output_map as $loader => $target) {
+			foreach (self::$autoScaffoldClasses as $loader) {
 
 				$test = iw::makeTarget($loader, self::MATCH_CLASS_METHOD);
 				$make = iw::makeTarget($loader, self::DYNAMIC_SCAFFOLD_METHOD);
@@ -85,7 +114,6 @@
 				if (is_callable($test) && is_callable($make)) {
 					if (call_user_func($test, $class)) {
 						if (call_user_func($make, $class)) {
-
 							return self::initializeClass($class);
 						}
 					}
@@ -96,122 +124,147 @@
 		}
 
 		/**
-		 * Sets the scaffolding root directory where all scaffolding templates
-		 * are located
+		 * Builds and writes out the scaffolding for a configured builder.
+		 * The builder can be a class or a template.  If a template is passed
+		 * it is assumed to require no additional template variables.
 		 *
-		 * @param string $directory The directory containing the scaffolding
+		 * @static
+		 * @access public
+		 * @param string $builder A valid class or template name
+		 * @param string $target A valid class name or file location
 		 * @return void
 		 */
-		static protected function setScaffoldingRoot($directory)
+		static public function build($builder, $target)
 		{
-			if (is_readable($directory)) {
-				self::$scaffoldingRoot = new fDirectory($directory);
-			} else {
-				throw new fProgrammerException (
-					'Scaffolding root directory %s is not readable', $directory
-				);
-			}
-		}
+			self::$isBuilding = TRUE;
 
-		/**
-		 *
-		 * Examples:
-		 *
-		 */
-		static public function build($class, $target, $support_vars = array())
-		{
-			if (class_exists($class)) {
+			try {
 
-				$make_method = iw::makeTarget($class, self::FINAL_SCAFFOLD_METHOD);
+				$root_directory = rtrim(implode(DIRECTORY_SEPARATOR, array(
+					iw::getRoot(),
+					iw::getRoot(fGrammar::underscorize($builder))
+				)), '/\\');
 
-				if (is_callable($make_method)) {
-					if (call_user_func($make_method, $target, $support_vars)) {
-
-					} else {
-						throw new fProgrammerException (
-							'Scaffolding failed, %s cannot build %s',
-							$make_method,
-							$target
-						);
-					}
+				if (is_string($target)) {
+					$output_file = implode(DIRECTORY_SEPARATOR, array(
+						$root_directory,
+						!($extension = pathinfo($target, PATHINFO_EXTENSION))
+							? $target . '.php'
+							: $target
+					));
 				} else {
-					throw new fProgrammerException (
-						'Scaffolding failed, %s does not support %s',
-						$class,
+					$output_file = NULL;
+				}
+
+
+				if (
+					preg_match(iw::REGEX_VARIABLE, $builder)
+					&& class_exists($builder)
+				) {
+
+					$make_method = iw::makeTarget(
+						$builder,
+						self::DYNAMIC_SCAFFOLD_METHOD
+					);
+
+					if (is_callable($make_method)) {
+						$make_target = pathinfo($target, PATHINFO_FILENAME);
+						call_user_func($make_method, $make_target);
+					}
+
+					$build_method = iw::makeTarget(
+						$builder,
 						self::FINAL_SCAFFOLD_METHOD
 					);
+
+					if (is_callable($build_method)) {
+						call_user_func(
+							$build_method,
+							$target,
+							$output_file,
+							self::$lastScaffoldedCode
+						);
+					} else {
+						$file = fFile::create(
+							$output_file,
+							self::$lastScaffoldedCode
+						);
+					}
+
+					self::$lastScaffoldedCode = NULL;
+
+				} else {
+
 				}
-			} else {
-				throw new fProgrammerException (
-					'Scaffolding failed, %s is an unknown class',
-					$class
-				);
+
+				self::$isBuilding = FALSE;
+			} catch (Exception $e) {
+				self::$isBuilding = FALSE;
+				throw $e;
 			}
 		}
 
 		/**
-		 * Scaffolds a new class using the parent class template.
+		 * Runs the scaffolder with a particular template.  This method will
+		 * generally be called from a class's __make() method
 		 *
-		 * @param string $class The new class name to scaffold as
-		 * @param string $parent_class The parent class to copy
-		 * @param array $support_vars An associative array of variables to import for scaffolding
-		 * @return string The Templated Class
+		 * @static
+		 * @access public
+		 * @param string $template The template to use for scaffolding
+		 * @param array $support_vars An associative array of variables to import into the template
+		 * @param string $build_class The class from which scaffolding is running
+		 * @param boolean $eval Whether or not the code should be evalulated.
+		 * @return string The code
 		 */
-		static public function makeClass($class, $parent_class, $support_vars = array(), $scaffolding = FALSE)
+		static public function make($template, $template_vars = array(), $build_class = NULL, $eval = TRUE)
 		{
 
-			if (
-				extract($support_vars) == sizeof($support_vars)
-				&& preg_match(iw::REGEX_VARIABLE, $class)
-				&& preg_match(iw::REGEX_VARIABLE, $parent_class)
-			) {
+			if (extract($template_vars, EXTR_SKIP) == sizeof($template_vars)) {
 
-				$scaffolding_template = implode(DIRECTORY_SEPARATOR, array(
+				$template = implode(DIRECTORY_SEPARATOR, array(
 					self::$scaffoldingRoot,
-					'classes',
-					$parent_class . '.php'
+					(pathinfo($template, PATHINFO_EXTENSION))
+						? $template
+						: $template . '.php'
 				));
 
-				if (!is_readable($scaffolding_template)) {
+				if (!is_readable($template)) {
 					throw new fProgrammerException(
-						'Scaffolder cannot make class %s, no template found',
-						$class
+						'Scaffolder cannot make %s, template %s not found',
+						$class,
+						$template
 					);
 				} else {
 					ob_start();
-					include $scaffolding_template;
+					include $template;
 					$code = ob_get_clean();
-					eval($code);
-					return $code;
+
+					if ($eval) {
+						ob_start();
+						eval($code);
+						ob_end_clean();
+					}
+
+					$code = '<?php' . "\n\n" . $code;
+
+					return (self::$isBuilding)
+						? (self::$lastScaffoldedCode = $code)
+						: $code;
 				}
 
 			} else {
 				throw new fProgrammerException(
-					'Scaffolder detected invalid class or variable names'
+					'Cannot scaffold, invalid template variable names'
 				);
 			}
-		}
-
-		/**
-		 * Writes a scaffolded class out to the filesystem
-		 *
-		 * @param string $file The location of the file to contain the scaffolded code
-		 * @param string $class The new class name to scaffold as
-		 * @param string $parent_class The parent class to copy
-		 * @param array $template_vars An associative array of variables to import for templating
-		 * @return boolean TRUE if the file was written, FALSE otherwise
-		 */
-		static public function writeClass($file, $class, $parent_class, $template_vars = array())
-		{
-			return file_put_contents($file,
-				'<?php' . "\n\n" . self::makeClass($class, $parent_class, $template_vars, TRUE)
-			);
 		}
 
 		/**
 		 * Exports variables in the same sense as var_export(), however does
 		 * some cleanup for arrays and other types.
 		 *
+		 * @static
+		 * @access private
 		 * @param mixed $variable The variable to export
 		 * @return string A PHP parseable version of the variable
 		 */
@@ -228,4 +281,24 @@
 			return $translated;
 		}
 
+		/**
+		 * Validates a string as a variable/class name.
+		 *
+		 * @static
+		 * @access private
+		 * @param string $variable
+		 * @return string The class name for inclusion if it is valid
+		 * @throws fValidationException In the event the variable name is unsafe
+		 */
+		static private function validateVariable($variable)
+		{
+			if (preg_match(iw::REGEX_VARIABLE, $variable)) {
+				return $variable;
+			} else {
+				throw new fValidationException(
+					'Scaffolder template detected an invalid variable named %s',
+					$variable
+				);
+			}
+		}
 	}

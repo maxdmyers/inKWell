@@ -162,7 +162,7 @@
 					fCore::startErrorCapture();
 
 					try {
-						@eval($___command);
+						eval($___command);
 					} catch (Exception $___e) {
 						echo 'Exception:  ' . $___e->getMessage();
 					}
@@ -305,7 +305,16 @@
 
 							if (!class_exists($t)) {
 								echo sprintf(
-									'Error:  Class %s does not exist.',
+									'Error: Class %s does not exist.',
+									$t
+								) . PHP_EOL;
+								return FALSE;
+							} elseif (
+								!isset($method)
+								&& !is_callable(array($t, '__construct'))
+							) {
+								echo sprintf(
+									'Error: Cannot create %s, invalid context.',
 									$t
 								) . PHP_EOL;
 								return FALSE;
@@ -313,13 +322,24 @@
 
 							// Handle method_exists check for static methods
 
-							if (isset($method) && !method_exists($t, $method)) {
-								echo sprintf(
-									'Error:  Method %s() does not exist on %s.',
-									$method,
-									$t
-								) . PHP_EOL;
-								return FALSE;
+							if (isset($method)) {
+								if(!method_exists($t, $method)) {
+									echo sprintf(
+										'Error: Method %s::%s does not exist.',
+										$t,
+										$method
+									) . PHP_EOL;
+									return FALSE;
+								} elseif (!is_callable(array($t, $method))) {
+									echo sprintf(
+										'Error: Method %s::%s is not callable.',
+										$t,
+										$method
+									) . PHP_EOL;
+									return FALSE;
+								}
+
+								$method = NULL;
 							}
 
 							break;

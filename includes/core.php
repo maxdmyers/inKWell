@@ -80,6 +80,15 @@
 		static private $databases = array();
 
 		/**
+		 * A list of root directories as registered by classes
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $roots = array();
+
+		/**
 		 * Constructing an iw object is not allowed, this is purely for
 		 * namespacing and static controls.
 		 *
@@ -90,66 +99,6 @@
 		 */
 		final private function __construct()
 		{
-		}
-
-		/**
-		 * Adds a database to the database index for retrieval with
-		 * getDatabase() method.
-		 *
-		 * @static
-		 * @access public
-		 * @param fDatabase $db The database object
-		 * @param string $db_name The name of the database
-		 * @param string $db_role The role of the database
-		 * @return void
-		 */
-		static public function addDatabase(fDatabase $db, $db_name, $db_role)
-		{
-			if (!in_array($db_role, array('read', 'write', 'both'))) {
-				throw new fProgrammerException (
-					'Cannot add database %s, invalid role %s',
-					$db_name,
-					$db_role
-				);
-			}
-
-			if ($db_role == 'read' || $db_role == 'both') {
-				self::$databases[$db_name]['read'] = $db;
-			}
-
-			if ($db_role == 'write' || $db_role == 'both') {
-				self::$databases[$db_name]['write'] = $db;
-			}
-		}
-
-		/**
-		 * Gets a database from the stored index of databases.
-		 *
-		 * @static
-		 * @access public
-		 * @param string $db_name The database name
-		 * @param string $db_role The database role, default 'either'
-		 * @return fDatabase The database matching the name and role
-		 */
-		static public function getDatabase($db_name, $db_role = 'either')
-		{
-			if ($db_role == 'either' || $db_role == 'write') {
-				if (isset(self::$databases[$db_name]['write'])) {
-					return self::$databases[$db_name]['write'];
-				}
-			}
-
-			if ($db_role == 'either' || $db_role == 'read') {
-				if (isset(self::$databases[$db_name]['read'])) {
-					return self::$databases[$db_name]['read'];
-				}
-			}
-
-			throw new fNotFoundException (
-				'Could not find database %s with role %s',
-				$db_name,
-				$db_role
-			);
 		}
 
 		/**
@@ -292,7 +241,6 @@
 			}
 
 			$file   = realpath($configuration . '.php');
-
 			$config = (is_readable($file))
 				? @unserialize(file_get_contents($file))
 				: NULL;
@@ -301,17 +249,33 @@
 				$config = @self::buildConfig($configuration, TRUE);
 			}
 
-			self::$config = $config;
+			self::$config          = $config;
+			self::$roots['config'] = realpath($configuration);
+
+			// Set up our write directory
 
 			self::$writeDirectory = implode(DIRECTORY_SEPARATOR, array(
 				APPLICATION_ROOT,
 				trim(
 					isset($config['inkwell']['write_directory'])
-					? $config['inkwell']['write_directory']
-					: self::DEFAULT_WRITE_DIRECTORY
-					, '/\\'
+						? $config['inkwell']['write_directory']
+						: self::DEFAULT_WRITE_DIRECTORY,
+					'/\\'
 				)
 			));
+
+			// Set up the inkwell root directory
+
+			if (isset($config['inkwell']['root_directory'])) {
+				self::$roots['inkwell'] = rtrim(
+					$config['inkwell']['root_directory'],
+					'/\\'
+				);
+			} else {
+				self::$roots['inkwell'] = APPLICATION_ROOT;
+			}
+
+			// Configure our autoloaders
 
 			if (isset($config['autoloaders'])) {
 				if(!is_array($config['autoloaders'])) {
@@ -519,8 +483,9 @@
 
 			// All other configurations have the following special properties
 			//
-			// 'class'   => Signifies which class the configuration maps to
-			// 'preload' => Signifies that the class should be preloaded
+			// 'class'          => Signifies which class the configuration maps to
+			// 'preload'        => Signifies that the class should be preloaded
+			// 'root_directory' => Used by the scaffolder and more
 			//
 			foreach (self::$config as $element => $config) {
 
@@ -537,6 +502,12 @@
 					if (isset($config['preload']) && $config['preload']) {
 						iw::loadClass(fGrammar::camelize($element, TRUE));
 					}
+
+					if (isset($config['root_directory'])) {
+						self::$roots[$element] = $config['root_directory'];
+					}
+
+
 				}
 			}
 
@@ -674,6 +645,53 @@
 			}
 
 			return new fDirectory($write_directory);
+		}
+
+		/**
+		 * Gets a configured root directory for the list of available roots
+		 *
+		 * @static
+		 * @access public
+		 * @param string $element The class or configuration element
+		 * @return string A reference to the root directory for "live roots"
+		 */
+		static public function getRoot($element = 'inkwell')
+		{
+			$element = strtolower($element);
+
+			return (isset(self::$roots[$element]))
+				? self::$roots[$element]
+				: NULL;
+		}
+
+		/**
+		 * Gets a database from the stored index of databases.
+		 *
+		 * @static
+		 * @access public
+		 * @param string $db_name The database name
+		 * @param string $db_role The database role, default 'either'
+		 * @return fDatabase The database matching the name and role
+		 */
+		static public function getDatabase($db_name, $db_role = 'either')
+		{
+			if ($db_role == 'either' || $db_role == 'write') {
+				if (isset(self::$databases[$db_name]['write'])) {
+					return self::$databases[$db_name]['write'];
+				}
+			}
+
+			if ($db_role == 'either' || $db_role == 'read') {
+				if (isset(self::$databases[$db_name]['read'])) {
+					return self::$databases[$db_name]['read'];
+				}
+			}
+
+			throw new fNotFoundException (
+				'Could not find database %s with role %s',
+				$db_name,
+				$db_role
+			);
 		}
 
 		/**
@@ -881,12 +899,42 @@
 			}
 
 			// Determine class configuration and call __init with it
-			$config_index = fGrammar::underscorize($class);
-			$class_config = (isset(self::$config[$config_index]))
-				? self::$config[$config_index]
+			$element      = fGrammar::underscorize($class);
+			$class_config = (isset(self::$config[$element]))
+				? self::$config[$element]
 				: array();
 
-			return call_user_func($init_callback, $class_config);
+			return call_user_func($init_callback, $class_config, $element);
+		}
+
+		/**
+		 * Adds a database to the database index for retrieval with
+		 * getDatabase() method.
+		 *
+		 * @static
+		 * @access private
+		 * @param fDatabase $db The database object
+		 * @param string $db_name The name of the database
+		 * @param string $db_role The role of the database
+		 * @return void
+		 */
+		static private function addDatabase(fDatabase $db, $db_name, $db_role)
+		{
+			if (!in_array($db_role, array('read', 'write', 'both'))) {
+				throw new fProgrammerException (
+					'Cannot add database %s, invalid role %s',
+					$db_name,
+					$db_role
+				);
+			}
+
+			if ($db_role == 'read' || $db_role == 'both') {
+				self::$databases[$db_name]['read'] = $db;
+			}
+
+			if ($db_role == 'write' || $db_role == 'both') {
+				self::$databases[$db_name]['write'] = $db;
+			}
 		}
 
 	}
@@ -897,6 +945,7 @@
 	 *
 	 *  __init()
 	 *  __match()
+	 *  __build()
 	 */
 
 	interface inkwell {}

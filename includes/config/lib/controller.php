@@ -2,10 +2,12 @@
 
 	return iw::createConfig('Library', array(
 
-		// The directory relative to APPLICATION_ROOT in which user defined
+		'auto_scaffold' => FALSE,
+
+		// The directory relative to inkwell root in which user defined
 		// controllers are stored.
 
-		'controller_root' => 'user/controllers',
+		'root_directory' => 'user/controllers',
 
 		// The default accept types in preferred order.
 
