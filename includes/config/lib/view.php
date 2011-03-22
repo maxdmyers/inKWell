@@ -2,15 +2,15 @@
 
 	return iw::createConfig('Library', array(
 
-		// The directory relative to APPLICATION_ROOT in which views
+		// The directory relative to the inKWell root directory in which views
 		// are stored.  Using the set() or add() method on a view will prepend
 		// this directory.
 		//
 		// Example :
 		// Code    : $controller->view->add('content', 'pages/home.html')
-		// Loads   : APPLICATION_ROOT/view_root/pages/home.html
+		// Loads   : <inkwell root>/<root_directory>/pages/home.html
 
-		'view_root'           => 'user/views',
+		'root_directory' => 'user/views',
 
 		// As per Flourish's code minification, we can set minification modes
 		// of either 'developer' or 'production' -- The differences between
@@ -19,11 +19,11 @@
 		//
 		// If set to NULL, no minification will take place at all.
 
-		'minification_mode'   => 'development',
+		'minification_mode' => 'development',
 
 		// The cache directory is relative to the global write directory, 
 		// default APPLICATION_ROOT/writable and is used to store
 		// cached versions of minified Javascript and CSS.
 
-		'cache_directory'     => 'cache'
+		'cache_directory' => 'cache'
 	));

@@ -225,27 +225,17 @@
 		 * @param array $config The configuration array
 		 * @return boolean TRUE if the initialization succeeds, FALSE otherwise
 		 */
-		static public function __init($config)
+		static public function __init(array $config = array(), $element = NULL)
 		{
 
 			self::$controllerRoot = implode(DIRECTORY_SEPARATOR, array(
-				APPLICATION_ROOT,
-				trim(
-					isset($config['controller_root'])
-					? $config['controller_root']
+				iw::getRoot(),
+				($root_directory = iw::getRoot($element))
+					? $root_directory
 					: self::DEFAULT_CONTROLLER_ROOT
-					, '/\\'
-				)
 			));
 
-			try {
-				self::$controllerRoot = new fDirectory(self::$controllerRoot);
-			} catch (fValidationException $e) {
-				throw new fProgrammerException (
-					'View root directory %s is not readable',
-					self::$controllerRoot
-				);
-			}
+			self::$controllerRoot = new fDirectory(self::$controllerRoot);
 
 			// Configure default accept types
 

@@ -305,9 +305,11 @@
 		 * @paramm string $record_class A specific record class to configure
 		 * @return boolen TRUE if the configuration succeeds, FALSE otherwise
 		 */
-		static public function __init($config, $record_class = NULL)
+		static public function __init(array $config = array(), $element = NULL)
 		{
-			if (!$record_class) {
+			$record_class = fGrammar::camelize($element, TRUE);
+
+			if ($record_class == __CLASS__) {
 
 				self::$imageUploadDirectory = iw::getWriteDirectory('images');
 				self::$fileUploadDirectory  = iw::getWriteDirectory('files');
@@ -610,7 +612,14 @@
 		 */
 		static public function __make($record_class)
 		{
-			Scaffolder::makeClass($record_class, __CLASS__, array());
+			$template = implode(DIRECTORY_SEPARATOR, array(
+				'classes',
+				__CLASS__ . '.php'
+			));
+
+			Scaffolder::make($template, array(
+				'class' => $record_class
+			), __CLASS__);
 
 			if (class_exists($record_class, FALSE)) {
 				return TRUE;

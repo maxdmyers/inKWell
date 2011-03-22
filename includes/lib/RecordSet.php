@@ -38,7 +38,7 @@
 		 * @param array $config The configuration array
 		 * @return boolean TRUE if initialization succeeds, FALSE otherwise
 		 */
-		static public function __init(array $config = array())
+		static public function __init(array $config = array(), $element = NULL)
 		{
 			return TRUE;
 		}
@@ -48,16 +48,21 @@
 		 *
 		 * @static
 		 * @access public
-		 * @param string $record_set_class The Class name to dynamically define
+		 * @param string $record_set The Class name to dynamically define
 		 * @return boolean TRUE if a recordset was dynamically defined, FALSE otherwise
 		 */
 		static public function __make($record_set)
 		{
 			$record_class = ActiveRecord::classFromRecordSet($record_set);
-
-			Scaffolder::makeClass($record_set, __CLASS__, array(
-				'active_record' => $record_class
+			$template     = implode(DIRECTORY_SEPARATOR, array(
+				'classes',
+				__CLASS__ . '.php'
 			));
+
+			Scaffolder::make($template, array(
+				'class'         => $record_set,
+				'active_record' => $record_class
+			), __CLASS__);
 
 			if (class_exists($record_set, FALSE)) {
 				return TRUE;
