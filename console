@@ -309,7 +309,10 @@
 									$t
 								) . PHP_EOL;
 								return FALSE;
-							} elseif (!is_callable(array($t, '__construct'))) {
+							} elseif (
+								!isset($method)
+								&& !is_callable(array($t, '__construct'))
+							) {
 								echo sprintf(
 									'Error: Cannot create %s, invalid context.',
 									$t
