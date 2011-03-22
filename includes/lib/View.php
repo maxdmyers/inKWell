@@ -92,7 +92,10 @@
 			}
 
 			if (self::$minificationMode) {
-				$this->enableMinification(self::$minificationMode, self::$cacheDirectory);
+				$this->enableMinification(
+					self::$minificationMode,
+					self::$cacheDirectory
+				);
 			}
 
 		}
@@ -161,7 +164,7 @@
 
 		/**
 		 * Loads a view file.  If the file begins with a '/' it will be looked
-		 * for relative to APPLICATION_ROOT.  If the file does not it will be
+		 * for relative to the document root.  If the file does not it will be
 		 * relative to the configured view root.  If the first parameter
 		 * may be an array of files, of which, the first one to exist will be
 		 * used.
@@ -617,28 +620,17 @@
 		 * @param array $config The configuration array
 		 * @return void
 		 */
-		static public function __init($config)
+		static public function __init(array $config = array(), $element = NULL)
 		{
 
 			self::$viewRoot = implode(DIRECTORY_SEPARATOR, array(
-				APPLICATION_ROOT,
-				trim(
-					isset($config['view_root'])
-					? $config['view_root']
-					: self::DEFAULT_VIEW_ROOT
-					, '/\\'
-				)
+				iw::getRoot(),
+				($root_directory = iw::getRoot($element))
+					? $root_directory
+					: self::DEFAULT_SCAFFOLDING_ROOT
 			));
 
-			try {
-				self::$viewRoot = new fDirectory(self::$viewRoot);
-			} catch (fValidationException $e) {
-				throw new fProgrammerException (
-					'View root directory %s is not readable',
-					self::$viewRoot
-				);
-			}
-
+			self::$viewRoot       = new fDirectory(self::$viewRoot);
 			self::$cacheDirectory = iw::getWriteDirectory(
 				isset($config['cache_directory'])
 					? $config['cache_directory']
@@ -686,7 +678,7 @@
 				));
 			} else {
 				$view_file = implode(DIRECTORY_SEPARATOR, array(
-					APPLICATION_ROOT,
+					$_SERVER['DOCUMENT_ROOT'],
 					$view_file
 				));
 			}
