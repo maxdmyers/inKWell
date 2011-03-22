@@ -17,7 +17,7 @@
 		 * @param array $config The configuration array
 		 * @return boolean TRUE if the initialization succeeds, FALSE otherwise
 		 */
-		static public function __init(array $config = array, $element = NULL)
+		static public function __init(array $config = array(), $element = NULL)
 		{
 			parent::__init($config, $element);
 		}
@@ -42,7 +42,7 @@
 					$ordering = <%= self::validateVariable($active_record) %>::getOrder();
 				} catch (fProgrammerException $e) {}
 			}
-			return parent::build('<%= self::validateVariable($active_record) %>', $wheres, $ordering, $limit, $page);
+			return parent::build('<%= $active_record %>', $wheres, $ordering, $limit, $page);
 		}
 
 		/**

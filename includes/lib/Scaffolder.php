@@ -44,6 +44,15 @@
 		static private $autoScaffoldClasses = array();
 
 		/**
+		 * Contains the last scaffolded code
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $lastScaffoldedCode = NULL;
+
+		/**
 		 * Initializses the Scaffolder class
 		 *
 		 * @static
@@ -128,8 +137,61 @@
 		static public function build($builder, $target)
 		{
 			self::$isBuilding = TRUE;
+
 			try {
 
+				if (!($extension = pathinfo($target, PATHINFO_EXTENSION))) {
+					$target .= '.php';
+				}
+
+				$root_directory = rtrim(implode(DIRECTORY_SEPARATOR, array(
+					iw::getRoot(),
+					iw::getRoot(fGrammar::underscorize($builder))
+				)), '/\\');
+
+				$output_file = implode(DIRECTORY_SEPARATOR, array(
+					$root_directory,
+					$target
+				));
+
+
+				if (
+					preg_match(iw::REGEX_VARIABLE, $builder)
+					&& class_exists($builder)
+					&& is_callable($make_method = iw::makeTarget(
+						$builder,
+						self::DYNAMIC_SCAFFOLD_METHOD
+					))
+				) {
+
+					$class = pathinfo($target, PATHINFO_FILENAME);
+
+					call_user_func($make_method, $class);
+
+					$build_method = iw::makeTarget(
+						$builder,
+						self::FINAL_SCAFFOLD_METHOD
+					);
+
+					if (is_callable($build_method)) {
+						call_user_func(
+							$build_method,
+							$builder,
+							$target,
+							$output_file
+						);
+					} else {
+						$file = fFile::create(
+							$output_file,
+							self::$lastScaffoldedCode
+						);
+					}
+
+					self::$lastScaffoldedCode = NULL;
+
+				} else {
+
+				}
 
 				self::$isBuilding = FALSE;
 			} catch (Exception $e) {
@@ -171,8 +233,16 @@
 					ob_start();
 					include $template;
 					$code = ob_get_clean();
+
+					ob_start();
 					eval($code);
-					return '<?php' . "\n\n" . $code;
+					ob_end_clean();
+
+					$code = '<?php' . "\n\n" . $code;
+
+					return (self::$isBuilding)
+						? (self::$lastScaffoldedCode = $code)
+						: $code;
 				}
 
 			} else {
