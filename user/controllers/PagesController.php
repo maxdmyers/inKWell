@@ -16,6 +16,16 @@
 
 		const DEFAULT_PAGES_ROOT = 'pages';
 
+
+		/**
+		 * The relative pages root as configured
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $pagesRoot = NULL;
+
 		/**
 		 * The page path as determined by the configured pages root and
 		 * the site section.
@@ -66,16 +76,85 @@
 		 * @param array $config The configuration array
 		 * @return void
 		 */
-		static public function __init($config)
+		static public function __init(array $config = array(), $element = NULL)
 		{
 			// Connect the pages root
 
-			self::$pagePath = self::getBasePath(isset($config['pages_root'])
+			self::$pagesRoot = isset($config['pages_root'])
 				? $config['pages_root']
-				: self::DEFAULT_PAGES_ROOT
-			);
+				: self::DEFAULT_PAGES_ROOT;
+
+			self::$pagePath  = self::getBasePath(self::$pagesRoot);
 
 			return TRUE;
+		}
+
+		/**
+		 * Builds a number of PagesControllers and corresponding views
+		 *
+		 * @static
+		 * @access public
+		 * @param string $target The target for the controller
+		 * @return boolean Whether or not the make was successful
+		 */
+		static public function __build($target)
+		{
+
+			$template = implode(DIRECTORY_SEPARATOR, array(
+				'pages_controller',
+				'controller.php'
+			));
+
+			foreach ($target as $site_section => $paths) {
+
+				$base_path = implode(DIRECTORY_SEPARATOR, array(
+					$site_section,
+					self::$pagesRoot
+				));
+
+				if (!is_array($paths)) {
+					$paths = array($paths);
+				}
+
+				foreach ($paths as $path) {
+					if (!pathinfo($path, PATHINFO_EXTENSION)) {
+						$path = $path . '.php';
+					}
+
+					$code = Scaffolder::make($template, array(
+						'path' => implode(DIRECTORY_SEPARATOR, array(
+							$base_path,
+							$path
+						))
+					), __CLASS__, FALSE);
+
+					$controller_file = implode(DIRECTORY_SEPARATOR, array(
+						iw::getRoot(),
+						iw::getRoot('controller'),
+						$base_path,
+						$path,
+					));
+
+					try {
+						fFile::create($controller_file, $code);
+					} catch (fValidationException $e) {
+						$failed_controllers[] = $controller_file;
+					}
+
+					$view_file = implode(DIRECTORY_SEPARATOR, array(
+						iw::getRoot(),
+						iw::getRoot('view'),
+						$base_path,
+						$path,
+					));
+
+					try {
+						fFile::create($view_file, '');
+					} catch (fValidationException $e) {
+						$failed_views[] = $view_file;
+					}
+				}
+			}
 		}
 
 		/**
