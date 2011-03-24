@@ -285,7 +285,7 @@
 		 */
 		static public function __match($class)
 		{
-			foreach (iw::getConfigsByType('ActiveRecord') as $key => $config) {
+			foreach (array_keys(iw::getConfigsByType('ActiveRecord')) as $key) {
 				if (fGrammar::underscorize($class) == $key) {
 					return TRUE;
 				}

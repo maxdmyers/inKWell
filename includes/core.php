@@ -257,8 +257,8 @@
 			self::$writeDirectory = implode(DIRECTORY_SEPARATOR, array(
 				APPLICATION_ROOT,
 				trim(
-					isset($config['inkwell']['write_directory'])
-						? $config['inkwell']['write_directory']
+					isset(self::$config['inkwell']['write_directory'])
+						? self::$config['inkwell']['write_directory']
 						: self::DEFAULT_WRITE_DIRECTORY,
 					'/\\'
 				)
@@ -266,7 +266,7 @@
 
 			// Set up the inkwell root directory
 
-			if (isset($config['inkwell']['root_directory'])) {
+			if (isset(self::$config['inkwell']['root_directory'])) {
 				self::$roots['inkwell'] = rtrim(
 					$config['inkwell']['root_directory'],
 					'/\\'
@@ -277,28 +277,31 @@
 
 			// Configure our autoloaders
 
-			if (isset($config['autoloaders'])) {
-				if(!is_array($config['autoloaders'])) {
+			if (isset(self::$config['autoloaders'])) {
+				if(!is_array(self::$config['autoloaders'])) {
 					throw new fProgrammerException (
 						'Autoloaders must be configured as an array.'
 					);
 				}
-				spl_autoload_register('iw::loadClass');
+			} else {
+				self::$config['autoloaders'] = array();
 			}
+
+			spl_autoload_register('iw::loadClass');
 
 			// Initialize Error Reporting
 
-			if (isset($config['inkwell']['error_level'])) {
-				error_reporting($config['inkwell']['error_level']);
+			if (isset(self::$config['inkwell']['error_level'])) {
+				error_reporting(self::$config['inkwell']['error_level']);
 			}
 
-			if (isset($config['inkwell']['display_errors'])) {
-				if ($config['inkwell']['display_errors']) {
+			if (isset(self::$config['inkwell']['display_errors'])) {
+				if (self::$config['inkwell']['display_errors']) {
 					fCore::enableErrorHandling('html');
 					fCore::enableExceptionHandling('html');
 					ini_set('display_errors', 1);
-				} elseif (isset($config['inkwell']['error_email_to'])) {
-					$admin_email = $config['inkwell']['error_email_to'];
+				} elseif (isset(self::$config['inkwell']['error_email_to'])) {
+					$admin_email = self::$config['inkwell']['error_email_to'];
 					fCore::enableErrorHandling($admin_email);
 					fCore::enableExceptionHandling($admin_email);
 					ini_set('display_errors', 0);
@@ -309,9 +312,9 @@
 
 			// Include any interfaces
 
-			if (isset($config['inkwell']['interfaces'])) {
+			if (isset(self::$config['inkwell']['interfaces'])) {
 
-				$interface_directories = $config['inkwell']['interfaces'];
+				$interface_directories = self::$config['inkwell']['interfaces'];
 
 				foreach ($interface_directories as $interface_directory) {
 					$files = glob(implode(DIRECTORY_SEPARATOR, array(
@@ -334,9 +337,9 @@
 			// Initialize Date and Time Information, this has to be before any
 			// time related functions.
 
-			if (isset($config['inkwell']['default_timezone'])) {
+			if (isset(self::$config['inkwell']['default_timezone'])) {
 				fTimestamp::setDefaultTimezone(
-					$config['inkwell']['default_timezone']
+					self::$config['inkwell']['default_timezone']
 				);
 			} else {
 				throw new fProgrammerException(
@@ -345,10 +348,10 @@
 			}
 
 			if (
-				isset($config['inkwell']['date_formats'])    &&
-				is_array($config['inkwell']['date_formats'])
+				   isset(self::$config['inkwell']['date_formats'])
+				&& is_array(self::$config['inkwell']['date_formats'])
 			) {
-				$date_formats = $config['inkwell']['date_formats'];
+				$date_formats = self::$config['inkwell']['date_formats'];
 				foreach ($date_formats as $name => $format) {
 					fTimestamp::defineFormat($name, $format);
 				}
@@ -363,13 +366,12 @@
 				)))
 			);
 
-			$session_length = (isset($config['inkwell']['session_length']))
+			$session_length = isset(self::$config['inkwell']['session_length'])
 				? $config['inkwell']['session_length']
 				: '30 minutes';
 
-			if (
-				isset($config['inkwell']['persistent_session']) &&
-				$config['inkwell']['persistent_sessions']
+			if (isset(self::$config['inkwell']['persistent_session'])
+				&& self::$config['inkwell']['persistent_sessions']
 			) {
 				fSession::enablePersistence();
 				fSession::setLength($session_length, $session_length);
@@ -380,19 +382,18 @@
 
 			// Initialize the Databases
 
-			if (
-				isset($config['database']['disabled'])  &&
-				!$config['database']['disabled']        &&
-				isset($config['database']['databases'])
+			if (isset(self::$config['database']['disabled'])
+				&& !self::$config['database']['disabled']
+				&& isset($config['database']['databases'])
 			)  {
 
-				if (!is_array($config['database']['databases'])) {
+				if (!is_array(self::$config['database']['databases'])) {
 					throw new fProgrammerException (
 						'Databases must be configured as an array.'
 					);
 				}
 
-				$databases = $config['database']['databases'];
+				$databases = self::$config['database']['databases'];
 
 				foreach ($databases as $name => $settings) {
 
@@ -477,7 +478,7 @@
 
 			// Load the Scaffolder if we have a configuration for it
 
-			if (isset($config['scaffolder'])) {
+			if (isset(self::$config['scaffolder'])) {
 				iw::loadClass('Scaffolder');
 			}
 
@@ -487,11 +488,15 @@
 			// 'preload'        => Signifies that the class should be preloaded
 			// 'root_directory' => Used by the scaffolder and more
 			//
+
+			$preload_classes = array();
+
 			foreach (self::$config as $element => $config) {
 
 				$core = self::$config['__types']['core'];
 
 				if ($element !== '__types' && !in_array($element, $core)) {
+
 					if (isset($config['class'])) {
 						fGrammar::addCamelUnderscoreRule(
 							$config['$class'],
@@ -499,16 +504,27 @@
 						);
 					}
 
-					if (isset($config['preload']) && $config['preload']) {
-						iw::loadClass(fGrammar::camelize($element, TRUE));
-					}
+					$class = fGrammar::camelize($element, TRUE);
 
 					if (isset($config['root_directory'])) {
 						self::$roots[$element] = $config['root_directory'];
 					}
 
+					if (isset($config['auto_load'])
+						&& $config['auto_load']
+						&& isset(self::$roots[$element])
+					) {
+						self::addAutoLoader($class, self::$roots[$element]);
+					}
 
+					if (isset($config['preload']) && $config['preload']) {
+						$preload_classes[] = $class;
+					}
 				}
+			}
+
+			foreach ($preload_classes as $class) {
+				iw::loadClass($class);
 			}
 
 			return self::$config;
@@ -788,7 +804,6 @@
 		 */
 		static public function loadClass($class, array $loaders = array())
 		{
-
 			if (!count($loaders)) {
 				$loaders = self::$config['autoloaders'];
 			}
@@ -935,6 +950,19 @@
 			if ($db_role == 'write' || $db_role == 'both') {
 				self::$databases[$db_name]['write'] = $db;
 			}
+		}
+
+		/**
+		 * Adds an autoloader to the autoloaders configuration key
+		 *
+		 * @static
+		 * @access private
+		 * @param string A match string compatible with iw::loadClass()
+		 * @param string A target to load from
+		 * @return void
+		 */
+		static private function addAutoLoader($match, $target) {
+			self::$config['autoloaders'][$match] = $target;
 		}
 
 	}
