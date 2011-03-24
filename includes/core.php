@@ -524,7 +524,7 @@
 			}
 
 			foreach ($preload_classes as $class) {
-				iw::loadClass($preload_classes);
+				iw::loadClass($class);
 			}
 
 			return self::$config;
