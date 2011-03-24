@@ -2,7 +2,7 @@
 
 	return iw::createConfig('Core', array(
 
-		'disabled'  => FALSE,
+		'disabled'  => TRUE,
 		'databases' => array(
 
 			// Multiple databases can be configured.  If database support is
@@ -28,13 +28,13 @@
 				// Both the type and name are required and should be a string
 				// value.
 
-				'type' => 'postgresql',
-				'name' => 'inkwell',
+				'type' => NULL,
+				'name' => NULL,
 
 				// Authentication information if required
 
-				'user'     => 'inkwell',
-				'password' => 'dotink',
+				'user'     => NULL,
+				'password' => NULL,
 
 				// If the host parameter is configured as an array then inKWell
 				// will select a random host to pull data from.  This can be
