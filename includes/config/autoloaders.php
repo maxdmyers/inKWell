@@ -55,12 +55,8 @@
 
 		'library'      => 'includes/lib',
 
-		// Our base library classes have __match() methods designed to
-		// determine whether or not the class name matches a potential child
-		// class.
-
-		'Controller'   => 'user/controllers',
-		'ActiveRecord' => 'user/models',
-		'RecordSet'    => 'user/models/sets'
+		// Additional class matches will be triggered by class configurations
+		// whose 'auto_load' key is set to true and for which a root_directory
+		// is defined.
 
 	));
