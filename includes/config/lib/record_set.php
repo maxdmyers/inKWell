@@ -10,7 +10,7 @@
 		// Whether or not we should attempt to auto scaffold records using this
 		// class.
 
-		'auto_scaffold' => TRUE,
+		'auto_scaffold' => FALSE,
 
 		// The directory relative to inkwell root in which user defined
 		// record sets are stored.
