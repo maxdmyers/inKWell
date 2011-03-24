@@ -252,18 +252,6 @@
 			self::$config          = $config;
 			self::$roots['config'] = realpath($configuration);
 
-			// Set up our write directory
-
-			self::$writeDirectory = implode(DIRECTORY_SEPARATOR, array(
-				APPLICATION_ROOT,
-				trim(
-					isset(self::$config['inkwell']['write_directory'])
-						? self::$config['inkwell']['write_directory']
-						: self::DEFAULT_WRITE_DIRECTORY,
-					'/\\'
-				)
-			));
-
 			// Set up the inkwell root directory
 
 			if (isset(self::$config['inkwell']['root_directory'])) {
@@ -274,6 +262,18 @@
 			} else {
 				self::$roots['inkwell'] = APPLICATION_ROOT;
 			}
+
+			// Set up our write directory
+
+			self::$writeDirectory = implode(DIRECTORY_SEPARATOR, array(
+				iw::getRoot(),
+				trim(
+					isset(self::$config['inkwell']['write_directory'])
+						? self::$config['inkwell']['write_directory']
+						: self::DEFAULT_WRITE_DIRECTORY,
+					'/\\'
+				)
+			));
 
 			// Configure our autoloaders
 
@@ -318,7 +318,7 @@
 
 				foreach ($interface_directories as $interface_directory) {
 					$files = glob(implode(DIRECTORY_SEPARATOR, array(
-						APPLICATION_ROOT,
+						iw::getRoot(),
 						$interface_directory,
 						'*.php'
 					)));
@@ -853,7 +853,7 @@
 				if ($match !== FALSE) {
 
 					$file = implode(DIRECTORY_SEPARATOR, array(
-						APPLICATION_ROOT,
+						iw::getRoot(),
 						trim($target, '/\\'),        // Target directory
 						$class . '.php'              // Class name as PHP file
 					));
