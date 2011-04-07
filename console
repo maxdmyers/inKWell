@@ -275,7 +275,6 @@
 	 */
 	function ___check($source)
 	{
-
 		$source  = '<?php ' . trim($source);
 		$tmp_dir = iw::getWriteDirectory('.tmp');
 		$file    = $tmp_dir . '.console_command';
