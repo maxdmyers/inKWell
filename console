@@ -223,6 +223,7 @@
 					'-d short_open_tag=0',
 					'-d asp_tags=1',
 					'-d xdebug.profiler_enabler=0',
+					'-d display_errors=1',
 					__FILE__,
 					$_SERVER['DOCUMENT_ROOT']
 			)));
