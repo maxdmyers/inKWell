@@ -562,7 +562,6 @@
 			self::$info[$record_class]['pkey_methods']   = array();
 			self::$info[$record_class]['fkey_columns']   = array();
 			self::$info[$record_class]['serial_columns'] = array();
-			self::$info[$record_class]['fixed_columns']  = array();
 
 			foreach ($schema->getColumnInfo($table) as $column => $info) {
 
@@ -761,20 +760,22 @@
 
 			// Determine additional properties
 
-			$fixed_columns     = self::getInfo($record_class, 'fixed_columns');
-			$serial_columns    = self::getInfo($record_class, 'serial_columns');
+			$fixed_columns  = self::getInfo($record_class, 'fixed_columns');
+			$serial_columns = self::getInfo($record_class, 'serial_columns');
+			$info['serial'] = FALSE;
 
-			$info['serial']    = FALSE;
-
-			if (in_array($column, $fixed_columns) ||
+			if (
 				$info['format'] == 'ordering'
+				|| in_array($column, $fixed_columns)
+				|| in_array($column, $serial_columns)
 			) {
-				$info['fixed']  = TRUE;
-			} elseif (in_array($column, $serial_columns)) {
-				$info['fixed']  = TRUE;
-				$info['serial'] = TRUE;
+				$info['fixed'] = TRUE;
 			} else {
-				$info['fixed']  = FALSE;
+				$info['fixed'] = FALSE;
+			}
+
+			if (in_array($column, $serial_columns)) {
+				$info['serial'] = TRUE;
 			}
 
 			return $info;
