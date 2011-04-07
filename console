@@ -311,13 +311,16 @@
 								return FALSE;
 							} elseif (
 								!isset($method)
-								&& !is_callable(array($t, '__construct'))
 							) {
-								echo sprintf(
-									'Error: Cannot create %s, invalid context.',
-									$t
-								) . PHP_EOL;
-								return FALSE;
+								$reflection = new ReflectionClass($t);
+								if (!$reflection->isInstantiable()) {
+									echo sprintf(
+										'Error: Cannot create %s, invalid or ' .
+										'non-public constructor.',
+										$t
+									) . PHP_EOL;
+									return FALSE;
+								}
 							}
 
 							// Handle method_exists check for static methods
