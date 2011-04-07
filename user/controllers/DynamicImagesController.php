@@ -327,18 +327,22 @@
 					foreach ($pkey_columns as $pkey_column) {
 						if (isset($old_values[$pkey_column][0])) {
 							$erase_target_parts[] = fURL::makeFriendly(
-								$old_values[$pkey_column][0]
+								$old_values[$pkey_column][0],
+								NULL,
+								'(.*)'
 							);
 						} else {
-							$erase_target_parts[] = fURL::makeFriendl(
-								$values[$pkey_column]
+							$erase_target_parts[] = fURL::makeFriendly(
+								$values[$pkey_column],
+								NULL,
+								'(.*)'
 							);
 						}
 					}
 					$erase_target = implode('(.+)', $erase_target_parts);
 				}
 
-				$erase_target    = '#' . $erase_target . '\#(.*)#';
+				$erase_target = '#' . $erase_target . '\#(.*)#';
 
 				foreach ($image_columns as $image_column) {
 					$cache_dir = iw::getWriteDirectory(
