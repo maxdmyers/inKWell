@@ -188,7 +188,7 @@
 		flush();
 
 	} while(($___code = ___readline($___stdin)));
-	
+
 	/**
 	 * A simple readline wrapper that allows us to get the user input via
 	 * various methods.
@@ -231,20 +231,13 @@
 	}
 
 	/**
-	 * Check syntax and other validity aspects of PHP source code.
+	 * Checks syntax of a file and outputs where the errors are.
 	 *
-	 * @param string $string A string of PHP source code without an open tag
-	 * @return boolean TRUE if code appears valid, FALSE otherwise
+	 * @param string $file The file to check
+	 * @return boolean TRUE if no errors exist, FALSE otherwise
 	 */
-	function ___check($source)
+	function ___verify($file)
 	{
-
-		$source  = '<?php ' . trim($source);
-		$tmp_dir = iw::getWriteDirectory('.tmp');
-		$file    = $tmp_dir . '.console_command';
-
-		file_put_contents($file, $source);
-
 		if (fCore::checkOS('windows')) {
 			$syntax_check = trim(shell_exec(sprintf('php -d %s -l %s',
 				escapeshellarg('error_reporting=E_PARSE'),
@@ -269,11 +262,66 @@
 			return FALSE;
 		}
 
+		return TRUE;
+	}
+
+	/**
+	 * Check validity of chunks of PHP source code based on advanced alien
+	 * token logic stolen from the mothership by uploading a virus to their
+	 * puter with a piece of fruit.
+	 *
+	 * @param string $string A string of PHP source code without an open tag
+	 * @return boolean TRUE if code appears valid, FALSE otherwise
+	 */
+	function ___check($source)
+	{
+
+		$source  = '<?php ' . trim($source);
+		$tmp_dir = iw::getWriteDirectory('.tmp');
+		$file    = $tmp_dir . '.console_command';
+
+		file_put_contents($file, $source);
+
+		if (!___verify($file)) {
+			return FALSE;
+		}
+
 		foreach (($tokens = token_get_all($source)) as $i => $token) {
 
 			if (is_array($token)) {
 
-				if ($token[0] == T_STRING && $tokens[$i + 1] == '(') {
+				if (
+					   $token[0] == T_INCLUDE
+					|| $token[0] == T_INCLUDE_ONCE
+					|| $token[0] == T_REQUIRE
+					|| $token[0] == T_REQUIRE_ONCE
+				) {
+					$c       = 1;
+					$collect = '';
+
+					do {
+						$next_token = is_array($tokens[$i + $c])
+							? $tokens[$i + $c][1]
+							: $tokens[$i + $c];
+
+						$collect .= $next_token;
+						$c++;
+
+					} while($next_token !== ';');
+
+					eval('$___file = ' . $collect);
+
+					if (!is_readable($___file)) {
+						echo sprintf(
+							'Error: The file "%s" could not be read',
+								$___file
+						) . PHP_EOL;
+						return FALSE;
+					} elseif (!___verify($___file)) {
+						return FALSE;
+					}
+
+				} elseif ($token[0] == T_STRING && $tokens[$i + 1] == '(') {
 
 					$t      = $token[1];
 					$c      = 1;
