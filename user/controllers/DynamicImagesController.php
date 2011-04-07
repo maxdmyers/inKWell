@@ -131,11 +131,20 @@
 				? $config['image_quality']
 				: self::DEFAULT_IMAGE_QUALITY;
 
-			fORM::registerHookCallback(
-				'*',
-				'post::store()',
-				iw::makeTarget(__CLASS__, 'resetCache')
-			);
+			$ar_configs = iw::getConfigsByType('ActiveRecord');
+
+			foreach ($ar_configs as $element => $ar_config) {
+				if (
+					isset($ar_config['image_columns'])
+					&& count($ar_config['image_columns'])
+				) {
+					fORM::registerHookCallback(
+						fGrammar::camelize($element, TRUE),
+						'post::store()',
+						iw::makeTarget(__CLASS__, 'resetCache')
+					);
+				}
+			}
 
 			return TRUE;
 		}
@@ -295,21 +304,14 @@
 		 */
 		static public function resetCache($object, &$values, &$old_values, &$related_records, &$cache)
 		{
-			$record_class  = get_class($object);
-			$record_name   = ActiveRecord::getRecordName($record_class);
-			$record_table  = ActiveRecord::getRecordTable($record_class);
-			$entry         = ActiveRecord::getEntry($record_class);
-			$image_columns = iw::getConfig($record_name, 'image_columns');
-
-			// If we don't have any configured image columns, just returned
-
-			if (!$image_columns) {
-				return;
-			}
-
+			$record_class     = get_class($object);
+			$record_name      = ActiveRecord::getRecordName($record_class);
+			$record_table     = ActiveRecord::getRecordTable($record_class);
+			$entry            = ActiveRecord::getEntry($record_class);
 			$schema           = fORMSchema::retrieve($record_class);
 			$pkey_columns     = $schema->getKeys($record_table, 'primary');
 			$slug_column      = iw::getConfig($record_name, 'slug_column');
+			$image_columns    = iw::getConfig($record_name, 'image_columns');
 			$changed_columns  = array_keys($old_values);
 
 			$relevant_columns = array_merge(
