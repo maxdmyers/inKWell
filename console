@@ -313,7 +313,7 @@
 					if (!is_readable($___file)) {
 						echo sprintf(
 							'Error: The file "%s" could not be read',
-							$___file
+								$___file
 						) . PHP_EOL;
 						return FALSE;
 					} elseif (!___verify($___file)) {
