@@ -412,7 +412,9 @@
 		static public function deAuthorize()
 		{
 			try {
-				$user_session = new UserSession(session_id());
+				self::$logged_in_user = NULL;
+				$user_session         = new UserSession(session_id());
+
 				$user_session->delete();
 			} catch (fNotFoundException $e) {}
 
@@ -452,7 +454,7 @@
 					}
 
 					if ($user_session->getRebuildAcl()) {
-						self::$logged_in_user->rebuildACL($user_session);
+						self::$logged_in_user->rebuildACL();
 					} else {
 						$user_session->store();
 					}
