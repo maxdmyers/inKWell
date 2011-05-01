@@ -18,11 +18,12 @@
 		 * @static
 		 * @access public
 		 * @param array $config The configuration array
+		 * @param array $element The element name of the configuration array
 		 * @return void
 		 */
-		static public function __init($config)
+		static public function __init(array $config = array(), $element = NULL)
 		{
-			return parent::__init($config, __CLASS__);
+			return parent::__init($config, $element);
 		}
 
 		/**

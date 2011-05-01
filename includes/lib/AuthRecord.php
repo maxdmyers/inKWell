@@ -1,4 +1,5 @@
 <?php
+
 	/**
 	 * The Auth Record model is an abstract base class for Users and AuthRoles
 	 * which provides functionality for various permission operations.
@@ -177,14 +178,15 @@
 		 * @static
 		 * @access protected
 		 * @param array $config The configuration array
+		 * @param array $element The element name of the configuration array
 		 * @return void
 		 */
-		static public function __init($config, $class = NULL)
+		static public function __init(array $config = array(), $element = NULL)
 		{
 			// Don't do any configuration for ourself, but if it's a child
 			// class pass it on up the line.
 
-			if ($class === NULL) {
+			if ($element === fGrammar::underscorize(__CLASS__)) {
 				define('IS_CREATOR', 1);
 				foreach (AuthActions::build() as $auth_action) {
 					$permission = implode('_', array(
@@ -197,7 +199,7 @@
 				return TRUE;
 			}
 
-			return parent::__init($config, $class);
+			return parent::__init($config, $element);
 		}
 
 	}
