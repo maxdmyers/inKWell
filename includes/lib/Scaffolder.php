@@ -194,7 +194,9 @@
 					self::$lastScaffoldedCode = NULL;
 
 				} else {
-
+					throw new fException(
+						'Non-class scaffolding not supported by build.'
+					);
 				}
 
 				self::$isBuilding = FALSE;
