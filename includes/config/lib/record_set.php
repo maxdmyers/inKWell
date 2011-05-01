@@ -5,7 +5,7 @@
 		// Whether or not we should attempt to autoload classes which match
 		// this class from the root_directory
 
-		'auto_load' => FALSE,
+		'auto_load' => TRUE,
 
 		// Whether or not we should attempt to auto scaffold records using this
 		// class.
