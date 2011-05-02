@@ -15,6 +15,7 @@
 		 * @static
 		 * @access public
 		 * @param array $config The configuration array
+		 * @param array $element The element name of the configuration array
 		 * @return void
 		 */
 		static public function __init(array $config = array(), $element = NULL)
