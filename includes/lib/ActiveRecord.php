@@ -302,7 +302,7 @@
 		 * @static
 		 * @access public
 		 * @param array $config The configuration array
-		 * @paramm string $record_class A specific record class to configure
+		 * @param string $element The element name of the configuration array
 		 * @return boolen TRUE if the configuration succeeds, FALSE otherwise
 		 */
 		static public function __init(array $config = array(), $element = NULL)

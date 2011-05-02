@@ -499,7 +499,7 @@
 
 					if (isset($config['class'])) {
 						fGrammar::addCamelUnderscoreRule(
-							$config['$class'],
+							$config['class'],
 							$element
 						);
 					}
