@@ -58,6 +58,7 @@
 		 * @static
 		 * @access public
 		 * @param array $config The configuration array
+		 * @param string $element The element name of the configuration array
 		 * @return void
 		 */
 		static public function __init(array $config = array(), $element = NULL)
@@ -194,7 +195,9 @@
 					self::$lastScaffoldedCode = NULL;
 
 				} else {
-
+					throw new fException(
+						'Non-class scaffolding not supported by build.'
+					);
 				}
 
 				self::$isBuilding = FALSE;
