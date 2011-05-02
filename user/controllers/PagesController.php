@@ -60,8 +60,8 @@
 						-> add  ('scripts', $scripts . 'common.js')
 						-> add  ('styles',  $styles  . $section . '/common.css')
 						-> add  ('scripts', $scripts . $section . '/common.js')
-						-> add  ('header',  $section . '/pages/header.php')
-						-> add  ('footer',  $section . '/pages/footer.php')
+						-> add  ('header',  $section . '/header.php')
+						-> add  ('footer',  $section . '/footer.php')
 						-> push ('classes', $section);
 					break;
 			}
