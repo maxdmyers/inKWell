@@ -115,9 +115,10 @@
 		 * @static
 		 * @access public
 		 * @param array $config The configuration array
+		 * @param string $element The element name of the configuration array
 		 * @return boolean TRUE if initialization succeeds, FALSE otherwise
 		 */
-		static public function __init(array $config = array())
+		static public function __init(array $config = array(), $element = NULL)
 		{
 			self::$cacheDirectory = (isset($config['cache_directory']))
 				? iw::getWriteDirectory($config['cache_directory'])
