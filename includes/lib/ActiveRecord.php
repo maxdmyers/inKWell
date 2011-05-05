@@ -291,8 +291,12 @@
 				}
 			}
 
-			$schema = fORMSchema::retrieve();
-			return in_array(fORM::tablize($class), $schema->getTables());
+			try {
+				$schema = fORMSchema::retrieve();
+				return in_array(fORM::tablize($class), $schema->getTables());
+			} catch (fException $e) {}
+
+			return FALSE;
 		}
 
 		/**
