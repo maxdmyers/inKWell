@@ -135,7 +135,7 @@
 			$config = array();
 
 			if (!$directory) {
-				$directory = self::DEFAULT_CONFIG_DIR;
+				$directory = self::DEFAULT_CONFIG;
 			}
 
 			if ($directory instanceof fDirectory) {
