@@ -420,11 +420,17 @@
 		 * Determines whether or not we should accept the request based on
 		 * the mime type accepted by the user agent.  If no array or an empty
 		 * array is passed the configured default accept types will be used.
+		 * If the request_format is provided in the request and the list of
+		 * acceptable types does not support the provided accept headers a
+		 * not_found error will be triggerd.  If no request_format is provided
+		 * in the request and the list of acceptable types does not support the
+		 * provided accept headers the method will trigger a 'not_acceptable'
+		 * error.
 		 *
 		 * @static
 		 * @access protected
 		 * @param array $accept_types An array of acceptable mime types
-		 * @return mixed The method will trigger a 'not_acceptable' error on failure, will return the best type upon success.
+		 * @return mixed The best type upon request
 		 */
 		static protected function acceptTypes(array $accept_types = array())
 		{

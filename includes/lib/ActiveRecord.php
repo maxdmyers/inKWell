@@ -10,7 +10,7 @@
 	 *
 	 * @package inKWell
 	 */
-	abstract class ActiveRecord extends fActiveRecord implements inkwell
+	abstract class ActiveRecord extends fActiveRecord implements inkwell, JSONSerializable
 	{
 
 		const DEFAULT_FIELD_SEPARATOR = '-';
@@ -139,6 +139,31 @@
 			}
 
 			return fGrammar::humanize($record_class);
+		}
+
+		/**
+		 * Default method for converting active record objects to JSON.  This
+		 * will make all properties, normally private, publically available
+		 * and return the object as a JSON encoded string.  As always, it can
+		 * be overloaded.
+		 *
+		 * @access public
+		 * @return string The JSON encoded object with public properties
+		 */
+		public function jsonSerialize()
+		{
+			$record_class = get_class($this);
+			$schema       = fORMSchema::retrieve($record_class);
+			$record_table = fORM::tablize($record_class);
+			$columns      = array_keys($schema->getColumnInfo($record_table));
+			$object       = new StdClass();
+
+			foreach ($columns as $column) {
+				$method          = 'get' . fGrammar::camelize($column, TRUE);
+				$object->$column = $this->$method();
+			}
+
+			return $object;
 		}
 
 		/**
@@ -291,8 +316,12 @@
 				}
 			}
 
-			$schema = fORMSchema::retrieve();
-			return in_array(fORM::tablize($class), $schema->getTables());
+			try {
+				$schema = fORMSchema::retrieve();
+				return in_array(fORM::tablize($class), $schema->getTables());
+			} catch (fException $e) {}
+
+			return FALSE;
 		}
 
 		/**
