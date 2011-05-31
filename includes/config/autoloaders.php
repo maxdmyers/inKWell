@@ -56,7 +56,7 @@
 		'library'      => 'includes/lib',
 
 		// Additional class matches will be triggered by class configurations
-		// whose 'auto_load' key is set to true and for which a root_directory
+		// whose 'auto_load' key is set to true and for which a 'root_directory'
 		// is defined.
 
 	));
