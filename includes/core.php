@@ -62,6 +62,15 @@
 		static private $initializedClasses = array();
 
 		/**
+		 * Index of interfaces loaded by the system
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $loadedInterfaces = array();
+
+		/**
 		 * The stored failure token
 		 *
 		 * @static
@@ -329,6 +338,7 @@
 
 						if (!interface_exists($interface, FALSE)) {
 							include $file;
+							self::$loadedInterfaces[] = $interface;
 						}
 					}
 				}
@@ -528,6 +538,23 @@
 			}
 
 			return self::$config;
+		}
+
+		/**
+		 * Returns a list of available interfaces.  Optionally this will exclude
+		 * any interfaces which were added by inKWell (i.e. which didn't exist)
+		 * in PHP itself.
+		 *
+		 * @param boolean $native Get only native interfaces, default is FALSE
+		 * @return array The list of interfaces
+		 */
+		static public function getInterfaces($native = FALSE)
+		{
+			$interfaces = get_declared_interfaces();
+
+			return ($native)
+				? array_diff($interfaces, self::$loadedInterfaces)
+				: $interfaces;
 		}
 
 		/**
@@ -966,14 +993,3 @@
 		}
 
 	}
-
-	/**
-	 * The inKWell interface is used to determine whether or not a class will
-	 * support the following methods:
-	 *
-	 *  __init()
-	 *  __match()
-	 *  __build()
-	 */
-
-	interface inkwell {}

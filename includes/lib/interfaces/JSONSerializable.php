@@ -3,14 +3,11 @@
 	/**
 	 * Provides the JSONSerializable Interface if it does not exist
 	 *
-	 * @copyright  Copyright (c) 2011 Matthew J. Sahagian
-	 * @author     Matthew J. Sahagian [mjs] <msahagian@dotink.org>
-	 * @license    http://flourishlib.com/license
+	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
+	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
+	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
 	 *
-	 * @package    Flourish
-	 * @link       http://flourishlib.com/fJSON
-	 *
-	 * @changes    1.0.0b   The initial implementation [mjs, 2011-07-12]
+	 * @package inKWell
 	 */
 	interface JSONSerializable
 	{
