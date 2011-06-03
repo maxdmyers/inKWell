@@ -352,6 +352,10 @@
 					'application/xml'
 				),
 
+				'php'  => array(
+					'application/octet-stream'
+				),
+
 				'jpg'  => array(
 					'image/jpeg'
 				),
@@ -451,6 +455,9 @@
 					break;
 				case 'xml':
 					$request_format_types = self::getFormatTypes('xml');
+					break;
+				case 'php':
+					$request_format_types = self::getFormatTypes('php');
 					break;
 				case 'jpg':
 				case 'jpeg':
