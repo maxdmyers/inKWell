@@ -2,7 +2,7 @@
 
 ## Preamble
 
-inKWell is currently alpha software, we will answer any questions you might have
+inKWell is currently beta software, we will answer any questions you might have
 directly.  Feel free to message us on GitHub, username: dotink.
 
 ## Licensing
