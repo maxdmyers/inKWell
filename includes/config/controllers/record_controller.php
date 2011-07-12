@@ -2,11 +2,11 @@
 
 	return iw::createConfig('Controller', array(
 
-		'auto_scaffold' => TRUE,
+		'auto_scaffold'   => TRUE,
 
 		'sections'        => array(
 
-			'admin'     => array(
+			'admin'       => array(
 				'title'   => 'inKWell Admin Panel',
 				'use_ssl' => FALSE
 			),

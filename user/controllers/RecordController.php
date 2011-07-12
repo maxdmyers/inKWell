@@ -50,6 +50,21 @@
 		}
 
 		/**
+		 * Matches whether or not a given class name is a potential
+		 * RecordController
+		 *
+		 * @param string $class The name of the class to check
+		 * @return boolean TRUE if it matches, FALSE otherwise
+		 */
+		static public function __match($class) {
+			if (parent::__match($class)) {
+				return RecordSet::__match(self::getRecordSet($class));
+			}
+
+			return FALSE;
+		}
+
+		/**
 		 * Initializes all static class information for the RecordController
 		 *
 		 * @param array $config The configuration array
