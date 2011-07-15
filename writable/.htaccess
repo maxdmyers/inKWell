@@ -1,0 +1,64 @@
+################################################################################
+## PHP Options                                                                ##
+##                                                                            ##
+## Depending on whether or not PHP is an apache module, these may or may not  ##
+## be allowed and may need to be configured in a separate php.ini file.       ##
+## this is common with shared hosting such as Bluehost.                       ##
+##                                                                            ##
+################################################################################
+
+	php_flag  register_globals       0
+	php_flag  display_errors         1
+	php_flag  magic_quotes_gpc       0
+	php_flag  short_open_tag         0
+	php_flag  asp_tags               1
+	php_flag  xdebug.profiler_enable 0
+	php_value upload_max_filesize    "15M"
+	php_value post_max_size          "16M"
+
+################################################################################
+## Forbid reading of certain files directly                                   ##
+################################################################################
+
+	<FilesMatch ^\.(.*)>
+		order allow,deny
+		deny from all
+	</FilesMatch>
+
+	<FilesMatch sess_(.*)>
+		order allow,deny
+		deny from all
+	</FilesMatch>
+
+################################################################################
+## Enable Rewrite                                                             ##
+################################################################################
+
+	<IfModule mod_rewrite.c>
+		RewriteEngine On
+		RewriteBase   /
+
+		RewriteCond	%{DOCUMENT_ROOT}/%{REQUEST_URI} !-f
+		RewriteRule	^.*$ %{DOCUMENT_ROOT}/index.php?__rewrite=1 [NS,QSA]
+	</IfModule>
+
+
+################################################################################
+## GZip plaintext being sent to the user                                      ##
+################################################################################
+
+<IfModule mod_deflate.c>
+	AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/x-javascript text/javascript application/javascript application/json
+	<FilesMatch "\.(ttf|otf|eot|svg)$" >
+		SetOutputFilter DEFLATE
+	</FilesMatch>
+</IfModule>
+
+################################################################################
+## Fix some Apache Mime Types                                                 ##
+################################################################################
+
+AddType application/vnd.ms-fontobject .eot
+AddType application/octet-stream .otf
+AddType application/x-font-ttf .ttf
+AddType application/x-woff .woff
