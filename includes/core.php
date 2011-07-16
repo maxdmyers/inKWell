@@ -473,11 +473,15 @@
 						}
 					}
 
-					$host_parts    = explode(':', $database_host, 2);
-					$database_host = $host_parts[0];
-					$database_port = (isset($host_parts[1]))
-						? $host_parts[1]
-						: NULL;
+					if (strpos($database_host, 'sock:') !== 0) {
+						$host_parts    = explode(':', $database_host, 2);
+						$database_host = $host_parts[0];
+						$database_port = (isset($host_parts[1]))
+							? $host_parts[1]
+							: NULL;					
+					} else {
+						$database_port = NULL;
+					}
 
 					iw::addDatabase($db = new fDatabase(
 						$database_type,
