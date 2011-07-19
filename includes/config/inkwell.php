@@ -21,7 +21,7 @@
 		// wish to set the error_email_to to your e-mail address.
 
 		'display_errors' => TRUE,
-		'error_level'    => E_ALL,
+		'error_level'    => E_ALL & ~E_STRICT,
 		'error_email_to' => NULL,
 
 		// Enabling persistent sessions will cause the user's session to stay
