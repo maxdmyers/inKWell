@@ -301,12 +301,6 @@
 			// Initialize Error Reporting
 
 			if (isset(self::$config['inkwell']['error_level'])) {
-				$error_level = &self::$config['inkwell']['error_level'];
-
-				if (!fCore::checkVersion('5.3') && $error_level = E_ALL) {
-					$error_level = $error_level | E_STRICT;
-				}
-
 				error_reporting(self::$config['inkwell']['error_level']);
 			}
 
