@@ -771,10 +771,18 @@
 		 */
 		static public function makeLink($target, $query = array())
 		{
+			if (strpos($target, '*::') === 0) {
+				$target = Moor::getActiveClass() . substr($target, 1);
+			}
+
+			if (strpos($target, '*\\') === 0 || preg_match('/^\*_[A-Z][A-Za-z0-9]*::/', $target)) {
+				$target = Moor::getActiveNamespace() . substr($target, 1);
+			}
+
 			if (!is_callable($target)) {
 
 				$query = (count($query))
-					? '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986)
+					? '?' . @http_build_query($query, '', '&', PHP_QUERY_RFC3986)
 					: NULL;
 
 				if (strpos($target, '/') === 0 && Moor::getActiveProxyURI()) {

@@ -54,9 +54,14 @@
 	$___command   = '';
 
 	if (isset($argv[1])) {
-		include $argv[1];
 		$___called_quit = TRUE;
-		exit();
+		try {
+			include $argv[1];
+			exit(0);
+		} catch (Exception $e) {
+			echo "Exception: " . $e->getMessage();
+			exit(1);
+		}
 	}
 
 	echo 'Welcome to the inKWell Console, you can begin typing PHP or try:';
