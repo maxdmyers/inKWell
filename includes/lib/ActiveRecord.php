@@ -1114,7 +1114,7 @@
 						$password_column
 					)));
 
-					if (strtolower(php_sapi_name()) == 'cli') {
+					if (iw::checkSAPI('cli')) {
 						$confirmation = $values[$password_column];
 					}
 
