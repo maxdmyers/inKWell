@@ -4,7 +4,8 @@ BASEDIR=$(dirname $0)
 
 if [ -n "`php -v 2> /dev/null`" ]; then
 	if [ -n "`rlwrap -v 2> /dev/null`" ]; then
-		rlwrap php -q -d register_globals=0 -d magic_quotes_gpc=0 -d short_open_tag=0 -d asp_tags=1 -d xdebug.profiler_enabler=0 -d display_errors=1 $BASEDIR/console $1
+		HIST_FILE="$BASEDIR/.console.hist"
+		rlwrap -H $HIST_FILE php -q -d register_globals=0 -d magic_quotes_gpc=0 -d short_open_tag=0 -d asp_tags=1 -d xdebug.profiler_enabler=0 -d display_errors=1 $BASEDIR/console $1
 	else
 		php -q -d register_globals=0 -d magic_quotes_gpc=0 -d short_open_tag=0 -d asp_tags=1 -d xdebug.profiler_enabler=0 -d display_errors=1 $BASEDIR/console $1
 	fi
