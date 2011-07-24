@@ -1050,7 +1050,10 @@
 		{
 			$record_class = get_class($object);
 			$slug_column  = self::getInfo($record_class, 'slug_column');
-			$url_friendly = fURL::makeFriendly($values[$slug_column]);
+			$url_friendly = fURL::makeFriendly(
+				$values[$slug_column],
+				self::$wordSeparator
+			);
 
 			if ($values[$slug_column] == $url_friendly) {
 				return;
