@@ -491,9 +491,9 @@
 				// special configuration depending on the
 				// $column_config
 
-				foreach ($config[$column_config] as $column) {
+				foreach ($config[$column_config] as $key => $column) {
 
-					self::$info[$record_class][$column_config][] = $column;
+					self::$info[$record_class][$column_config][$key] = $column;
 
 					switch ($column_config) {
 
@@ -567,7 +567,8 @@
 						case 'money_columns':
 							fORMMoney::configureMoneyColumn(
 								$record_class,
-								$column
+								$column,
+								(!is_numeric($key)) ? $key : NULL
 							);
 							break;
 					}
