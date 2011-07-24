@@ -7,8 +7,9 @@
 			$_SERVER['PATH_INFO']   = '/';
 			$_SERVER['REQUEST_URI'] = $_SERVER['PHP_SELF'];
 		}
-	} else {
-		$_SERVER['PATH_INFO'] = NULL;
+	} elseif (isset($_SERVER['PATH_INFO'])) {
+		$_SERVER['REQUEST_URI'] .= $_SERVER['PATH_INFO']; 
+		$_SERVER['PATH_INFO']    = NULL;
 	}
 
 	// Step back until we find our includes directory (should be 1 at most)
