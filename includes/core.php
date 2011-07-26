@@ -261,6 +261,25 @@
 			self::$config          = $config;
 			self::$roots['config'] = realpath($configuration);
 
+			// Redirect if we're not the active domain.
+			
+			if (isset(self::$config['inkwell']['active_domain'])) {
+				$url_sections   = parse_url(fURL::getDomain());
+				$active_domain  = self::$config['inkwell']['active_domain'];
+				$cur_domain     = $url_sections['host'];
+				$cur_scheme     = $url_sections['scheme'];
+				$cur_port       = (isset($url_sections['port']))
+					? ':' . $url_sections['port']
+					: NULL;
+			
+				if (strpos($cur_domain, $active_domain) !== 0) {
+					fURL::redirect(
+						$cur_scheme . '://' . $active_domain . $cur_port .
+						fURL::getWithQueryString()
+					);
+				}
+			}
+
 			// Set up the inkwell root directory
 
 			if (isset(self::$config['inkwell']['root_directory'])) {
