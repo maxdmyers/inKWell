@@ -270,28 +270,6 @@
 			self::$config          = $config;
 			self::$roots['config'] = realpath($configuration);
 
-			// Redirect if we're not the active domain.
-			
-			self::$activeDomain = (isset($config['inkwell']['active_domain']))
-				? $config['inkwell']['active_domain']
-				: parse_url(fURL::getDomain(), PHP_URL_HOST);
-			
-			$url_sections  = parse_url(fURL::getDomain());
-			$active_domain = self::getActiveDomain();
-			
-			if ($url_sections['host'] != $active_domain) {
-				$current_domain = $url_sections['host'];
-				$current_scheme = $url_sections['scheme'];
-				$current_port   = (isset($url_sections['port']))
-					? ':' . $url_sections['port']
-					: NULL;
-			
-				fURL::redirect(
-					$current_scheme . '://' . $active_domain . $current_port .
-					fURL::getWithQueryString()
-				);
-			}
-
 			// Set up the inkwell root directory
 
 			if (isset(self::$config['inkwell']['root_directory'])) {
@@ -396,6 +374,28 @@
 				foreach ($date_formats as $name => $format) {
 					fTimestamp::defineFormat($name, $format);
 				}
+			}
+
+			// Redirect if we're not the active domain.
+			
+			self::$activeDomain = (isset($config['inkwell']['active_domain']))
+				? $config['inkwell']['active_domain']
+				: parse_url(fURL::getDomain(), PHP_URL_HOST);
+			
+			$url_sections  = parse_url(fURL::getDomain());
+			$active_domain = self::getActiveDomain();
+			
+			if ($url_sections['host'] != $active_domain) {
+				$current_domain = $url_sections['host'];
+				$current_scheme = $url_sections['scheme'];
+				$current_port   = (isset($url_sections['port']))
+					? ':' . $url_sections['port']
+					: NULL;
+			
+				fURL::redirect(
+					$current_scheme . '://' . $active_domain . $current_port .
+					fURL::getWithQueryString()
+				);
 			}
 
 			// Initialize the Session
