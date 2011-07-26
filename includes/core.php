@@ -44,6 +44,15 @@
 		static private $writeDirectory = NULL;
 
 		/**
+		 * The active domain for inkwell
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $activeDomain = NULL;
+
+		/**
 		 * Cached static auto-loader matches
 		 *
 		 * @static
@@ -263,21 +272,24 @@
 
 			// Redirect if we're not the active domain.
 			
-			if (isset(self::$config['inkwell']['active_domain'])) {
-				$url_sections   = parse_url(fURL::getDomain());
-				$active_domain  = self::$config['inkwell']['active_domain'];
-				$cur_domain     = $url_sections['host'];
-				$cur_scheme     = $url_sections['scheme'];
-				$cur_port       = (isset($url_sections['port']))
+			self::$activeDomain = (isset($config['inkwell']['active_domain']))
+				? $config['inkwell']['active_domain']
+				: parse_url(fURL::getDomain(), PHP_URL_HOST);
+			
+			$url_sections  = parse_url(fURL::getDomain());
+			$active_domain = self::getActiveDomain();
+			
+			if ($url_sections['host'] != $active_domain) {
+				$current_domain = $url_sections['host'];
+				$current_scheme = $url_sections['scheme'];
+				$current_port   = (isset($url_sections['port']))
 					? ':' . $url_sections['port']
 					: NULL;
 			
-				if (strpos($cur_domain, $active_domain) !== 0) {
-					fURL::redirect(
-						$cur_scheme . '://' . $active_domain . $cur_port .
-						fURL::getWithQueryString()
-					);
-				}
+				fURL::redirect(
+					$current_scheme . '://' . $active_domain . $current_port .
+					fURL::getWithQueryString()
+				);
 			}
 
 			// Set up the inkwell root directory
@@ -561,6 +573,19 @@
 			}
 
 			return self::$config;
+		}
+
+		/**
+		 * Returns the active domain for inkwell
+		 *
+		 * @static
+		 * @access public
+		 * @param void
+		 * @return string The Active domain for inkwell
+		 */
+		static public function getActiveDomain()
+		{
+			return self::$activeDomain;
 		}
 
 		/**
