@@ -382,10 +382,11 @@
 				? $config['inkwell']['active_domain']
 				: parse_url(fURL::getDomain(), PHP_URL_HOST);
 			
-			$url_sections  = parse_url(fURL::getDomain());
-			$active_domain = self::getActiveDomain();
+			$url_parts = parse_url(fURL::getDomain());
+			$iw_domain = self::getActiveDomain();
 			
-			if ($url_sections['host'] != $active_domain) {
+			
+			if (!iw::checkSAPI('cli') && $url_parts['host'] != $iw_domain) {
 				$current_domain = $url_sections['host'];
 				$current_scheme = $url_sections['scheme'];
 				$current_port   = (isset($url_sections['port']))
@@ -393,7 +394,7 @@
 					: NULL;
 			
 				fURL::redirect(
-					$current_scheme . '://' . $active_domain . $current_port .
+					$current_scheme . '://' . $iw_domain . $current_port .
 					fURL::getWithQueryString()
 				);
 			}
