@@ -886,7 +886,7 @@
 		 */
 		static public function checkSAPI($sapi)
 		{
-			return (strtolower(php_sapi_name()) == 'cli');
+			return (strtolower(php_sapi_name()) == strtolower($sapi));
 		}
 
 		/**
