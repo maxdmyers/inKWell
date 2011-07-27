@@ -25,7 +25,7 @@
 		// to render the actual not_authorized view.  The default is the
 		// 'PagesController' (official inkwell extension)
 
-		'host_controller' => 'PagesController' 
+		'host_controller' => 'PagesController',
 		
 		// The method which will be called on the host controller in the event
 		// a user is not authorized.  The default is 'notAuthorized'
