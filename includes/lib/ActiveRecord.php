@@ -123,181 +123,6 @@
 		static private $fileUploadDirectory = NULL;
 
 		/**
-		 * Represents the object as a string using the value of a configured
-		 * or natural id_column.  If no such column exists, it uses the
-		 * human version of the record class.
-		 *
-		 * @access public
-		 * @return string The string representation of the object
-		 */
-		public function __toString()
-		{
-			$record_class = get_class($this);
-
-			if (($id_column = self::getInfo($record_class, 'id_column'))) {
-				return self::encode($id_column);
-			}
-
-			return fGrammar::humanize($record_class);
-		}
-
-		/**
-		 * Default method for converting active record objects to JSON.  This
-		 * will make all properties, normally private, publically available
-		 * and return the object as a JSON encoded string.  As always, it can
-		 * be overloaded.
-		 *
-		 * @access public
-		 * @return string The JSON encoded object with public properties
-		 */
-		public function jsonSerialize()
-		{
-			$record_class = get_class($this);
-			$schema       = fORMSchema::retrieve($record_class);
-			$record_table = fORM::tablize($record_class);
-			$columns      = array_keys($schema->getColumnInfo($record_table));
-			$object       = new StdClass();
-
-			foreach ($columns as $column) {
-				$method          = 'get' . fGrammar::camelize($column, TRUE);
-				$object->$column = $this->$method();
-			}
-
-			return $object;
-		}
-
-		/**
-		 * Get the value of the record's primary key as passed to the
-		 * constructor or as a serialized string.
-		 *
-		 * @access public
-		 * @param boolean $serialize Whether or not to serialize the pkey
-		 * @return mixed The primary key, usable in the constructor
-		 */
-		public function getPrimaryKey($serialize = FALSE)
-		{
-			$record_class = get_class($this);
-			$columns      = self::getInfo($record_class, 'pkey_columns');
-			$pkey         = array();
-
-			foreach ($columns as $column) {
-				$get_method    = 'get' . fGrammar::camelize($column, TRUE);
-				$pkey[$column] = $this->$get_method();
-
-				// Gets columns returned as objects in string form
-
-				if (is_object($pkey[$column])) {
-					$pkey[$column] = (string) $pkey[$column];
-				}
-			}
-
-			if (count($pkey) == 1) {
-				$pkey = reset($pkey);
-			}
-
-			return ($serialize) ? fJSON::encode($pkey) : $pkey;
-		}
-
-		/**
-		 * Creates an identifying slug which can be comprised ultimately of a
-		 * URL friendly string representation of the primary key and optionally
-		 * the value of the record's configured id_column. The slug is HTML
-		 * friendly by nature, although it is not independently HTML encoded.
-		 *
-		 * @access public
-		 * @param string $identify Whether or not to append an identifier
-		 * @return string The slug representation of the active record.
-		 */
-		public function makeSlug($identify = TRUE)
-		{
-
-			// The cached slug will be reset to NULL via the ::resetCache()
-			// callback in the event any of the values comprising the slug
-			// have changed.
-
-			if (!$this->slug) {
-
-				$record_class = get_class($this);
-				$slug_column  = self::getInfo($record_class, 'slug_column');
-
-				if ($slug_column) {
-					$method = 'get' . fGrammar::camelize($slug_column, TRUE);
-					$slug   = $this->$method();
-
-				} else {
-
-					if (!is_array($pkey = $this->getPrimaryKey())) {
-						$pkey = array($pkey);
-					}
-
-					foreach ($pkey as $i => $value) {
-						$pkey[$i] = fURL::makeFriendly(
-							$value,
-							NULL,
-							self::$wordSeparator
-						);
-					}
-
-					$slug = implode(self::$fieldSeparator, $pkey);
-
-				}
-
-				$this->slug = $slug;
-			}
-
-			if ($identify === TRUE) {
-				return implode('/', array(
-					$this->slug,
-					fURL::makeFriendly(
-						$this->__toString(),
-						NULL,
-						self::$wordSeparator
-					)
-				));
-			}
-
-			return $this->slug;
-		}
-
-		/**
-		 * Creates a resource key which can be comprised ultimately of the
-		 * JSON serialized primary key and optionally the identifier.  The
-		 * returned value is not necessarily HTML safe and should be encoded
-		 * if embedded in HTML.
-		 *
-		 * @access public
-		 * @param boolean $identify Whether or not to append an identifiier
-		 * @return string The JSON serialized resource key
-		 */
-		public function makeResourceKey($identify = TRUE)
-		{
-
-			// The cached resource key will be reset to NULL via the
-			// ::resetCache() callback in the event any of the values
-			// comprising the slug have changed.
-
-			if (!$this->resourceKey) {
-
-				$record_class = get_class($this);
-
-				$resource_key = array(
-					'primary_key' => $this->getPrimaryKey()
-				);
-
-				$this->resourceKey = $resource_key;
-			}
-
-			if ($identify === TRUE) {
-				return fJSON::encode(array_merge(
-					$this->resourceKey,
-					array('identifier' => (string) $this)
-				));
-			}
-
-			return fJSON::encode($this->resourceKey);
-		}
-
-		/**
 		 * Matches whether or not a given class name is a potential
 		 * ActiveRecord by looking for an available matching ActiveRecord
 		 * configuration or the tablized form in the list of the default
@@ -408,6 +233,11 @@
 			// Default and Configurable Values
 
 			if (isset($config['id_column'])) {
+				if (empty($config['id_column'])) {
+					throw new fProgrammerException (
+						'ID column cannot be configured as an empty string'
+					);
+				}
 				self::$info[$record_class]['id_column'] = $config['id_column'];
 			} else {
 				$ukeys = $schema->getKeys($table, 'unique');
@@ -419,6 +249,12 @@
 			}
 
 			if (isset($config['slug_column'])) {
+			
+				if (!isset($config['id_column'])) {
+					throw new fProgrammerException (
+						'Enabling a slug column requires an ID column'
+					);
+				}
 
 				$valid_slug_column = FALSE;
 				$slug_column       = $config['slug_column'];
@@ -1058,6 +894,27 @@
 
 			if ($values[$slug_column] == $url_friendly) {
 				return;
+			} elseif (!$values[$slug_column]) {
+				$id_column = self::getInfo($record_class, 'id_column');
+				$id_value  = $values[$id_column];
+				try {
+					$revision    = NULL;
+					$friendly_id = fURL::makeFriendly(
+						$values[$id_column],
+						self::$wordSeparator
+					);
+
+					do {
+						$suffix = ($revision)
+							? self::$wordSeparator . $revision
+							: NULL;
+
+						self::createFromSlug($friendly_id . $suffix);
+					} while (TRUE);
+				} catch (fNotFoundException $e) {
+					$values[$slug_column] = $friendly_id . $suffix;
+					return;					
+				}
 			}
 
 			$invalid_characters = array_diff(
@@ -1286,4 +1143,178 @@
 			return NULL;
 		}
 
+		/**
+		 * Represents the object as a string using the value of a configured
+		 * or natural id_column.  If no such column exists, it uses the
+		 * human version of the record class.
+		 *
+		 * @access public
+		 * @return string The string representation of the object
+		 */
+		public function __toString()
+		{
+			$record_class = get_class($this);
+
+			if (($id_column = self::getInfo($record_class, 'id_column'))) {
+				return self::encode($id_column);
+			}
+
+			return fGrammar::humanize($record_class);
+		}
+
+		/**
+		 * Default method for converting active record objects to JSON.  This
+		 * will make all properties, normally private, publically available
+		 * and return the object as a JSON encoded string.  As always, it can
+		 * be overloaded.
+		 *
+		 * @access public
+		 * @return string The JSON encoded object with public properties
+		 */
+		public function jsonSerialize()
+		{
+			$record_class = get_class($this);
+			$schema       = fORMSchema::retrieve($record_class);
+			$record_table = fORM::tablize($record_class);
+			$columns      = array_keys($schema->getColumnInfo($record_table));
+			$object       = new StdClass();
+
+			foreach ($columns as $column) {
+				$method          = 'get' . fGrammar::camelize($column, TRUE);
+				$object->$column = $this->$method();
+			}
+
+			return $object;
+		}
+
+		/**
+		 * Get the value of the record's primary key as passed to the
+		 * constructor or as a serialized string.
+		 *
+		 * @access public
+		 * @param boolean $serialize Whether or not to serialize the pkey
+		 * @return mixed The primary key, usable in the constructor
+		 */
+		public function getPrimaryKey($serialize = FALSE)
+		{
+			$record_class = get_class($this);
+			$columns      = self::getInfo($record_class, 'pkey_columns');
+			$pkey         = array();
+
+			foreach ($columns as $column) {
+				$get_method    = 'get' . fGrammar::camelize($column, TRUE);
+				$pkey[$column] = $this->$get_method();
+
+				// Gets columns returned as objects in string form
+
+				if (is_object($pkey[$column])) {
+					$pkey[$column] = (string) $pkey[$column];
+				}
+			}
+
+			if (count($pkey) == 1) {
+				$pkey = reset($pkey);
+			}
+
+			return ($serialize) ? fJSON::encode($pkey) : $pkey;
+		}
+
+		/**
+		 * Creates an identifying slug which can be comprised ultimately of a
+		 * URL friendly string representation of the primary key and optionally
+		 * the value of the record's configured id_column. The slug is HTML
+		 * friendly by nature, although it is not independently HTML encoded.
+		 *
+		 * @access public
+		 * @param string $identify Whether or not to append an identifier
+		 * @return string The slug representation of the active record.
+		 */
+		public function makeSlug($identify = TRUE)
+		{
+
+			// The cached slug will be reset to NULL via the ::resetCache()
+			// callback in the event any of the values comprising the slug
+			// have changed.
+
+			if (!$this->slug) {
+
+				$record_class = get_class($this);
+				$slug_column  = self::getInfo($record_class, 'slug_column');
+
+				if ($slug_column) {
+					$method = 'get' . fGrammar::camelize($slug_column, TRUE);
+					$slug   = $this->$method();
+
+				} else {
+
+					if (!is_array($pkey = $this->getPrimaryKey())) {
+						$pkey = array($pkey);
+					}
+
+					foreach ($pkey as $i => $value) {
+						$pkey[$i] = fURL::makeFriendly(
+							$value,
+							NULL,
+							self::$wordSeparator
+						);
+					}
+
+					$slug = implode(self::$fieldSeparator, $pkey);
+
+				}
+
+				$this->slug = $slug;
+			}
+
+			if ($identify === TRUE) {
+				return implode('/', array(
+					$this->slug,
+					fURL::makeFriendly(
+						$this->__toString(),
+						NULL,
+						self::$wordSeparator
+					)
+				));
+			}
+
+			return $this->slug;
+		}
+
+		/**
+		 * Creates a resource key which can be comprised ultimately of the
+		 * JSON serialized primary key and optionally the identifier.  The
+		 * returned value is not necessarily HTML safe and should be encoded
+		 * if embedded in HTML.
+		 *
+		 * @access public
+		 * @param boolean $identify Whether or not to append an identifiier
+		 * @return string The JSON serialized resource key
+		 */
+		public function makeResourceKey($identify = TRUE)
+		{
+
+			// The cached resource key will be reset to NULL via the
+			// ::resetCache() callback in the event any of the values
+			// comprising the slug have changed.
+
+			if (!$this->resourceKey) {
+
+				$record_class = get_class($this);
+
+				$resource_key = array(
+					'primary_key' => $this->getPrimaryKey()
+				);
+
+				$this->resourceKey = $resource_key;
+			}
+
+			if ($identify === TRUE) {
+				return fJSON::encode(array_merge(
+					$this->resourceKey,
+					array('identifier' => (string) $this)
+				));
+			}
+
+			return fJSON::encode($this->resourceKey);
+		}
 	}
