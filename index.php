@@ -2,13 +2,14 @@
 
 	$include_directory = 'includes';
 
-	// Check for rewrite if it's not set, prep some $_SERVER variables
-
-	if (!isset($_GET['__rewrite'])) {
-		if ($_SERVER['REQUEST_URI'] == '/' || empty($_SERVER['REQUEST_URI'])) {
+	if (!isset($_SERVER['REWRITE_ENABLED']) || !$_SERVER['REWRITE_ENABLED']) {
+		if (in_array($_SERVER['REQUEST_URI'], array('', '/', '/index.php'))) {
 			$_SERVER['PATH_INFO']   = '/';
 			$_SERVER['REQUEST_URI'] = $_SERVER['PHP_SELF'];
 		}
+	} elseif (isset($_SERVER['PATH_INFO'])) {
+		$_SERVER['REQUEST_URI'] .= $_SERVER['PATH_INFO']; 
+		$_SERVER['PATH_INFO']    = NULL;
 	}
 
 	// Step back until we find our includes directory (should be 1 at most)
