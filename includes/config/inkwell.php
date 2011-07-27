@@ -2,6 +2,13 @@
 
 	return iw::createConfig('Core', array(
 
+		// The active domain name for the site.  This can handle automatic
+		// redirection if the site is hit from an alias (i.e. throw away your)
+		// apache/nginx redirects.  If it's null, then no redirection will
+		// occur.
+		
+		'active_domain' => NULL,
+
 		// The root directory for inkWell, generally this will be the
 		// APPLICATION_ROOT -- this is an absolute path relative to the root
 		// of the filesystem

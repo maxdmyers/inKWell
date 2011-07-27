@@ -37,9 +37,11 @@
 	<IfModule mod_rewrite.c>
 		RewriteEngine On
 		RewriteBase   /
+		
+		SetEnv REWRITE_ENABLED 1;
 
 		RewriteCond	%{DOCUMENT_ROOT}/%{REQUEST_URI} !-f
-		RewriteRule	^.*$ %{DOCUMENT_ROOT}/index.php?__rewrite=1 [NS,QSA]
+		RewriteRule	^.*$ %{DOCUMENT_ROOT}/index.php [NS,QSA]
 	</IfModule>
 
 

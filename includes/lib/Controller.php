@@ -328,6 +328,32 @@
 		}
 
 		/**
+		 * Dynamically scaffolds a Controller class.
+		 *
+		 * @static
+		 * @access public
+		 * @param string $record_class The class name to scaffold
+		 * @return boolean TRUE if the controller class was scaffolded, FALSE otherwise
+		 */
+		static public function __make($controller_class)
+		{
+			$template = implode(DIRECTORY_SEPARATOR, array(
+				'classes',
+				__CLASS__ . '.php'
+			));
+
+			Scaffolder::make($template, array(
+				'class' => $controller_class
+			), __CLASS__);
+
+			if (class_exists($controller_class, FALSE)) {
+				return TRUE;
+			}
+
+			return FALSE;
+		}
+
+		/**
 		 * Gets format mime types for selected or all request formats
 		 *
 		 * @static
