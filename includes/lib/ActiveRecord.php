@@ -491,9 +491,9 @@
 				// special configuration depending on the
 				// $column_config
 
-				foreach ($config[$column_config] as $column) {
+				foreach ($config[$column_config] as $key => $column) {
 
-					self::$info[$record_class][$column_config][] = $column;
+					self::$info[$record_class][$column_config][$key] = $column;
 
 					switch ($column_config) {
 
@@ -567,7 +567,8 @@
 						case 'money_columns':
 							fORMMoney::configureMoneyColumn(
 								$record_class,
-								$column
+								$column,
+								(!is_numeric($key)) ? $key : NULL
 							);
 							break;
 					}
@@ -1050,7 +1051,10 @@
 		{
 			$record_class = get_class($object);
 			$slug_column  = self::getInfo($record_class, 'slug_column');
-			$url_friendly = fURL::makeFriendly($values[$slug_column]);
+			$url_friendly = fURL::makeFriendly(
+				$values[$slug_column],
+				self::$wordSeparator
+			);
 
 			if ($values[$slug_column] == $url_friendly) {
 				return;
@@ -1109,16 +1113,19 @@
 					!empty($old_values[$column])
 				) {
 
-					$confirmation = fRequest::get('confirm-' . $column);
+					$confirmation = fRequest::get(implode('-', array(
+						'confirm',
+						$password_column
+					)));
 
-					if (strtolower(php_sapi_name()) == 'cli') {
-						$confirmation = $values[$column];
+					if (iw::checkSAPI('cli')) {
+						$confirmation = $values[$password_column];
 					}
 
-					if ($confirmation == $values[$column]) {
+					if ($confirmation == $values[$password_column]) {
 
-						$values[$column] = fCryptography::hashPassword(
-							$values[$column]
+						$values[$password_column] = fCryptography::hashPassword(
+							$values[$password_column]
 						);
 
 					} else {

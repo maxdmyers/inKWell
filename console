@@ -1,5 +1,13 @@
 <?php
 
+	if (function_exists('posix_setgid')) {
+		posix_setgid(filegroup(__FILE__));
+	}
+
+	if (function_exists('posix_setuid')) {
+		posix_setuid(fileowner(__FILE__));
+	}
+
 	// Fix some output buffering bugs and clear the screen
 
 	@ob_end_clean();
@@ -8,10 +16,7 @@
 
 	define('APPLICATION_ROOT', realpath(dirname(__FILE__)));
 
-	$_SERVER['DOCUMENT_ROOT']  = (isset($argv[1]))
-		? realpath($argv[1]) // Accept an optional parameter as document root
-		: dirname(__FILE__);
-
+	$_SERVER['DOCUMENT_ROOT']  = '/';
 	$_SERVER['REQUEST_URI']    = '/';
 	$_SERVER['REQUEST_METHOD'] = 'GET';
 	$_SERVER['REMOTE_ADDR']    = '127.0.0.1';
@@ -54,9 +59,14 @@
 	$___command   = '';
 
 	if (isset($argv[1])) {
-		include $argv[1];
 		$___called_quit = TRUE;
-		exit();
+		try {
+			include $argv[1];
+			exit(0);
+		} catch (Exception $e) {
+			echo "Exception: " . $e->getMessage();
+			exit(1);
+		}
 	}
 
 	echo 'Welcome to the inKWell Console, you can begin typing PHP or try:';

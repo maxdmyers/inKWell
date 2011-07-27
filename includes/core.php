@@ -44,6 +44,15 @@
 		static private $writeDirectory = NULL;
 
 		/**
+		 * The active domain for inkwell
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $activeDomain = NULL;
+
+		/**
 		 * Cached static auto-loader matches
 		 *
 		 * @static
@@ -367,6 +376,29 @@
 				}
 			}
 
+			// Redirect if we're not the active domain.
+			
+			self::$activeDomain = (isset($config['inkwell']['active_domain']))
+				? $config['inkwell']['active_domain']
+				: parse_url(fURL::getDomain(), PHP_URL_HOST);
+			
+			$url_parts = parse_url(fURL::getDomain());
+			$iw_domain = self::getActiveDomain();
+			
+			
+			if (!iw::checkSAPI('cli') && $url_parts['host'] != $iw_domain) {
+				$current_domain = $url_sections['host'];
+				$current_scheme = $url_sections['scheme'];
+				$current_port   = (isset($url_sections['port']))
+					? ':' . $url_sections['port']
+					: NULL;
+			
+				fURL::redirect(
+					$current_scheme . '://' . $iw_domain . $current_port .
+					fURL::getWithQueryString()
+				);
+			}
+
 			// Initialize the Session
 
 			fSession::setPath(
@@ -542,6 +574,19 @@
 			}
 
 			return self::$config;
+		}
+
+		/**
+		 * Returns the active domain for inkwell
+		 *
+		 * @static
+		 * @access public
+		 * @param void
+		 * @return string The Active domain for inkwell
+		 */
+		static public function getActiveDomain()
+		{
+			return self::$activeDomain;
 		}
 
 		/**
@@ -771,10 +816,18 @@
 		 */
 		static public function makeLink($target, $query = array())
 		{
+			if (strpos($target, '*::') === 0) {
+				$target = Moor::getActiveClass() . substr($target, 1);
+			}
+
+			if (strpos($target, '*\\') === 0 || preg_match('/^\*_[A-Z][A-Za-z0-9]*::/', $target)) {
+				$target = Moor::getActiveNamespace() . substr($target, 1);
+			}
+
 			if (!is_callable($target)) {
 
 				$query = (count($query))
-					? '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986)
+					? '?' . @http_build_query($query, '', '&', PHP_QUERY_RFC3986)
 					: NULL;
 
 				if (strpos($target, '/') === 0 && Moor::getActiveProxyURI()) {
@@ -821,6 +874,19 @@
 		static public function checkFailureToken($failure_token)
 		{
 			return (self::$failureToken === $failure_token);
+		}
+
+		/**
+		 * Checks the SAPI name
+		 *
+		 * @static
+		 * @access public
+		 * @param string $sapi The SAPI to verify running
+		 * @return bollean TRUE if the running SAPI matches, FALSE otherwise
+		 */
+		static public function checkSAPI($sapi)
+		{
+			return (strtolower(php_sapi_name()) == strtolower($sapi));
 		}
 
 		/**
