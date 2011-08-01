@@ -249,7 +249,7 @@
 			}
 
 			if (isset($config['slug_column'])) {
-			
+
 				if (!isset($config['id_column'])) {
 					throw new fProgrammerException (
 						'Enabling a slug column requires an ID column'
@@ -887,14 +887,11 @@
 		{
 			$record_class = get_class($object);
 			$slug_column  = self::getInfo($record_class, 'slug_column');
-			$url_friendly = fURL::makeFriendly(
-				$values[$slug_column],
-				self::$wordSeparator
-			);
 
-			if ($values[$slug_column] == $url_friendly) {
-				return;
-			} elseif (!$values[$slug_column]) {
+			// If no value is set for the slug column, try to generate it
+			// based on the ID column.
+
+			if (!$values[$slug_column]) {
 				$id_column = self::getInfo($record_class, 'id_column');
 				$id_value  = $values[$id_column];
 				try {
@@ -913,31 +910,42 @@
 					} while (TRUE);
 				} catch (fNotFoundException $e) {
 					$values[$slug_column] = $friendly_id . $suffix;
-					return;					
 				}
 			}
 
-			$invalid_characters = array_diff(
-				str_split(strtolower($values[$slug_column])),
-				str_split($url_friendly)
+			// Validation based on comparing the differences between the
+			// slug column value and the fURL::makeFriendly version of it.
+
+			$url_friendly = fURL::makeFriendly(
+				$values[$slug_column],
+				self::$wordSeparator
 			);
 
-			if (($i = array_search(' ', $invalid_characters)) !== FALSE) {
-				$invalid_characters   = array_diff(
-					$invalid_characters,
-					array(' ')
+			if ($values[$slug_column] != $url_friendly) {
+				$invalid_characters = array_diff(
+					str_split(strtolower($values[$slug_column])),
+					str_split($url_friendly)
 				);
-				$invalid_characters[] = 'spaces';
+
+				if (($i = array_search(' ', $invalid_characters)) !== FALSE) {
+					$invalid_characters   = array_diff(
+						$invalid_characters,
+						array(' ')
+					);
+					$invalid_characters[] = 'spaces';
+				}
+
+				if(count($invalid_characters)) {
+					$message  = fGrammar::humanize($slug_column) . ': ';
+					$message .= 'Cannot contain ' . fGrammar::joinArray(
+						$invalid_characters,
+						'or'
+					);
+					$validation_messages[] = $message;
+				}
 			}
 
-			if(count($invalid_characters)) {
-				$message  = fGrammar::humanize($slug_column) . ': ';
-				$message .= 'Cannot contain ' . fGrammar::joinArray(
-					$invalid_characters,
-					'or'
-				);
-				$validation_messages[] = $message;
-			}
+			return;
 		}
 
 		/**
