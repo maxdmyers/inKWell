@@ -16,6 +16,36 @@
 		const PERMISSION_DEFINITION_PREFIX = 'PERM';
 
 		/**
+		 * Initializes all static class information for AuthRecords.
+		 *
+		 * @static
+		 * @access protected
+		 * @param array $config The configuration array
+		 * @param array $element The element name of the configuration array
+		 * @return void
+		 */
+		static public function __init(array $config = array(), $element = NULL)
+		{
+			// Don't do any configuration for ourself, but if it's a child
+			// class pass it on up the line.
+
+			if ($element === fGrammar::underscorize(__CLASS__)) {
+				define('IS_CREATOR', 1);
+				foreach (AuthActions::build() as $auth_action) {
+					$permission = implode('_', array(
+						self::PERMISSION_DEFINITION_PREFIX,
+						strtoupper($auth_action->getName())
+					));
+
+					define($permission, pow(2, $auth_action->getId()));
+				}
+				return TRUE;
+			}
+
+			return parent::__init($config, $element);
+		}
+
+		/**
 		 * Fetches an auth record's permission for a given type, key, and field.
 		 * This is different than an ACL check, in that it is not the combined
 		 * result of user + roles on a User record.  If there is no exact match
@@ -121,7 +151,7 @@
 		 * @param string $type The type of record (a record name)
 		 * @param string $key The resource key for the record
 		 * @param string $field The field to check (a column or property)
-		 * @param boolean $inherit Whether or not to assign calculated bi_value to new permissions
+		 * @param boolean $inherit Whether or not to assign calculated bit_value to new permissions
 		 * @return boolean returns TRUE of the auth record has permission, FALSE otherwise
 		 */
 		public function checkPermission($permission, $type = NULL, $key = NULL, $field = NULL, $inherit = FALSE)
@@ -171,35 +201,4 @@
 			$new_value = $bit_value & ~$permission;
 			$record->setBitValue($new_value)->store();
 		}
-
-		/**
-		 * Initializes all static class information for AuthRecords.
-		 *
-		 * @static
-		 * @access protected
-		 * @param array $config The configuration array
-		 * @param array $element The element name of the configuration array
-		 * @return void
-		 */
-		static public function __init(array $config = array(), $element = NULL)
-		{
-			// Don't do any configuration for ourself, but if it's a child
-			// class pass it on up the line.
-
-			if ($element === fGrammar::underscorize(__CLASS__)) {
-				define('IS_CREATOR', 1);
-				foreach (AuthActions::build() as $auth_action) {
-					$permission = implode('_', array(
-						self::PERMISSION_DEFINITION_PREFIX,
-						strtoupper($auth_action->getName())
-					));
-
-					define($permission, pow(2, $auth_action->getId()));
-				}
-				return TRUE;
-			}
-
-			return parent::__init($config, $element);
-		}
-
 	}
