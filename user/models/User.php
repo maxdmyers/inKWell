@@ -63,46 +63,6 @@
 		static protected $logged_in_user = NULL;
 
 		/**
-		 * Obfuscates the auth hash in standard text for HTML encoded
-		 * output.
-		 *
-		 * @access public
-		 * @param void
-		 * @return string The obfuscated login password
-		 */
-		public function encodeLoginPassword()
-		{
-			return fHTML::encode('< Encrypted Password >');
-		}
-
-		/**
-		 * Prepares and returns the login password for HTML views by obfuscating
-		 * it.
-		 *
-		 * @access public
-		 * @param void
-		 * @return string The obfuscated auth hash
-		 */
-		public function prepareLoginPassword()
-		{
-			return '<em>' . $this->encodeLoginPassword() . '</em>';
-		}
-
-		/**
-		 * Override the associateRoles method in order to trigger
-		 * rebuilding teh ACL.
-		 *
-		 * @access public
-		 * @param array|fRecordSet $record_set A recordset to associate with
-		 * @return void
-		 */
-		public function associateRoles()
-		{
-			self::rebuildACL($this);
-			$this->__call(__FUNCTION__, func_get_args());
-		}
-
-		/**
 		 * Initializes all static class information for User Model
 		 *
 		 * @static
@@ -593,5 +553,57 @@
 			return TRUE;
 		}
 
+		/**
+		 * Obfuscates the auth hash in standard text for HTML encoded
+		 * output.
+		 *
+		 * @access public
+		 * @param void
+		 * @return string The obfuscated login password
+		 */
+		public function encodeLoginPassword()
+		{
+			return fHTML::encode('< Encrypted Password >');
+		}
 
+		/**
+		 * Prepares and returns the login password for HTML views by obfuscating
+		 * it.
+		 *
+		 * @access public
+		 * @param void
+		 * @return string The obfuscated auth hash
+		 */
+		public function prepareLoginPassword()
+		{
+			return '<em>' . $this->encodeLoginPassword() . '</em>';
+		}
+
+		/**
+		 * Override the associateRoles method in order to trigger
+		 * rebuilding teh ACL.
+		 *
+		 * @access public
+		 * @param array|fRecordSet $record_set A recordset to associate with
+		 * @return void
+		 */
+		public function associateRoles()
+		{
+			self::rebuildACL($this);
+			$this->__call(__FUNCTION__, func_get_args());
+		}
+		
+		/**
+		 * Checks whether or not a user belongs to a certain role.  This can
+		 * be used instead of more advanced ACLs for simple checks.
+		 *
+		 * @access public
+		 * @param string $role The role to check membership in
+		 * @return boolean TRUE if the user has that role, FALSE otherwise
+		 */
+		public function checkRole($role)
+		{
+			$roles = $this->buildRoles()->call('getName');
+			return in_array($role, $roles);
+		}
 	}
