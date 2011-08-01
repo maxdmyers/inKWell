@@ -995,7 +995,6 @@
 
 					} else {
 						$validation_messages[] = fText::compose(
-							'post',
 							'%s: Does not match confirmation field',
 							fGrammar::humanize($password_column)
 						);
