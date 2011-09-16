@@ -101,41 +101,55 @@
 		}
 
 		/**
-		 * Outputs the view or a particular view element to the screen, this
-		 * is a pseudonym for place wrapped to catch exceptions and allow for
-		 * callbacks.
+		 * Gets the output of the view or a particular view element. allowing for
+		 * filters to be applied.
+		 *
+		 * @param string $element An optional name of an element to output
+		 * @param array $filters A list of callbacks to filter the rendered view through
+		 * @return string The output of the view
+		 */
+		public function make($element = NULL, $filters = array())
+		{
+			try {
+				ob_start();
+				$this->place($element);
+				$content = ob_get_clean;
+
+				foreach ($filters as $filter) {
+					$content = call_user_func($filter, $content);
+				}
+
+				return $content;
+			} catch (fException $e) {
+				ob_end_clean();
+				throw $e;
+			}
+		}
+
+		/**
+		 * Outputs the view or a particular view element to the screen, calling all
+		 * onRender callbacks prior to outputting and allowing for filters to be
+		 * applied.
 		 *
 		 * @access public
 		 * @param string $element An optional name of an element to output
-		 * @param boolean $return Whether or not to return output as a string
-		 * @return void|string Void if $return is FALSE, the rendered template as a string otherwise
+		 * @param array $filters A list of callbacks to filter the rendered view through
+		 * @return void
 		 */
-		public function render($element = NULL, $return = FALSE)
+		public function render($element = NULL, $filters = array())
 		{
-			try {
-
-				foreach ($this->renderCallbacks as $callback_info) {
-					if (count($callback_info['arguments'])) {
-						call_user_func_array(
-							$callback_info['method'],
-							$callback_info['arguments']
-						);
-					} else {
-						call_user_func($callback_info['method']);
-					}
-				}
-
-				if (!$return) {
-					return $this->place($element);
+			foreach ($this->renderCallbacks as $callback_info) {
+				if (count($callback_info['arguments'])) {
+					call_user_func_array(
+						$callback_info['method'],
+						$callback_info['arguments']
+					);
 				} else {
-					ob_start();
-					$this->place($element);
-					return ob_get_clean();
+					call_user_func($callback_info['method']);
 				}
-
-			} catch (fException $e) {
-				echo 'The view cannot be rendered: ' . $e->getMessage();
 			}
+
+			echo $this->make($element, $filters);
 		}
 
 		/**
@@ -641,14 +655,14 @@
 			try {
 				self::$cacheDirectory = new fDirectory(self::$cacheDirectory);
 			} catch (fValidationException $e) {
-				throw new fProgrammerException (
+				throw new fEnvironmentException (
 					'Cache directory %s does not exist',
 					self::$cacheDirectory
 				);
 			}
 
 			if (!self::$cacheDirectory->isWritable()) {
-				throw new fProgrammerException (
+				throw new fEnvironmentException (
 					'Cache directory %s is not writable',
 					self::$cacheDirectory
 				);
