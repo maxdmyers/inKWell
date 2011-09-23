@@ -113,7 +113,7 @@
 			try {
 				ob_start();
 				$this->place($element);
-				$content = ob_get_clean;
+				$content = ob_get_clean();
 
 				foreach ($filters as $filter) {
 					$content = call_user_func($filter, $content);
