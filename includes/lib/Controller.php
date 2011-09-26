@@ -10,7 +10,7 @@
 	 *
 	 * @package inKWell
 	 */
-	class Controller extends MoorAbstractController implements inkwell
+	class Controller extends MoorBaseController implements inkwell
 	{
 
 		const SUFFIX                      = __CLASS__;
