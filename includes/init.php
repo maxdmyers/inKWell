@@ -26,7 +26,7 @@
 	 * need any routing.
 	 */
 
-	if (strtolower(php_sapi_name()) == 'cli') {
+	if (iw::checkSAPI('cli')) {
 		return;
 	}
 
