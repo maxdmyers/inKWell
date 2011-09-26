@@ -894,22 +894,28 @@
 			if (!$values[$slug_column]) {
 				$id_column = self::getInfo($record_class, 'id_column');
 				$id_value  = $values[$id_column];
+
 				try {
 					$revision    = NULL;
 					$friendly_id = fURL::makeFriendly(
 						$values[$id_column],
+						NULL,
 						self::$wordSeparator
 					);
 
 					do {
-						$suffix = ($revision)
-							? self::$wordSeparator . $revision
-							: NULL;
 
-						self::createFromSlug($friendly_id . $suffix);
+						$slug  = $friendly_id;
+						$slug .= ($revision)
+							? self::$wordSeparator . $revision
+							: NULL; 
+
+						self::createFromSlug($record_class, $slug);
+						$revision++;
+
 					} while (TRUE);
 				} catch (fNotFoundException $e) {
-					$values[$slug_column] = $friendly_id . $suffix;
+					$values[$slug_column] = $slug;
 				}
 			}
 
@@ -918,6 +924,7 @@
 
 			$url_friendly = fURL::makeFriendly(
 				$values[$slug_column],
+				NULL,
 				self::$wordSeparator
 			);
 
