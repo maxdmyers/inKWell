@@ -80,11 +80,8 @@
 			foreach (iw::getConfig() as $element => $element_config) {
 				if (isset($element_config['auto_scaffold'])) {
 					if ($element_config['auto_scaffold']) {
-						self::$autoScaffoldClasses[] = fGrammar::camelize(
-							$element,
-							TRUE
-						);
-						$register_autoloader = TRUE;
+						$register_autoloader         = TRUE;
+						self::$autoScaffoldClasses[] = iw::classize($element);
 					}
 				}
 			}
@@ -115,7 +112,7 @@
 				if (is_callable($test) && is_callable($make)) {
 					if (call_user_func($test, $class)) {
 						if (call_user_func($make, $class)) {
-							return self::initializeClass($class);
+							return iw::initializeClass($class);
 						}
 					}
 				}

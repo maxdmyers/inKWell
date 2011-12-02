@@ -89,6 +89,15 @@
 		static private $failureToken = NULL;
 
 		/**
+		 * List of class translations.
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $classTranslations = array();
+
+		/**
 		 * Index of configured databases
 		 *
 		 * @static
@@ -244,6 +253,22 @@
 		}
 
 		/**
+		 * Gets the defined/translated class for a particular name.  Words are usually lowercase
+		 * underscore notation, however, there is some leeway due to the algorithm.
+		 *
+		 * @param string $name The name to translate
+		 * @return string $class The name of the class which matches the original name
+		 */
+		static public function classize($name)
+		{
+			if (isset(self::$classTranslations[$name])) {
+				return self::$classTranslations[$name];
+			} else {
+				return fGrammar::camelize($name, TRUE);
+			}
+		}
+
+		/**
 		 * Initializes the inKWell system with a configuration
 		 *
 		 * @static
@@ -377,22 +402,22 @@
 			}
 
 			// Redirect if we're not the active domain.
-			
+
 			self::$activeDomain = (isset($config['inkwell']['active_domain']))
 				? $config['inkwell']['active_domain']
 				: parse_url(fURL::getDomain(), PHP_URL_HOST);
-			
+
 			$url_parts = parse_url(fURL::getDomain());
 			$iw_domain = self::getActiveDomain();
-			
-			
+
+
 			if (!iw::checkSAPI('cli') && $url_parts['host'] != $iw_domain) {
 				$current_domain = $url_sections['host'];
 				$current_scheme = $url_sections['scheme'];
 				$current_port   = (isset($url_sections['port']))
 					? ':' . $url_sections['port']
 					: NULL;
-			
+
 				fURL::redirect(
 					$current_scheme . '://' . $iw_domain . $current_port .
 					fURL::getWithQueryString()
@@ -504,7 +529,7 @@
 						$database_host = $host_parts[0];
 						$database_port = (isset($host_parts[1]))
 							? $host_parts[1]
-							: NULL;					
+							: NULL;
 					} else {
 						$database_port = NULL;
 					}
@@ -544,22 +569,19 @@
 				if ($element !== '__types' && !in_array($element, $core)) {
 
 					if (isset($config['class'])) {
-						fGrammar::addCamelUnderscoreRule(
-							$config['class'],
-							$element
-						);
+						$class = self::$classTranslations[$element] = $config['class'];
+					} else {
+						//
+						// Default convention is upper camelcase
+						//
+						$class = self::$classTranslations[$element] = fGrammar::camelize($element, TRUE);
 					}
-
-					$class = fGrammar::camelize($element, TRUE);
 
 					if (isset($config['root_directory'])) {
 						self::$roots[$element] = $config['root_directory'];
 					}
 
-					if (isset($config['auto_load'])
-						&& $config['auto_load']
-						&& isset(self::$roots[$element])
-					) {
+					if (isset($config['auto_load'])	&& $config['auto_load'] && isset(self::$roots[$element])) {
 						self::addAutoLoader($class, self::$roots[$element]);
 					}
 
@@ -932,7 +954,7 @@
 
 					} elseif (class_exists($test)) {
 
-						$test  = self::makeTarget(
+						$test = self::makeTarget(
 							$test,
 							self::MATCH_CLASS_METHOD
 						);

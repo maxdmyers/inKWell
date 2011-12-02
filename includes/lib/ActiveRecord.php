@@ -161,9 +161,8 @@
 		 */
 		static public function __init(array $config = array(), $element = NULL)
 		{
-			$record_class = fGrammar::camelize($element, TRUE);
 
-			if ($record_class == __CLASS__) {
+			if ($element == 'active_record') {
 
 				self::$imageUploadDirectory = iw::getWriteDirectory('images');
 				self::$fileUploadDirectory  = iw::getWriteDirectory('files');
@@ -182,7 +181,7 @@
 
 				foreach ($ar_configs as $config_element => $config) {
 
-					$record_class = fGrammar::camelize($config_element, TRUE);
+					$record_class = iw::classize($config_element);
 					$database     = NULL;
 					$table        = NULL;
 					$name         = NULL;
@@ -223,9 +222,13 @@
 
 				return TRUE;
 
-			} elseif (!is_subclass_of($record_class, __CLASS__)) {
+		} else {
+			$record_class = iw::classize($element);
+
+			if (!is_subclass_of($record_class, __CLASS__)) {
 				return FALSE;
 			}
+		}
 
 			$schema = fORMSchema::retrieve($record_class);
 			$table  = fORM::tablize($record_class);
@@ -660,7 +663,8 @@
 		{
 			if (!in_array($record_name, self::$nameTranslations)) {
 				try {
-					$record_class = fGrammar::camelize($record_name, TRUE);
+					$record_class = iw::classize($record_name);
+
 					if (self::classExists($record_class)){
 						self::$nameTranslations[$record_class] = $record_name;
 					}
@@ -684,6 +688,7 @@
 			if (!in_array($record_table, self::$tableTranslations)) {
 				try {
 					$record_class = fORM::classize($record_table);
+
 					if (self::classExists($record_class)){
 						self::$tableTranslations[$record_class] = $record_table;
 					}
@@ -730,7 +735,8 @@
 			if (!in_array($entry, self::$entryTranslations)) {
 				try {
 					$singularized = fGrammar::singularize($entry);
-					$record_class = fGrammar::camelize($singularized, TRUE);
+					$record_class = iw::classize($singularized);
+
 					if (self::classExists($record_class)){
 						self::$entryTranslations[$record_class] = $entry;
 					}
@@ -908,7 +914,7 @@
 						$slug  = $friendly_id;
 						$slug .= ($revision)
 							? self::$wordSeparator . $revision
-							: NULL; 
+							: NULL;
 
 						self::createFromSlug($record_class, $slug);
 						$revision++;
