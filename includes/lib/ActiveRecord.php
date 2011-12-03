@@ -136,7 +136,7 @@
 		static public function __match($class)
 		{
 			foreach (array_keys(iw::getConfigsByType('ActiveRecord')) as $key) {
-				if (fGrammar::underscorize($class) == $key) {
+				if (iw::classize($key) == $class) {
 					return TRUE;
 				}
 			}
