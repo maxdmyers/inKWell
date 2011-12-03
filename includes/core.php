@@ -573,7 +573,7 @@
 
 					if (isset($config['auto_load'])	&& $config['auto_load']) {
 						if (isset(self::$roots[$element]) && self::$roots[$element]) {
-							self::addAutoLoader($class, self::$roots[$element]);
+							self::$config['autoloaders'][$class] = self::$roots[$element];
 						}
 					}
 
@@ -1038,18 +1038,4 @@
 				self::$databases[$db_name]['write'] = $db;
 			}
 		}
-
-		/**
-		 * Adds an autoloader to the autoloaders configuration key
-		 *
-		 * @static
-		 * @access private
-		 * @param string A match string compatible with iw::loadClass()
-		 * @param string A target to load from
-		 * @return void
-		 */
-		static private function addAutoLoader($match, $target) {
-			self::$config['autoloaders'][$match] = $target;
-		}
-
 	}
