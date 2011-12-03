@@ -8,7 +8,7 @@
 			$_SERVER['REQUEST_URI'] = $_SERVER['PHP_SELF'];
 		}
 	} elseif (isset($_SERVER['PATH_INFO'])) {
-		$_SERVER['REQUEST_URI'] .= $_SERVER['PATH_INFO']; 
+		$_SERVER['REQUEST_URI'] .= $_SERVER['PATH_INFO'];
 		$_SERVER['PATH_INFO']    = NULL;
 	}
 
@@ -20,10 +20,9 @@
 
 	// Change to our includes directory
 
-	define('APPLICATION_ROOT', realpath(dirname($include_directory)));
-
-	chdir($include_directory);
+	define('INCLUDE_ROOT', realpath($include_directory));
+	define('APPLICATION_ROOT', dirname(INCLUDE_ROOT));
 
 	// Boostrap!
 
-	require 'init.php';
+	require INCLUDE_ROOT . DIRECTORY_SEPARATOR . 'init.php';
