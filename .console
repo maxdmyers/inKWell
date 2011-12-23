@@ -58,7 +58,7 @@
 	$___code      = '\?';
 	$___command   = '';
 
-	if (isset($argv[1])) {
+	if (isset($argv[1]) && $argv[1]) {
 		$___called_quit = TRUE;
 		try {
 			include $argv[1];
@@ -238,10 +238,8 @@
 					'-d magic_quotes_gpc=0',
 					'-d short_open_tag=0',
 					'-d asp_tags=1',
-					'-d xdebug.profiler_enabler=0',
 					'-d display_errors=1',
-					__FILE__,
-					$_SERVER['DOCUMENT_ROOT']
+					__FILE__
 			)));
 		}
 	}
