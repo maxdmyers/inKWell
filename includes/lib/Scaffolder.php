@@ -80,11 +80,8 @@
 			foreach (iw::getConfig() as $element => $element_config) {
 				if (isset($element_config['auto_scaffold'])) {
 					if ($element_config['auto_scaffold']) {
-						self::$autoScaffoldClasses[] = fGrammar::camelize(
-							$element,
-							TRUE
-						);
-						$register_autoloader = TRUE;
+						$register_autoloader         = TRUE;
+						self::$autoScaffoldClasses[] = iw::classize($element);
 					}
 				}
 			}
@@ -115,7 +112,7 @@
 				if (is_callable($test) && is_callable($make)) {
 					if (call_user_func($test, $class)) {
 						if (call_user_func($make, $class)) {
-							return self::initializeClass($class);
+							return iw::initializeClass($class);
 						}
 					}
 				}
@@ -133,9 +130,10 @@
 		 * @access public
 		 * @param string $builder A valid class or template name
 		 * @param string $target A valid class name or file location
+		 * @param string 
 		 * @return void
 		 */
-		static public function build($builder, $target)
+		static public function build($builder, $target, $template_vars = array())
 		{
 			self::$isBuilding = TRUE;
 
@@ -144,7 +142,7 @@
 				$root_directory = rtrim(implode(DIRECTORY_SEPARATOR, array(
 					iw::getRoot(),
 					iw::getRoot(fGrammar::underscorize($builder))
-				)), '/\\');
+				)), '/\\' . DIRECTORY_SEPARATOR);
 
 				if (is_string($target)) {
 					$output_file = implode(DIRECTORY_SEPARATOR, array(
@@ -157,26 +155,16 @@
 					$output_file = NULL;
 				}
 
+				if (preg_match(iw::REGEX_VARIABLE, $builder) && class_exists($builder)) {
 
-				if (
-					preg_match(iw::REGEX_VARIABLE, $builder)
-					&& class_exists($builder)
-				) {
-
-					$make_method = iw::makeTarget(
-						$builder,
-						self::DYNAMIC_SCAFFOLD_METHOD
-					);
+					$make_method = iw::makeTarget($builder, self::DYNAMIC_SCAFFOLD_METHOD);
 
 					if (is_callable($make_method)) {
 						$make_target = pathinfo($target, PATHINFO_FILENAME);
 						call_user_func($make_method, $make_target);
 					}
 
-					$build_method = iw::makeTarget(
-						$builder,
-						self::FINAL_SCAFFOLD_METHOD
-					);
+					$build_method = iw::makeTarget($builder, self::FINAL_SCAFFOLD_METHOD);
 
 					if (is_callable($build_method)) {
 						call_user_func(
@@ -191,16 +179,20 @@
 							self::$lastScaffoldedCode
 						);
 					}
-
-					self::$lastScaffoldedCode = NULL;
-
 				} else {
-					throw new fException(
-						'Non-class scaffolding not supported by build.'
+					self::make($builder, $template_vars, NULL, FALSE);
+
+					$file = fFile::create(
+						realpath(implode(DIRECTORY_SEPARATOR, array(
+							APPLICATION_ROOT,
+							pathinfo($target, PATHINFO_DIRNAME)
+						))) . DIRECTORY_SEPARATOR . pathinfo($target, PATHINFO_BASENAME),
+						self::$lastScaffoldedCode
 					);
 				}
 
-				self::$isBuilding = FALSE;
+				self::$lastScaffoldedCode = NULL;
+				self::$isBuilding         = FALSE;
 			} catch (Exception $e) {
 				self::$isBuilding = FALSE;
 				throw $e;
@@ -214,7 +206,7 @@
 		 * @static
 		 * @access public
 		 * @param string $template The template to use for scaffolding
-		 * @param array $support_vars An associative array of variables to import into the template
+		 * @param array $template_vars An associative array of variables to import into the template
 		 * @param string $build_class The class from which scaffolding is running
 		 * @param boolean $eval Whether or not the code should be evalulated.
 		 * @return string The code
@@ -243,9 +235,7 @@
 					$code = ob_get_clean();
 
 					if ($eval) {
-						ob_start();
 						eval($code);
-						ob_end_clean();
 					}
 
 					$code = '<?php' . "\n\n" . $code;

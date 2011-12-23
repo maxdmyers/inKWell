@@ -14,16 +14,17 @@
 	class iw
 	{
 
-		const DEFAULT_CONFIG          = 'config';
+		const DEFAULT_CONFIG           = 'config';
 
-		const INITIALIZATION_METHOD   = '__init';
-		const MATCH_CLASS_METHOD      = '__match';
-		const CONFIG_TYPE_ELEMENT     = '__type';
+		const INITIALIZATION_METHOD    = '__init';
+		const MATCH_CLASS_METHOD       = '__match';
+		const CONFIG_TYPE_ELEMENT      = '__type';
 
-		const DEFAULT_WRITE_DIRECTORY = 'writable';
+		const DEFAULT_WRITE_DIRECTORY  = 'writable';
 
-		const REGEX_VARIABLE          = '/[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/';
-		const REGEX_ABS_PATH          = '#^(/|\\\\|[a-z]:(\\\\|/)|\\\\|//|\./|\.\\\\)#i';
+		const REGEX_ABSOLUTE_DIRECTORY = '/^(\\/|\\\\|.\:[\\/|\\\\])(.*)$/';
+		const REGEX_VARIABLE           = '/[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/';
+		const REGEX_ABS_PATH           = '#^(/|\\\\|[a-z]:(\\\\|/)|\\\\|//|\./|\.\\\\)#i';
 
 		/**
 		 * The cached configuration array
@@ -53,15 +54,6 @@
 		static private $activeDomain = NULL;
 
 		/**
-		 * Cached static auto-loader matches
-		 *
-		 * @static
-		 * @access private
-		 * @var array
-		 */
-		static private $staticALMatches = array();
-
-		/**
 		 * Index of classes which have been initialized
 		 *
 		 * @static
@@ -87,6 +79,15 @@
 		 * @var string
 		 */
 		static private $failureToken = NULL;
+
+		/**
+		 * List of class translations.
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $classTranslations = array();
 
 		/**
 		 * Index of configured databases
@@ -157,27 +158,30 @@
 			}
 
 			if ($directory instanceof fDirectory) {
-
 				$directory = $directory->getPath();
+			} else {
+				if (!preg_match(self::REGEX_ABSOLUTE_DIRECTORY, $directory)) {
+					$directory = APPLICATION_ROOT . DIRECTORY_SEPARATOR . $directory;
+				}
 
-			} elseif (!is_dir($directory) || !is_readable($directory)) {
-				throw new Exception (sprintf(
-					'Cannot built configuration, directory %s is unreadable.',
-					$directory
-				));
-
+				$directory = realpath($directory);
 			}
 
-			$current_working_directory = getcwd();
+			if (!is_dir($directory) || !is_readable($directory)) {
+				throw new Exception (sprintf(
+					'Cannot build configuration, directory "%s" is unreadable.',
+					$directory
+				));
+			}
 
-			chdir($directory);
+			$directory .= DIRECTORY_SEPARATOR;
 
 			// Loads each PHP file into a configuration element named after
 			// the file.  We check to see if the CONFIG_TYPE_ELEMENT is set
 			// to ensure configurations are added to their respective
 			// type in the $config['__types'] array.
 
-			foreach (glob("*.php") as $config_file) {
+			foreach (glob($directory . '*.php') as $config_file) {
 
 				$config_element = pathinfo($config_file, PATHINFO_FILENAME);
 
@@ -202,14 +206,12 @@
 			// configurations.  Directory names do not play a role in the
 			// configuration key name.
 
-			foreach (glob("*", GLOB_ONLYDIR) as $sub_directory) {
+			foreach (glob($directory . '*', GLOB_ONLYDIR) as $sub_directory) {
 				$config = array_merge_recursive(
 					$config,
 					self::buildConfig($sub_directory, $quiet)
 				);
 			}
-
-			chdir($current_working_directory);
 
 			return $config;
 		}
@@ -244,6 +246,22 @@
 		}
 
 		/**
+		 * Gets the defined/translated class for a particular name.  Words are usually lowercase
+		 * underscore notation, however, there is some leeway due to the algorithm.
+		 *
+		 * @param string $name The name to translate
+		 * @return string $class The name of the class which matches the original name
+		 */
+		static public function classize($name)
+		{
+			if (isset(self::$classTranslations[$name])) {
+				return self::$classTranslations[$name];
+			} else {
+				return fGrammar::camelize($name, TRUE);
+			}
+		}
+
+		/**
 		 * Initializes the inKWell system with a configuration
 		 *
 		 * @static
@@ -275,7 +293,7 @@
 			if (isset(self::$config['inkwell']['root_directory'])) {
 				self::$roots['inkwell'] = rtrim(
 					$config['inkwell']['root_directory'],
-					'/\\'
+					'/\\' . DIRECTORY_SEPARATOR
 				);
 			} else {
 				self::$roots['inkwell'] = APPLICATION_ROOT;
@@ -289,7 +307,7 @@
 					isset(self::$config['inkwell']['write_directory'])
 						? self::$config['inkwell']['write_directory']
 						: self::DEFAULT_WRITE_DIRECTORY,
-					'/\\'
+					'/\\' . DIRECTORY_SEPARATOR
 				)
 			));
 
@@ -377,24 +395,21 @@
 			}
 
 			// Redirect if we're not the active domain.
-			
+			$url_parts          = parse_url(fURL::getDomain());
 			self::$activeDomain = (isset($config['inkwell']['active_domain']))
 				? $config['inkwell']['active_domain']
-				: parse_url(fURL::getDomain(), PHP_URL_HOST);
-			
-			$url_parts = parse_url(fURL::getDomain());
-			$iw_domain = self::getActiveDomain();
-			
-			
-			if (!iw::checkSAPI('cli') && $url_parts['host'] != $iw_domain) {
+				: $url_parts['host'];
+
+			if (!iw::checkSAPI('cli') && $url_parts['host'] != self::$activeDomain) {
+				//TODO: Check on flourish support for user/pass in domain and handle it properly
 				$current_domain = $url_sections['host'];
 				$current_scheme = $url_sections['scheme'];
 				$current_port   = (isset($url_sections['port']))
 					? ':' . $url_sections['port']
 					: NULL;
-			
+
 				fURL::redirect(
-					$current_scheme . '://' . $iw_domain . $current_port .
+					$current_scheme . '://' . self::$activeDomain . $current_port .
 					fURL::getWithQueryString()
 				);
 			}
@@ -504,7 +519,7 @@
 						$database_host = $host_parts[0];
 						$database_port = (isset($host_parts[1]))
 							? $host_parts[1]
-							: NULL;					
+							: NULL;
 					} else {
 						$database_port = NULL;
 					}
@@ -544,23 +559,22 @@
 				if ($element !== '__types' && !in_array($element, $core)) {
 
 					if (isset($config['class'])) {
-						fGrammar::addCamelUnderscoreRule(
-							$config['class'],
-							$element
-						);
+						$class = self::$classTranslations[$element] = $config['class'];
+					} else {
+						//
+						// Default convention is upper camelcase
+						//
+						$class = self::$classTranslations[$element] = fGrammar::camelize($element, TRUE);
 					}
-
-					$class = fGrammar::camelize($element, TRUE);
 
 					if (isset($config['root_directory'])) {
 						self::$roots[$element] = $config['root_directory'];
 					}
 
-					if (isset($config['auto_load'])
-						&& $config['auto_load']
-						&& isset(self::$roots[$element])
-					) {
-						self::addAutoLoader($class, self::$roots[$element]);
+					if (isset($config['auto_load'])	&& $config['auto_load']) {
+						if (isset(self::$roots[$element]) && self::$roots[$element]) {
+							self::$config['autoloaders'][$class] = self::$roots[$element];
+						}
 					}
 
 					if (isset($config['preload']) && $config['preload']) {
@@ -701,7 +715,6 @@
 
 				if ($sub_directory instanceof fDirectory) {
 					$sub_directory = $sub_directory->getPath();
-
 				} elseif (!is_string($sub_directory)) {
 					throw new fProgrammerException(
 						'Sub directory must be a string or fDirectory object'
@@ -718,7 +731,7 @@
 
 				$write_directory = implode(DIRECTORY_SEPARATOR, array(
 					self::$writeDirectory,
-					trim($sub_directory, '/\\')
+					trim($sub_directory, '/\\' . DIRECTORY_SEPARATOR)
 				));
 
 			} else {
@@ -729,10 +742,10 @@
 				try {
 					fDirectory::create($write_directory);
 				} catch (fException $e) {
-					throw new fEnvironmentException(
-						'Directory %s is not writable or createable.',
+					throw new fEnvironmentException(fText::compose(
+						'Directory "%s" is not writable or createable.',
 						$write_directory
-					);
+					));
 		 		}
 			}
 
@@ -905,46 +918,23 @@
 				$loaders = self::$config['autoloaders'];
 			}
 
+
+			if (!count($loaders)) {
+				$loaders = self::$config['autoloaders'];
+			}
+
 			foreach ($loaders as $test => $target) {
 
-				$match = $test;
-
-				if (!in_array($test, self::$staticALMatches)) {
-
-					if ($test == $class) {
-
-						// TODO: This needs to be thought about.  The default
-						// TODO: autoloaders are putting, library, as a static
-						// TODO: key, since it it doesn't contain a * the
-						// TODO: it recursively autoloads on the class_exists
-						// TODO: This prevents the recursive autoload from
-						// TODO: going any further than the key itself to try
-						// TODO: and load it... would one of the loaders below
-						// TODO: hypothetically be responsible for matching and
-						// TODO: targetting a class used as a key above?
-
-						return;
-
-					} elseif (strpos($test, '*') !== FALSE) {
-
-						$regex = str_replace('*', '(.*?)', $test);
-						$match = preg_match('/' . $regex . '/', $class);
-
-					} elseif (class_exists($test)) {
-
-						$test  = self::makeTarget(
-							$test,
-							self::MATCH_CLASS_METHOD
-						);
-
-						if (is_callable($test)) {
-							$match = call_user_func($test, $class);
-						}
-					}
-
-					if ($test == $match) {
-						self::$staticALMatches[] = $test;
-					}
+				if (strpos($test, '*') !== FALSE) {
+					$regex = str_replace('*', '(.*?)', $test);
+					$match = preg_match('/' . $regex . '/', $class);
+				} elseif (class_exists($test)) {
+					$test  = self::makeTarget($test, self::MATCH_CLASS_METHOD);
+					$match = is_callable($test)
+						? call_user_func($test, $class)
+						: FALSE;
+				} else {
+					$match = TRUE;
 				}
 
 				if ($match !== FALSE) {
@@ -959,11 +949,11 @@
 
 						include $file;
 
-						$interfaces = class_implements($class, FALSE);
-
-						return (in_array('inkwell', $interfaces))
-							? self::initializeClass($class)
-							: TRUE;
+						if (is_array($interfaces = class_implements($class, FALSE))) {
+							return (in_array('inkwell', $interfaces))
+								? self::initializeClass($class)
+								: TRUE;
+						}
 					}
 				}
 			}
@@ -1048,18 +1038,4 @@
 				self::$databases[$db_name]['write'] = $db;
 			}
 		}
-
-		/**
-		 * Adds an autoloader to the autoloaders configuration key
-		 *
-		 * @static
-		 * @access private
-		 * @param string A match string compatible with iw::loadClass()
-		 * @param string A target to load from
-		 * @return void
-		 */
-		static private function addAutoLoader($match, $target) {
-			self::$config['autoloaders'][$match] = $target;
-		}
-
 	}
