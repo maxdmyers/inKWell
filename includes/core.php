@@ -926,7 +926,7 @@
 			foreach ($loaders as $test => $target) {
 
 				if (strpos($test, '*') !== FALSE) {
-					$regex = str_replace('*', '(.*?)', $test);
+					$regex = str_replace('*', '(.*?)', str_replace('\\', '\\\\', $test));
 					$match = preg_match('/' . $regex . '/', $class);
 				} elseif (class_exists($test)) {
 					$test  = self::makeTarget($test, self::MATCH_CLASS_METHOD);
@@ -941,8 +941,15 @@
 
 					$file = implode(DIRECTORY_SEPARATOR, array(
 						iw::getRoot(),
-						trim($target, '/\\'),        // Target directory
-						$class . '.php'              // Class name as PHP file
+						//
+						// Trim leading or trailing directory separators from target
+						//
+						trim($target, '/\\' . DIRECTORY_SEPARATOR),
+						//
+						// Replace any backslashes in the class with directory separator
+						// to support Namespaces and trim the leading root namespace if present.
+						//
+						ltrim(str_replace('\\', DIRECTORY_SEPARATOR, $class), '\\') . '.php'
 					));
 
 					if (file_exists($file)) {

@@ -7,13 +7,9 @@
 	if (function_exists('posix_setuid')) {
 		posix_setuid(fileowner(__FILE__));
 	}
-
-	// Fix some output buffering bugs and clear the screen
-
-	@ob_end_clean();
-
+	//
 	// Set up our APPLICATION_ROOT and pseudo-$_SERVER params
-
+	//
 	define('APPLICATION_ROOT', realpath(dirname(__FILE__)));
 
 	$_SERVER['DOCUMENT_ROOT']  = '/';
@@ -26,13 +22,13 @@
 		dirname(__FILE__),
 		'includes'
 	)));
-
+	//
 	// Bootstrap inKWell
-
+	//
 	require 'init.php';
-
+	//
 	// Set some basics regardless of configuration
-
+	//
 	fCore::enableErrorHandling('html');
 	fCore::enableExceptionHandling('html');
 
