@@ -321,18 +321,18 @@
 
 					} while($next_token !== ';');
 
-					eval('$file = ' . trim($collect, '() ;') . ';');
+					eval('$included_file = ' . trim($collect, '() ;') . ';');
 
-					if (!is_readable($file)) {
+					if (!is_readable($included_file)) {
 						echo sprintf(
 							'Error: The file "%s" could not be read',
-							$file
+							$included_file
 						) . PHP_EOL;
 						return FALSE;
 					} else {
 						ob_start();
 
-						if (!___check($file)) {
+						if (!___check('?>' . file_get_contents($included_file))) {
 							echo sprintf(
 								'Included/Required File [%s] %s',
 								$file,
