@@ -321,7 +321,7 @@
 
 					} while($next_token !== ';');
 
-					eval('$included_file = ' . trim($collect, '() ;') . ';');
+					$included_file = trim($collect, '() ;"\'');
 
 					if (!is_readable($included_file)) {
 						echo sprintf(
