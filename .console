@@ -285,9 +285,10 @@
 	 */
 	function ___check($source)
 	{
-		$source  = '<?php ' . trim($source);
-		$tmp_dir = iw::getWriteDirectory('.tmp');
-		$file    = $tmp_dir . '.console_command';
+		$source        = '<?php ' . trim($source);
+		$tmp_dir       = iw::getWriteDirectory('.tmp');
+		$file          = $tmp_dir . '.console_command';
+		$current_class = NULL;
 
 		file_put_contents($file, $source);
 
@@ -305,8 +306,10 @@
 					|| $token[0] == T_REQUIRE
 					|| $token[0] == T_REQUIRE_ONCE
 				) {
-					$c       = 1;
+
 					$collect = '';
+
+					$c = 1;
 
 					do {
 						$next_token = is_array($tokens[$i + $c])
@@ -318,103 +321,136 @@
 
 					} while($next_token !== ';');
 
-					eval('$___file = ' . $collect);
+					eval('$file = ' . trim($collect, '() ;') . ';');
 
-					if (!is_readable($___file)) {
+					if (!is_readable($file)) {
 						echo sprintf(
 							'Error: The file "%s" could not be read',
-							$___file
+							$file
 						) . PHP_EOL;
 						return FALSE;
-					} elseif (!___verify($___file)) {
+					} else {
+						ob_start();
+
+						if (!___check($file)) {
+							echo sprintf(
+								'Included/Required File [%s] %s',
+								$file,
+								ob_get_clean()
+							);
+						}
+
 						return FALSE;
 					}
 
-				} elseif ($token[0] == T_STRING && $tokens[$i + 1] == '(') {
+				} elseif ($token[0] == T_STRING) {
 
 					$t      = $token[1];
-					$c      = 1;
 					$method = NULL;
 
-					do {
+					//
+					// Find the next non-whitespace token, and if it's not an ( or an {
+					// continue on.
+					//
+					$c = 1;
 
+					do {
+						$next_token = is_array($tokens[$i + $c])
+							? $tokens[$i + $c][0]
+							: $tokens[$i + $c];
+
+						$c++;
+					} while ($next_token == T_WHITESPACE);
+
+					//
+					// Next non-whitespace token was ( or { so now let's see what the previous
+					// non-whitespace token was.
+					//
+					$c = 1;
+
+					do {
 						$previous_token = is_array($tokens[$i - $c])
 							? $tokens[$i - $c][0]
 							: $tokens[$i - $c];
 
 						$c++;
-
 					} while($previous_token == T_WHITESPACE);
 
-					switch ($previous_token) {
+					if ($next_token == '(') {
 
-						// Safe Cases
+						switch ($previous_token) {
 
-						case T_FUNCTION:
-						case T_OBJECT_OPERATOR:
-							break;
+							case T_FUNCTION:
+							case T_OBJECT_OPERATOR:
+								//
+								// Safe cases
+								//
+								break;
 
-						case T_PAAMAYIM_NEKUDOTAYIM:
+							case T_PAAMAYIM_NEKUDOTAYIM:
 
-							$t      = $tokens[$i - 2][1];
-							$method = $token[1];
+								$t      = $tokens[$i - 2][1];
+								$method = $token[1];
 
-						case T_NEW:
+							case T_NEW:
 
-							if (!class_exists($t)) {
-								echo sprintf(
-									'Error: Class %s does not exist.',
-									$t
-								) . PHP_EOL;
-								return FALSE;
-							} elseif (
-								!isset($method)
-							) {
-								$reflection = new ReflectionClass($t);
-								if (!$reflection->isInstantiable()) {
+								if (in_array($t, array('self', 'static', 'parent'))) {
+									continue;
+								} elseif (!class_exists($t)) {
 									echo sprintf(
-										'Error: Cannot create %s, invalid or ' .
-										'non-public constructor.',
+										'Error: Class %s does not exist.',
+										$t
+									) . PHP_EOL;
+									return FALSE;
+								} elseif (!isset($method)) {
+									//
+									// No method set, so we're trying to instantiate.
+									//
+									$reflection = new ReflectionClass($t);
+									if (!$reflection->isInstantiable()) {
+										echo sprintf(
+											'Error: Cannot create %s, invalid or ' .
+											'non-public constructor.',
+											$t
+										) . PHP_EOL;
+										return FALSE;
+									}
+								} else {
+									//
+									// Method was set, so it's a static call
+									//
+									if(!method_exists($t, $method)) {
+										echo sprintf(
+											'Error: Method %s::%s does not exist.',
+											$t,
+											$method
+										) . PHP_EOL;
+										return FALSE;
+									} elseif (!is_callable(array($t, $method))) {
+										echo sprintf(
+											'Error: Method %s::%s is not callable.',
+											$t,
+											$method
+										) . PHP_EOL;
+										return FALSE;
+									}
+
+									$method = NULL;
+								}
+
+								break;
+
+							default:
+
+								if (!function_exists($t)) {
+									echo sprintf(
+										'Error:  Function %s() does not exist.',
 										$t
 									) . PHP_EOL;
 									return FALSE;
 								}
-							}
-
-							// Handle method_exists check for static methods
-
-							if (isset($method)) {
-								if(!method_exists($t, $method)) {
-									echo sprintf(
-										'Error: Method %s::%s does not exist.',
-										$t,
-										$method
-									) . PHP_EOL;
-									return FALSE;
-								} elseif (!is_callable(array($t, $method))) {
-									echo sprintf(
-										'Error: Method %s::%s is not callable.',
-										$t,
-										$method
-									) . PHP_EOL;
-									return FALSE;
-								}
-
-								$method = NULL;
-							}
-
-							break;
-
-						default:
-
-							if (!function_exists($t)) {
-								echo sprintf(
-									'Error:  Function %s() does not exist.',
-									$t
-								) . PHP_EOL;
-								return FALSE;
-							}
-							break;
+								break;
+						}
 					}
 				}
 			}
