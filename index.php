@@ -15,7 +15,7 @@
 		//
 		// Modifier
 		//
-		$include_directory = '..' . DIRECTORY_SEPARATOR . $include_directory;
+		$include_directory = '..' . DIRECTORY_SEPARATOR . $include_directory
 	);
 	//
 	// Define our application root as the directory containing the includes folder
