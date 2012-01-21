@@ -1,31 +1,38 @@
 <?php
 
+	//
+	// We want to ensure that if we run as root that we take on the groupid
+	// and userid of our files.  This allows scaffolded files and written files
+	// to maintain proper user and grou permissions.
+	//
 	if (function_exists('posix_setgid')) {
-		posix_setgid(filegroup(__FILE__));
+		@posix_setgid(filegroup(__FILE__));
 	}
 
 	if (function_exists('posix_setuid')) {
-		posix_setuid(fileowner(__FILE__));
+		@posix_setuid(fileowner(__FILE__));
 	}
 	//
-	// Set up our APPLICATION_ROOT and pseudo-$_SERVER params
+	// Set up our APPLICATION_ROOT, the console is always assumed to run in directly in it.
 	//
 	define('APPLICATION_ROOT', realpath(dirname(__FILE__)));
-
-	$_SERVER['DOCUMENT_ROOT']  = '/';
-	$_SERVER['REQUEST_URI']    = '/';
-	$_SERVER['REQUEST_METHOD'] = 'GET';
-	$_SERVER['REMOTE_ADDR']    = '127.0.0.1';
-	$_SERVER['SERVER_NAME']    = 'localhost';
-
-	chdir(implode(DIRECTORY_SEPARATOR, array(
-		dirname(__FILE__),
-		'includes'
-	)));
+	//
+	// Set up our pseudo $_SERVER parameters
+	//
+	$_SERVER['DOCUMENT_ROOT']   = '/';
+	$_SERVER['REQUEST_URI']     = '/';
+	$_SERVER['REQUEST_METHOD']  = 'GET';
+	$_SERVER['REMOTE_ADDR']     = '127.0.0.1';
+	$_SERVER['SERVER_NAME']     = 'localhost';
+	$_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
 	//
 	// Bootstrap inKWell
 	//
-	require 'init.php';
+	require implode(DIRECTORY_SEPARATOR, array(
+		APPLICATION_ROOT,
+		'includes',
+		'init.php'
+	));
 	//
 	// Set some basics regardless of configuration
 	//

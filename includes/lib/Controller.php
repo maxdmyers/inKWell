@@ -157,6 +157,9 @@
 		 */
 		final protected function __construct()
 		{
+			//
+			// TODO: Determine request format
+			//
 			$this->view = new View();
 
 			if (method_exists($this, 'prepare')) {
@@ -177,25 +180,9 @@
 		protected function prepare()
 		{
 			$section = self::getBaseURL();
-
 			$title   = (isset(self::$siteSections[$section]['title']))
 				? self::$siteSections[$section]['title']
 				: self::DEFAULT_SITE_TITLE;
-
-			$use_ssl = (isset(self::$siteSections[$section]['use_ssl']))
-				? self::$siteSections[$section]['use_ssl']
-				: self::DEFAULT_USE_SSL;
-
-			// Redirect to https:// if required for the section
-
-			if ($use_ssl && empty($_SERVER['HTTPS'])) {
-				$domain     = fURL::getDomain();
-				$request    = fURL::getWithQueryString();
-				$ssl_domain = str_replace('http://', 'https://', $domain);
-				fURL::redirect($ssl_domain . $request);
-			}
-
-			self::sendHeader();
 
 			$this->view
 				-> load (self::getRequestFormat() . '.php')
@@ -228,6 +215,20 @@
 		 */
 		static public function __init(array $config = array(), $element = NULL)
 		{
+
+			$section = self::getBaseURL();
+			$use_ssl = (isset(self::$siteSections[$section]['use_ssl']))
+				? self::$siteSections[$section]['use_ssl']
+				: self::DEFAULT_USE_SSL;
+			//
+			// Redirect to https:// if required for the section
+			//
+			if ($use_ssl && empty($_SERVER['HTTPS'])) {
+				$domain     = fURL::getDomain();
+				$request    = fURL::getWithQueryString();
+				$ssl_domain = str_replace('http://', 'https://', $domain);
+				self::redirect($ssl_domain . $request, NULL, 301);
+			}
 
 			self::$controllerRoot = implode(DIRECTORY_SEPARATOR, array(
 				iw::getRoot(),
@@ -365,41 +366,45 @@
 		{
 			$format_types = array(
 
-				'html' => array(
+				'html'  => array(
 					'text/html'
+				),
+
+				'css'   => array(
+					'text/css'
+				),
+
+				'js'    => array(
+					'text/javascript'
+				),
+
+				'txt'   => array(
+					'text/plain'
 				),
 
 				'json' => array(
 					'application/json',
-					'application/x-javascript'
+					'application/x-javascript',
 				),
 
-				'xml'  => array(
+				'xml'   => array(
 					'application/xml'
 				),
 
-				'php'  => array(
+				'php'   => array(
 					'application/octet-stream'
 				),
 
-				'jpg'  => array(
+				'jpg'   => array(
 					'image/jpeg'
 				),
 
-				'gif'  => array(
+				'gif'   => array(
 					'image/gif'
 				),
 
-				'png'  => array(
+				'png'   => array(
 					'image/png'
-				),
-
-				'css'  => array(
-					'text/css'
-				),
-
-				'js'   => array(
-					'application/x-javascript'
 				)
 			);
 
@@ -476,6 +481,15 @@
 				case 'html':
 					$request_format_types = self::getFormatTypes('html');
 					break;
+				case 'txt':
+					$request_format_types = self::getFormatTypes('txt');
+					break;
+				case 'css':
+					$request_format_types = self::getFormatTypes('css');
+					break;
+				case 'js':
+					$request_format_types = self::getFormatTypes('js');
+					break;
 				case 'json':
 					$request_format_types = self::getFormatTypes('json');
 					break;
@@ -534,7 +548,7 @@
 		 */
 		static protected function acceptLanguages(array $languages)
 		{
-			return ($best_language = fRequest::getBestAcceptType($types))
+			return ($best_language = fRequest::getBestAcceptType($languages))
 				? $best_language
 				: self::triggerError('not_acceptable');
 		}
@@ -571,10 +585,41 @@
 		 * @access protected
 		 * @param string $target an inKWell target to redirect to
 		 * @param array $query an associative array containing parameters => values
-		 * @return mixed
+		 * @param int $type 3xx HTTP Code to send (normalized for HTTP version), default 302/303
+		 * @return void
 		 */
-		static protected function redirect($target, $query = array())
+		static protected function redirect($target, $query = array(), $type = 302)
 		{
+			$protocol = strtoupper($_SERVER['SERVER_PROTOCOL']);
+
+			if ($protocol == 'HTTP/1.0') {
+				switch ($type) {
+					case 301:
+						header('HTTP/1.0 Moved Permanently');
+						break;
+					case 302:
+					case 303:
+					case 307:
+						header('HTTP/1.0 302 Moved Temporarily');
+						break;
+				}
+			} elseif ($protocol == 'HTTP/1.1') {
+				switch ($type) {
+					case 301:
+						header('HTTP/1.1 Moved Permanently');
+						break;
+					case 302:
+						header('HTTP/1.1 302 Found');
+						break;
+					case 303:
+						header('HTTP/1.1 303 See Other');
+						break;
+					case 307:
+						header('HTTP/1.1 307 Temporary Redirect');
+						break;
+				}
+			}
+
 			fURL::redirect(iw::makeLink($target, $query));
 		}
 
@@ -863,7 +908,7 @@
 
 			$error_info   = array(
 				'handler' => NULL,
-				'header'  => 'HTTP/1.0 500 Internal Server Error',
+				'header'  => $_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error',
 				'message' => 'An Unknown error occurred.'
 			);
 

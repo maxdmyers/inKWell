@@ -14,7 +14,8 @@
 	class iw
 	{
 
-		const DEFAULT_CONFIG           = 'config';
+		const DEFAULT_CONFIG_PATH      = 'config';
+		const DEFAULT_CONFIG           = 'default';
 
 		const INITIALIZATION_METHOD    = '__init';
 		const MATCH_CLASS_METHOD       = '__match';
@@ -45,7 +46,16 @@
 		static private $writeDirectory = NULL;
 
 		/**
-		 * The active domain for inkwell
+		 * The execution mode of inKWell
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $executionMode = NULL;
+
+		/**
+		 * The active domain for inKWell
 		 *
 		 * @static
 		 * @access private
@@ -153,25 +163,24 @@
 		{
 			$config = array();
 
-			if (!$directory) {
-				$directory = self::DEFAULT_CONFIG;
-			}
-
-			if ($directory instanceof fDirectory) {
-				$directory = $directory->getPath();
-			} else {
+			if ($directory === NULL) {
+				$directory = iw::getRoot('config');
+			} elseif (is_string($directory)) {
 				if (!preg_match(self::REGEX_ABSOLUTE_DIRECTORY, $directory)) {
-					$directory = APPLICATION_ROOT . DIRECTORY_SEPARATOR . $directory;
+					$directory = realpath(implode(DIRECTORY_SEPARATOR, array(
+						iw::getRoot('config'),
+						$directory
+					)));
 				}
-
-				$directory = realpath($directory);
+			} elseif (class_exists('fDirectory', FALSE) && $directory instanceof fDirectory) {
+				$directory = $directory->getPath();
 			}
 
 			if (!is_dir($directory) || !is_readable($directory)) {
-				throw new Exception (sprintf(
+				throw new Exception(
 					'Cannot build configuration, directory "%s" is unreadable.',
 					$directory
-				));
+				);
 			}
 
 			$directory .= DIRECTORY_SEPARATOR;
@@ -229,7 +238,11 @@
 		static public function writeConfig(array $config, $file = NULL, $quiet = FALSE)
 		{
 			if (!$file) {
-				$file = self::DEFAULT_CONFIG . '.php';
+				$file = '.' . self::DEFAULT_CONFIG;
+			}
+
+			if (!preg_match(self::REGEX_ABSOLUTE_DIRECTORY, $file)) {
+				$file = realpath(iw::getRoot('config') . DIRECTORY_SEPARATOR . $file);
 			}
 
 			if (!$quiet) {
@@ -271,32 +284,39 @@
 		 */
 		static public function init($configuration = NULL)
 		{
-
 			if (!$configuration) {
 				$configuration = self::DEFAULT_CONFIG;
 			}
 
-			$file   = realpath($configuration . '.php');
-			$config = (is_readable($file))
-				? @unserialize(file_get_contents($file))
-				: NULL;
+			self::$roots['config'] = realpath(implode(DIRECTORY_SEPARATOR, array(
+				iw::getRoot(),
+				self::DEFAULT_CONFIG_PATH
+			)));
 
-			if (!$config) {
-				$config = @self::buildConfig($configuration, TRUE);
+			$config_source = implode(DIRECTORY_SEPARATOR, array(
+				self::getRoot('config'),
+				'.' . $configuration
+			));
+
+			if (is_readable($config_source)) {
+				self::$config = @unserialize(file_get_contents($config_source));
 			}
 
-			self::$config          = $config;
-			self::$roots['config'] = realpath($configuration);
+			if (!self::$config) {
+				self::$config = self::buildConfig($configuration, TRUE);
+			}
 
-			// Set up the inkwell root directory
+			// set up execution mode
 
-			if (isset(self::$config['inkwell']['root_directory'])) {
-				self::$roots['inkwell'] = rtrim(
-					$config['inkwell']['root_directory'],
-					'/\\' . DIRECTORY_SEPARATOR
+			self::$executionMode = (isset(self::$config['inkwell']['execution_mode']))
+				? self::$config['inkwell']['execution_mode']
+				: self::DEFAULT_EXECUTION_MODE;
+
+			if (!in_array(self::$executionMode, array('development', 'production'))) {
+				throw fProgrammerException(
+					'Invalid execution mode %s specified in config',
+					self::$executionMode
 				);
-			} else {
-				self::$roots['inkwell'] = APPLICATION_ROOT;
 			}
 
 			// Set up our write directory
@@ -424,7 +444,7 @@
 			);
 
 			$session_length = isset(self::$config['inkwell']['session_length'])
-				? $config['inkwell']['session_length']
+				? self::$config['inkwell']['session_length']
 				: '30 minutes';
 
 			if (isset(self::$config['inkwell']['persistent_session'])
@@ -698,6 +718,18 @@
 		}
 
 		/**
+		 * Gets the current execution mode for inkwell
+		 *
+		 * @static
+		 * @access public
+		 * @return string The current execution mode
+		 */
+		static public function getExecutionMode()
+		{
+			return self::$executionMode;
+		}
+
+		/**
 		 * Gets the requested write directory.  If the optional parameter is
 		 * entered it will attempt to get it as a sub directory of the overall
 		 * write directory.  If the child directory does not exist, if the sub
@@ -760,8 +792,12 @@
 		 * @param string $element The class or configuration element
 		 * @return string A reference to the root directory for "live roots"
 		 */
-		static public function getRoot($element = 'inkwell')
+		static public function getRoot($element = NULL)
 		{
+			if ($element === NULL) {
+				return APPLICATION_ROOT;
+			}
+
 			$element = strtolower($element);
 
 			return (isset(self::$roots[$element]))
@@ -829,15 +865,7 @@
 		 */
 		static public function makeLink($target, $query = array())
 		{
-			if (strpos($target, '*::') === 0) {
-				$target = Moor::getActiveClass() . substr($target, 1);
-			}
-
-			if (strpos($target, '*\\') === 0 || preg_match('/^\*_[A-Z][A-Za-z0-9]*::/', $target)) {
-				$target = Moor::getActiveNamespace() . substr($target, 1);
-			}
-
-			if (!is_callable($target)) {
+			if (!is_callable($target) && strpos($target, '*') !== 0) {
 
 				$query = (count($query))
 					? '?' . @http_build_query($query, '', '&', PHP_QUERY_RFC3986)

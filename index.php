@@ -1,28 +1,33 @@
 <?php
-
-	$include_directory = 'includes';
-
-	if (!isset($_SERVER['REWRITE_ENABLED']) || !$_SERVER['REWRITE_ENABLED']) {
-		if (in_array($_SERVER['REQUEST_URI'], array('', '/', '/index.php'))) {
-			$_SERVER['PATH_INFO']   = '/';
-			$_SERVER['REQUEST_URI'] = $_SERVER['PHP_SELF'];
-		}
-	} elseif (isset($_SERVER['PATH_INFO'])) {
-		$_SERVER['REQUEST_URI'] .= $_SERVER['PATH_INFO'];
-		$_SERVER['PATH_INFO']    = NULL;
-	}
-
-	// Step back until we find our includes directory (should be 1 at most)
-
-	while (!is_dir($include_directory)) {
+	//
+	// If our document root has been moved to a subdirectory of the actual application
+	// directory, then we need to find it.
+	//
+	for (
+		//
+		// Initial assignment
+		//
+		$include_directory = 'includes';
+		//
+		// While Condition
+		//
+		!is_dir($include_directory));
+		//
+		// Modifier
+		//
 		$include_directory = '..' . DIRECTORY_SEPARATOR . $include_directory;
-	}
-
-	// Change to our includes directory
-
-	define('INCLUDE_ROOT', realpath($include_directory));
-	define('APPLICATION_ROOT', dirname(INCLUDE_ROOT));
-
+	);
+	//
+	// Define our application root as the directory containing the includes folder
+	//
+	define('APPLICATION_ROOT', dirname(realpath($include_directory)));
+	//
 	// Boostrap!
-
-	require INCLUDE_ROOT . DIRECTORY_SEPARATOR . 'init.php';
+	//
+	require $include_directory . DIRECTORY_SEPARATOR . 'init.php';
+	//
+	// Include our routing logic and run the router.
+	//
+	//
+	include 'routing.php';
+	$view = Moor::run();

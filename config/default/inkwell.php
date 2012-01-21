@@ -6,14 +6,14 @@
 		// redirection if the site is hit from an alias (i.e. throw away your)
 		// apache/nginx redirects.  If it's null, then no redirection will
 		// occur.
-		
+
 		'active_domain' => NULL,
 
-		// The root directory for inkWell, generally this will be the
-		// APPLICATION_ROOT -- this is an absolute path relative to the root
-		// of the filesystem
+		// The execution mode determines various aspects of operation.  Valid execution modes
+		// are currently 'development' and 'production'.  Other settings, when set to NULL
+		// will have varying defaults based on the execution mode.
 
-		'root_directory' => APPLICATION_ROOT,
+		'execution_mode' => 'development',
 
 		// This is the writable directory where everything from sessions
 		// to file uploads will be stored.  The default .htaccess file
@@ -45,6 +45,11 @@
 
 		'default_timezone' => 'America/Los_Angeles',
 
+		// The RegEx pattern which a route request parameter will match against, the default
+		// is: [A-Za-z0-9_-]+
+
+		'request_param_pattern' => '[A-Za-z0-9_-]+',
+
 		// Date formats can be added for quick reference when using dates
 		// returned by the system.  Example being that if you had a column
 		// in a database which was a date and wanted it to be represented
@@ -65,5 +70,5 @@
 
 		'interfaces' => array(
 			'includes/lib/interfaces'
-		),
+		)
 	));

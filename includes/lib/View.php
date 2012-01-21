@@ -15,7 +15,7 @@
 
 		const DEFAULT_VIEW_ROOT     = 'views';
 		const DEFAULT_CACHE_DIR     = 'cache';
-		const PRIMARY_VIEW_ELEMENT  = '__main__';
+		const PRIMARY_VIEW_ELEMENT  = '__main__'; // This must match Flourish
 
 		/**
 		 * The data storage area
@@ -255,21 +255,13 @@
 		 * existing keys which may be in it's way
 		 *
 		 * @access public
-		 * @param string $data_set A string indicating the data set to pack into
+		 * @param string|array $data_set A string indicating the data set to pack into
 		 * @param mixed $value The value to pack into the data set
 		 * @return View The view object to allow for method chaining
 		 */
 		public function pack($data_set, $value = NULL)
 		{
-			if (!is_array($data_set)) {
-				if (is_string($data_set) || is_int($data_set)) {
-					$data_set = array($data_set => $value);
-				} else {
-					throw new fProgrammerException(
-						'Invalid data set supplied, must be a string or integer'
-					);
-				}
-			}
+		 	$data_set = self::normalizeDataSet($data_set, $value);
 
 			foreach ($data_set as $key => $value) {
 				$this->data[$key] = $value;
@@ -289,15 +281,7 @@
 		 */
 		 public function push($data_set, $value = NULL)
 		 {
-			if (!is_array($data_set)) {
-				if (is_string($data_set) || is_int($data_set)) {
-					$data_set = array($data_set => $value);
-				} else {
-					throw new fProgrammerException(
-						'Invalid data set supplied, must be a string or integer'
-					);
-				}
-			}
+		 	$data_set = self::normalizeDataSet($data_set, $value);
 
 		 	foreach ($data_set as $key => $value) {
 		 		if (!array_key_exists($key, $this->data)) {
@@ -668,9 +652,13 @@
 				);
 			}
 
-			if (isset($config['minification_mode'])) {
-				if ($config['minification_mode']) {
-					self::$minificationMode = $config['minification_mode'];
+			if (!isset($config['disable_minification']) || !$config['disable_minification']) {
+				if (isset($config['minification_mode'])) {
+					if ($config['minification_mode']) {
+						self::$minificationMode = $config['minification_mode'];
+					}
+				} else {
+					self::$minificationMode = iw::getExecutionMode();
 				}
 			}
 		}
@@ -699,6 +687,31 @@
 			}
 
 			return is_readable($view_file);
+		}
+
+		/**
+		 * Normalizes a data set.
+		 *
+		 * @static
+		 * @access private
+		 * @param mixed $data_set The data set key or data set
+		 * @param mixed $value The value of $data_set if provided a key
+		 * @return array The data set represented as an array
+		 * @throws fProgrammerException if the data set is not valid.
+		 */
+		static private normalizeDataSet($data_set, $value = NULL)
+		{
+			if (!is_array($data_set)) {
+				if (is_string($data_set) || is_int($data_set)) {
+					return $data_set = array($data_set => $value);
+				} else {
+					throw new fProgrammerException(
+						'Invalid data set supplied, must be a string or integer'
+					);
+				}
+			}
+
+			return $data_set;
 		}
 
 	}
