@@ -1,4 +1,5 @@
 <?php
+
 	//
 	// If our document root has been moved to a subdirectory of the actual application
 	// directory, then we need to find it.
@@ -11,16 +12,16 @@
 		//
 		// While Condition
 		//
-		!is_dir($include_directory));
+		!is_dir($include_directory);
 		//
 		// Modifier
 		//
-		$include_directory = '..' . DIRECTORY_SEPARATOR . $include_directory
+		$include_directory = realpath('..' . DIRECTORY_SEPARATOR . $include_directory)
 	);
 	//
 	// Define our application root as the directory containing the includes folder
 	//
-	define('APPLICATION_ROOT', dirname(realpath($include_directory)));
+	define('APPLICATION_ROOT', dirname($include_directory));
 	//
 	// Boostrap!
 	//
@@ -29,5 +30,6 @@
 	// Include our routing logic and run the router.
 	//
 	//
-	include 'routing.php';
+	require $include_directory . DIRECTORY_SEPARATOR . 'routing.php';
+
 	$view = Moor::run();
