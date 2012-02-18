@@ -29,14 +29,6 @@
 		const MSG_TYPE_SUCCESS            = 'success';
 
 		/**
-		 * The controller's view object
-		 *
-		 * @access protected
-		 * @var View
-		 */
-		protected $view = NULL;
-
-		/**
 		 * The path from which relative controllers are loaded
 		 *
 		 * @static
@@ -145,52 +137,12 @@
 		static private $typeHeadersSent = FALSE;
 
 		/**
-		 * Builds a new controller by assigning it a local view and running
-		 * prepare if it exists.  Only static methods on controllers can
-		 * instantiate a new controller object, and all standard __construct()
-		 * functionality should be moved to prepare().
+		 * The controller's view object
 		 *
-		 * @deprecated
-		 * @final
 		 * @access protected
-		 * @param void
-		 * @return void
+		 * @var View
 		 */
-		final protected function __construct()
-		{
-			//
-			// TODO: Determine request format
-			//
-			$this->view = new View();
-
-			if (method_exists($this, 'prepare')) {
-				$prepare_callback = array($this, 'prepare');
-				$arguments        = func_get_args();
-				call_user_func_array($prepare_callback, $arguments);
-			}
-		}
-
-		/**
-		 * Prepares a new controller by establishing any shared object
-		 * information
-		 *
-		 * @deprecated
-		 * @access protected
-		 * @param void
-		 * @return void
-		 */
-		protected function prepare()
-		{
-			$section = self::getBaseURL();
-			$title   = (isset(self::$siteSections[$section]['title']))
-				? self::$siteSections[$section]['title']
-				: self::DEFAULT_SITE_TITLE;
-
-			$this->view
-				-> load (self::getRequestFormat() . '.php')
-				-> push ('title',   $title);
-		}
-
+		protected $view = NULL;
 
 		/**
 		 * Matches whether or not a given class name is a potential
@@ -980,4 +932,51 @@
 			self::$errors[$error]['header']  = $header;
 			self::$errors[$error]['message'] = $message;
 		}
+		/**
+		 * Builds a new controller by assigning it a local view and running
+		 * prepare if it exists.  Only static methods on controllers can
+		 * instantiate a new controller object, and all standard __construct()
+		 * functionality should be moved to prepare().
+		 *
+		 * @deprecated
+		 * @final
+		 * @access protected
+		 * @param void
+		 * @return void
+		 */
+		final protected function __construct()
+		{
+			//
+			// TODO: Determine request format
+			//
+			$this->view = new View();
+
+			if (method_exists($this, 'prepare')) {
+				$prepare_callback = array($this, 'prepare');
+				$arguments        = func_get_args();
+				call_user_func_array($prepare_callback, $arguments);
+			}
+		}
+
+		/**
+		 * Prepares a new controller by establishing any shared object
+		 * information
+		 *
+		 * @deprecated
+		 * @access protected
+		 * @param void
+		 * @return void
+		 */
+		protected function prepare()
+		{
+			$section = self::getBaseURL();
+			$title   = (isset(self::$siteSections[$section]['title']))
+				? self::$siteSections[$section]['title']
+				: self::DEFAULT_SITE_TITLE;
+
+			$this->view
+				-> load (self::getRequestFormat() . '.php')
+				-> push ('title',   $title);
+		}
+
 	}

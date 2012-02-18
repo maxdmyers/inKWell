@@ -11,7 +11,6 @@
 	 */
 	abstract class RecordSet extends fRecordSet implements inkwell
 	{
-
 		/**
 		 * Matches whether or not a given class name is a potential
 		 * RecordSet
@@ -70,6 +69,17 @@
 			}
 
 			return FALSE;
+		}
+
+		/**
+		 * Preps the RecordSet for JSON Serialization
+		 *
+		 * @access public
+		 * @return array A JSON encodable array of all records in the set
+		 */
+		public function jsonSerialize()
+		{
+			return $this->getRecords();
 		}
 
 	}

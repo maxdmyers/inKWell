@@ -942,10 +942,16 @@
 		 */
 		static public function loadClass($class, array $loaders = array())
 		{
+			//
+			// If we're called manually, we want to make sure the class isn't already loaded
+			//
+			if (class_exists($class, FALSE)) {
+				return;
+			}
+
 			if (!count($loaders)) {
 				$loaders = self::$config['autoloaders'];
 			}
-
 
 			if (!count($loaders)) {
 				$loaders = self::$config['autoloaders'];
@@ -999,7 +1005,7 @@
 
 		/**
  		 * Renders various data types and objects to the screen.
-		 * 
+		 *
 		 * @static
 		 * @access public
 		 * @param mixed $data The data to render

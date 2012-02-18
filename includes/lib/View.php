@@ -18,30 +18,6 @@
 		const PRIMARY_VIEW_ELEMENT  = '__main__'; // This must match Flourish
 
 		/**
-		 * The data storage area
-		 *
-		 * @access private
-		 * @var array
-		 */
-		private $data = array();
-
-		/**
-		 * A list of callbacks to call when render() is called
-		 *
-		 * @access private
-		 * @var array
-		 */
-		private $renderCallbacks = array();
-
-		/**
-		 * If the template represents string content
-		 *
-		 * @access private
-		 * @var boolean
-		 */
-		private $isFood = FALSE;
-
-		/**
 		 * The path from which relative views are loaded
 		 *
 		 * @static
@@ -67,6 +43,148 @@
 		 * @var string|NULL
 		 */
 		static private $minificationMode = NULL;
+
+		/**
+		 * A simple factory method for creating new views based on a file.
+		 *
+		 * @static
+		 * @access public
+		 * @param string $view_file The file to load
+		 * @return View The view object with the view file loaded
+		 */
+		static public function create($view_file)
+		{
+			$view = new self();
+			return $view->load($view_file);
+		}
+
+		/**
+		 * The data storage area
+		 *
+		 * @access private
+		 * @var array
+		 */
+		private $data = array();
+
+		/**
+		 * A list of callbacks to call when render() is called
+		 *
+		 * @access private
+		 * @var array
+		 */
+		private $renderCallbacks = array();
+
+		/**
+		 * If the template represents string content
+		 *
+		 * @access private
+		 * @var boolean
+		 */
+		private $isFood = FALSE;
+
+		/**
+		 * Initializes the templating engine
+		 *
+		 * @static
+		 * @access public
+		 * @param array $config The configuration array
+		 * @param string $element The element name of the configuration array
+		 * @return void
+		 */
+		static public function __init(array $config = array(), $element = NULL)
+		{
+
+			self::$viewRoot = implode(DIRECTORY_SEPARATOR, array(
+				iw::getRoot(),
+				($root_directory = iw::getRoot($element))
+					? $root_directory
+					: self::DEFAULT_SCAFFOLDING_ROOT
+			));
+
+			self::$viewRoot       = new fDirectory(self::$viewRoot);
+			self::$cacheDirectory = iw::getWriteDirectory(
+				isset($config['cache_directory'])
+					? $config['cache_directory']
+					: self::DEFAULT_CACHE_DIRECTORY
+			);
+
+			try {
+				self::$cacheDirectory = new fDirectory(self::$cacheDirectory);
+			} catch (fValidationException $e) {
+				throw new fEnvironmentException (
+					'Cache directory %s does not exist',
+					self::$cacheDirectory
+				);
+			}
+
+			if (!self::$cacheDirectory->isWritable()) {
+				throw new fEnvironmentException (
+					'Cache directory %s is not writable',
+					self::$cacheDirectory
+				);
+			}
+
+			if (!isset($config['disable_minification']) || !$config['disable_minification']) {
+				if (isset($config['minification_mode'])) {
+					if ($config['minification_mode']) {
+						self::$minificationMode = $config['minification_mode'];
+					}
+				} else {
+					self::$minificationMode = iw::getExecutionMode();
+				}
+			}
+		}
+
+		/**
+		 * Check whether or not a particular view file exists relative to the
+		 * view root.
+		 *
+		 * @static
+		 * @access public
+		 * @param string $view_file The relative path to the view file to check
+		 * @return boolean TRUE if the view file is readable, FALSE otherwise
+		 */
+		static public function exists($view_file)
+		{
+			if ($view_file[0] !== '/' && $view_file[0] !== '\\') {
+				$view_file = implode(DIRECTORY_SEPARATOR, array(
+					self::$viewRoot,
+					$view_file
+				));
+			} else {
+				$view_file = implode(DIRECTORY_SEPARATOR, array(
+					$_SERVER['DOCUMENT_ROOT'],
+					$view_file
+				));
+			}
+
+			return is_readable($view_file);
+		}
+
+		/**
+		 * Normalizes a data set.
+		 *
+		 * @static
+		 * @access private
+		 * @param mixed $data_set The data set key or data set
+		 * @param mixed $value The value of $data_set if provided a key
+		 * @return array The data set represented as an array
+		 * @throws fProgrammerException if the data set is not valid.
+		 */
+		static private function normalizeDataSet($data_set, $value = NULL)
+		{
+			if (!is_array($data_set)) {
+				if (is_string($data_set) || is_int($data_set)) {
+					return $data_set = array($data_set => $value);
+				} else {
+					throw new fProgrammerException(
+						'Invalid data set supplied, must be a string or integer'
+					);
+				}
+			}
+
+			return $data_set;
+		}
 
 		/**
 		 * Creates a new templating object.
@@ -611,121 +729,14 @@
 		}
 
 		/**
-		 * A simple factory method for creating new views based on a file.
+		 * Preps the View for JSON Serialization
 		 *
-		 * @static
 		 * @access public
-		 * @param string $view_file The file to load
-		 * @return View The view object with the view file loaded
+		 * @return object A JSON encodable object of all the data in the view
 		 */
-		static public function create($view_file)
+		public function jsonSerialize()
 		{
-			$view = new self();
-			return $view->load($view_file);
-		}
-
-		/**
-		 * Initializes the templating engine
-		 *
-		 * @static
-		 * @access public
-		 * @param array $config The configuration array
-		 * @param string $element The element name of the configuration array
-		 * @return void
-		 */
-		static public function __init(array $config = array(), $element = NULL)
-		{
-
-			self::$viewRoot = implode(DIRECTORY_SEPARATOR, array(
-				iw::getRoot(),
-				($root_directory = iw::getRoot($element))
-					? $root_directory
-					: self::DEFAULT_SCAFFOLDING_ROOT
-			));
-
-			self::$viewRoot       = new fDirectory(self::$viewRoot);
-			self::$cacheDirectory = iw::getWriteDirectory(
-				isset($config['cache_directory'])
-					? $config['cache_directory']
-					: self::DEFAULT_CACHE_DIRECTORY
-			);
-
-			try {
-				self::$cacheDirectory = new fDirectory(self::$cacheDirectory);
-			} catch (fValidationException $e) {
-				throw new fEnvironmentException (
-					'Cache directory %s does not exist',
-					self::$cacheDirectory
-				);
-			}
-
-			if (!self::$cacheDirectory->isWritable()) {
-				throw new fEnvironmentException (
-					'Cache directory %s is not writable',
-					self::$cacheDirectory
-				);
-			}
-
-			if (!isset($config['disable_minification']) || !$config['disable_minification']) {
-				if (isset($config['minification_mode'])) {
-					if ($config['minification_mode']) {
-						self::$minificationMode = $config['minification_mode'];
-					}
-				} else {
-					self::$minificationMode = iw::getExecutionMode();
-				}
-			}
-		}
-
-		/**
-		 * Check whether or not a particular view file exists relative to the
-		 * view root.
-		 *
-		 * @static
-		 * @access public
-		 * @param string $view_file The relative path to the view file to check
-		 * @return boolean TRUE if the view file is readable, FALSE otherwise
-		 */
-		static public function exists($view_file)
-		{
-			if ($view_file[0] !== '/' && $view_file[0] !== '\\') {
-				$view_file = implode(DIRECTORY_SEPARATOR, array(
-					self::$viewRoot,
-					$view_file
-				));
-			} else {
-				$view_file = implode(DIRECTORY_SEPARATOR, array(
-					$_SERVER['DOCUMENT_ROOT'],
-					$view_file
-				));
-			}
-
-			return is_readable($view_file);
-		}
-
-		/**
-		 * Normalizes a data set.
-		 *
-		 * @static
-		 * @access private
-		 * @param mixed $data_set The data set key or data set
-		 * @param mixed $value The value of $data_set if provided a key
-		 * @return array The data set represented as an array
-		 * @throws fProgrammerException if the data set is not valid.
-		 */
-		static private function normalizeDataSet($data_set, $value = NULL)
-		{
-			if (!is_array($data_set)) {
-				if (is_string($data_set) || is_int($data_set)) {
-					return $data_set = array($data_set => $value);
-				} else {
-					throw new fProgrammerException(
-						'Invalid data set supplied, must be a string or integer'
-					);
-				}
-			}
-
-			return $data_set;
+			return (object) $this->data;
 		}
 
 	}
