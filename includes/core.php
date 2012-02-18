@@ -996,6 +996,41 @@
 			return FALSE;
 		}
 
+
+		/**
+ 		 * Renders various data types and objects to the screen.
+		 * 
+		 * @static
+		 * @access public
+		 * @param mixed $data The data to render
+		 * @return void
+		 */
+		static public function render($data)
+		{
+			if (is_string($data)) {
+				echo $string;
+			} elseif (is_object($data)) {
+				switch(strtolower(get_class($data))) {
+					case 'stdclass':
+						echo fJSON::encode($data);
+						break;
+					case 'view':
+						$data->render();
+						break;
+					case 'ffile':
+					case 'fimage':
+						$data->output();
+						break;
+					default:
+						(string) $data;
+						break;
+				}
+			} elseif ($data) {
+				var_dump($data);
+			}
+		}
+
+
 		/**
 		 * Initializes a class by calling it's __init() method if it has one
 		 * and returning its return value.

@@ -611,6 +611,20 @@
 		}
 
 		/**
+		 * A simple factory method for creating new views based on a file.
+		 *
+		 * @static
+		 * @access public
+		 * @param string $view_file The file to load
+		 * @return View The view object with the view file loaded
+		 */
+		static public function create($view_file)
+		{
+			$view = new self();
+			return $view->load($view_file);
+		}
+
+		/**
 		 * Initializes the templating engine
 		 *
 		 * @static
@@ -699,7 +713,7 @@
 		 * @return array The data set represented as an array
 		 * @throws fProgrammerException if the data set is not valid.
 		 */
-		static private normalizeDataSet($data_set, $value = NULL)
+		static private function normalizeDataSet($data_set, $value = NULL)
 		{
 			if (!is_array($data_set)) {
 				if (is_string($data_set) || is_int($data_set)) {

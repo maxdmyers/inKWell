@@ -150,6 +150,7 @@
 		 * instantiate a new controller object, and all standard __construct()
 		 * functionality should be moved to prepare().
 		 *
+		 * @deprecated
 		 * @final
 		 * @access protected
 		 * @param void
@@ -173,6 +174,7 @@
 		 * Prepares a new controller by establishing any shared object
 		 * information
 		 *
+		 * @deprecated
 		 * @access protected
 		 * @param void
 		 * @return void
