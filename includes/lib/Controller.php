@@ -582,15 +582,15 @@
 		 *
 		 * @static
 		 * @access protected
-		 * @param mixed $value The value to check.  If this matches the current iw::$failureToken the provided error will be triggered
+		 * @param mixed $action The to demand be completed.  The action should return iw::makeFailureToken() upon failing.
 		 * @param string $error The name of the error to trigger upon failure, defaults to 'not_found'
 		 * @return mixed The original value upon success
 		 */
-		static protected function demand($value, $error = 'not_found')
+		static protected function demand($action, $error = 'not_found')
 		{
-			return (iw::checkFailureToken($value))
+			return (iw::checkFailureToken($action))
 				? self::triggerError($error)
-				: $value;
+				: $action;
 		}
 
 		/**
@@ -932,6 +932,7 @@
 			self::$errors[$error]['header']  = $header;
 			self::$errors[$error]['message'] = $message;
 		}
+
 		/**
 		 * Builds a new controller by assigning it a local view and running
 		 * prepare if it exists.  Only static methods on controllers can

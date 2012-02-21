@@ -12,7 +12,13 @@
 		$_SERVER['PATH_INFO']    = NULL;
 	}
 	//
-	// Set the Request Parm Pattern
+	// Enable debugging depending on execution mode
+	//
+	if (iw::getExecutionMode() == 'development') {
+		Moor::enableDebug();
+	}
+	//
+	// Set the Request Param Pattern
 	//
 	$request_param_pattern = isset($config['inkwell']['request_param_pattern'])
 		? $config['inkwell']['request_param_pattern']

@@ -29,10 +29,8 @@
 	//
 	// Include our routing logic and run the router.
 	//
-	//
 	require $include_directory . DIRECTORY_SEPARATOR . 'routing.php';
-
 	//
-	// Run the router and render it's return value
+	// Run the router and render its return value
 	//
 	iw::render(Moor::run());
