@@ -22,10 +22,18 @@
 	// Define our application root as the directory containing the includes folder
 	//
 	define('APPLICATION_ROOT', dirname($include_directory));
+	define('MAINTENANCE_FILE', APPLICATION_ROOT . DIRECTORY_SEPARATOR . 'MAINTENANCE');
 	//
 	// Boostrap!
 	//
 	require $include_directory . DIRECTORY_SEPARATOR . 'init.php';
+	//
+	// Check for and include maintenance file if it exists
+	//
+	if (file_exists(MAINTENANCE_FILE)) {
+		include MAINTENANCE_FILE;
+		exit(-1);
+	}
 	//
 	// Include our routing logic and run the router.
 	//
