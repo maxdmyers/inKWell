@@ -1014,7 +1014,11 @@
 		static public function render($data)
 		{
 			if (is_string($data)) {
-				echo $string;
+				echo $data;
+			} elseif (is_numeric($data)) {
+				echo $data;
+			} elseif (is_array($data)) {
+				echo JSON::encode($data);
 			} elseif (is_object($data)) {
 				switch(strtolower(get_class($data))) {
 					case 'stdclass':
@@ -1025,14 +1029,14 @@
 						break;
 					case 'ffile':
 					case 'fimage':
-						$data->output();
+						$data->output(FALSE);
 						break;
 					default:
-						(string) $data;
+						echo (string) $data;
 						break;
 				}
-			} elseif ($data) {
-				var_dump($data);
+			} else {
+				echo serialize($data);
 			}
 		}
 
