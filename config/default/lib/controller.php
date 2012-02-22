@@ -94,6 +94,12 @@
 				'handler'    => NULL,
 				'header'     => $_SERVER['SERVER_PROTOCOL'] . ' 406 Not Acceptable',
 				'message'    => 'The requested resource is not available in the accepted parameters'
+			),
+
+			'unavailable'    => array(
+				'handler'    => NULL,
+				'header'     => $_SERVER['SERVER_PROTOCOL'] . ' 503 Service Unavailable',
+				'message'    => 'Service is temporarily unavailable due to heavily load or maintenance'
 			)
 		)
 	));

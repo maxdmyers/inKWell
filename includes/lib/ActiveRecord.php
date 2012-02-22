@@ -161,7 +161,6 @@
 		 */
 		static public function __init(array $config = array(), $element = NULL)
 		{
-
 			if ($element == 'active_record') {
 
 				self::$imageUploadDirectory = iw::getWriteDirectory('images');

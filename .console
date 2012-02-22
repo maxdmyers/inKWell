@@ -345,6 +345,8 @@
 								$file,
 								ob_get_clean()
 							);
+						} else {
+							ob_get_flush();
 						}
 
 						return FALSE;

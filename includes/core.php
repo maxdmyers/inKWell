@@ -21,7 +21,7 @@
 		const MATCH_CLASS_METHOD       = '__match';
 		const CONFIG_TYPE_ELEMENT      = '__type';
 
-		const DEFAULT_WRITE_DIRECTORY  = 'writable';
+		const DEFAULT_WRITE_DIRECTORY  = 'assets';
 
 		const REGEX_ABSOLUTE_DIRECTORY = '/^(\\/|\\\\|.\:[\\/|\\\\])(.*)$/';
 		const REGEX_VARIABLE           = '/[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/';
@@ -184,12 +184,12 @@
 			}
 
 			$directory .= DIRECTORY_SEPARATOR;
-
+			//
 			// Loads each PHP file into a configuration element named after
 			// the file.  We check to see if the CONFIG_TYPE_ELEMENT is set
 			// to ensure configurations are added to their respective
 			// type in the $config['__types'] array.
-
+			//
 			foreach (glob($directory . '*.php') as $config_file) {
 
 				$config_element = pathinfo($config_file, PATHINFO_FILENAME);
@@ -305,9 +305,9 @@
 			if (!self::$config) {
 				self::$config = self::buildConfig($configuration, TRUE);
 			}
-
-			// set up execution mode
-
+			//
+			// Set up execution mode
+			//
 			self::$executionMode = (isset(self::$config['inkwell']['execution_mode']))
 				? self::$config['inkwell']['execution_mode']
 				: self::DEFAULT_EXECUTION_MODE;
@@ -318,9 +318,9 @@
 					self::$executionMode
 				);
 			}
-
+			//
 			// Set up our write directory
-
+			//
 			self::$writeDirectory = implode(DIRECTORY_SEPARATOR, array(
 				iw::getRoot(),
 				trim(
@@ -330,9 +330,9 @@
 					'/\\' . DIRECTORY_SEPARATOR
 				)
 			));
-
+			//
 			// Configure our autoloaders
-
+			//
 			if (isset(self::$config['autoloaders'])) {
 				if(!is_array(self::$config['autoloaders'])) {
 					throw new fProgrammerException (
@@ -344,9 +344,9 @@
 			}
 
 			spl_autoload_register('iw::loadClass');
-
+			//
 			// Initialize Error Reporting
-
+			//
 			if (isset(self::$config['inkwell']['error_level'])) {
 				error_reporting(self::$config['inkwell']['error_level']);
 			}
@@ -365,9 +365,9 @@
 					ini_set('display_errors', 0);
 				}
 			}
-
+			//
 			// Include any interfaces
-
+			//
 			if (isset(self::$config['inkwell']['interfaces'])) {
 
 				$interface_directories = self::$config['inkwell']['interfaces'];
@@ -390,10 +390,10 @@
 					}
 				}
 			}
-
+			//
 			// Initialize Date and Time Information, this has to be before any
 			// time related functions.
-
+			//
 			if (isset(self::$config['inkwell']['default_timezone'])) {
 				fTimestamp::setDefaultTimezone(
 					self::$config['inkwell']['default_timezone']
@@ -413,15 +413,15 @@
 					fTimestamp::defineFormat($name, $format);
 				}
 			}
-
+			//
 			// Redirect if we're not the active domain.
+			//
 			$url_parts          = parse_url(fURL::getDomain());
 			self::$activeDomain = (isset($config['inkwell']['active_domain']))
 				? $config['inkwell']['active_domain']
 				: $url_parts['host'];
 
 			if (!iw::checkSAPI('cli') && $url_parts['host'] != self::$activeDomain) {
-				//TODO: Check on flourish support for user/pass in domain and handle it properly
 				$current_domain = $url_sections['host'];
 				$current_scheme = $url_sections['scheme'];
 				$current_port   = (isset($url_sections['port']))
@@ -433,15 +433,14 @@
 					fURL::getWithQueryString()
 				);
 			}
-
+			//
 			// Initialize the Session
-
-			fSession::setPath(
-				iw::getWriteDirectory(implode(DIRECTORY_SEPARATOR, array(
-					'.tmp',
-					'sessions'
-				)))
-			);
+			//
+			if (isset(self::$config['inkwell']['session_path'])) {
+				fSession::setPath(iw::getWriteDirectory(
+					self::$config['inkwell']['session_path']
+				));
+			}
 
 			$session_length = isset(self::$config['inkwell']['session_length'])
 				? self::$config['inkwell']['session_length']
@@ -456,9 +455,9 @@
 				fSession::setLength($session_length);
 			}
 			fSession::open();
-
+			//
 			// Initialize the Databases
-
+			//
 			if (isset(self::$config['database']['disabled'])
 				&& !self::$config['database']['disabled']
 				&& isset($config['database']['databases'])
@@ -556,20 +555,20 @@
 					fORMDatabase::attach($db, $database_entry, $database_role);
 				}
 			}
-
+			//
 			// Load the Scaffolder if we have a configuration for it
-
+			//
 			if (isset(self::$config['scaffolder'])) {
 				iw::loadClass('Scaffolder');
 			}
-
+			//
 			// All other configurations have the following special properties
 			//
 			// 'class'          => Signifies which class the configuration maps to
 			// 'preload'        => Signifies that the class should be preloaded
 			// 'root_directory' => Used by the scaffolder and more
 			//
-
+			//
 			$preload_classes = array();
 
 			foreach (self::$config as $element => $config) {
@@ -732,9 +731,8 @@
 		/**
 		 * Gets the requested write directory.  If the optional parameter is
 		 * entered it will attempt to get it as a sub directory of the overall
-		 * write directory.  If the child directory does not exist, if the sub
-		 * directory does not exist, it will create it with owner and group
-		 * writable permissions.
+		 * write directory.  If the sub directory does not exist, it will create
+		 * it with owner and group writable permissions.
 		 *
 		 * @static
 		 * @access public
@@ -747,15 +745,11 @@
 
 				if ($sub_directory instanceof fDirectory) {
 					$sub_directory = $sub_directory->getPath();
-				} elseif (!is_string($sub_directory)) {
-					throw new fProgrammerException(
-						'Sub directory must be a string or fDirectory object'
-					);
 				}
-
+				//
 				// Prevent an absolute sub directory from repeating the
 				// base write directory
-
+				//
 				if (strpos($sub_directory, self::$writeDirectory) === 0) {
 					$offset        = strlen(self::$writeDirectory);
 					$sub_directory = substr($sub_directory, $offset);
@@ -770,18 +764,9 @@
 				$write_directory = self::$writeDirectory;
 			}
 
-			if(!is_writable($write_directory)) {
-				try {
-					fDirectory::create($write_directory);
-				} catch (fException $e) {
-					throw new fEnvironmentException(fText::compose(
-						'Directory "%s" is not writable or createable.',
-						$write_directory
-					));
-		 		}
-			}
-
-			return new fDirectory($write_directory);
+			return (!is_dir($write_directory))
+				? fDirectory::create($write_directory)
+				: new fDirectory($write_directory);
 		}
 
 		/**
@@ -946,11 +931,7 @@
 			// If we're called manually, we want to make sure the class isn't already loaded
 			//
 			if (class_exists($class, FALSE)) {
-				return;
-			}
-
-			if (!count($loaders)) {
-				$loaders = self::$config['autoloaders'];
+				return TRUE;
 			}
 
 			if (!count($loaders)) {
@@ -1052,30 +1033,26 @@
 		 */
 		static protected function initializeClass($class)
 		{
-
+			//
 			// Classes cannot be initialized twice
+			//
 			if (in_array($class, self::$initializedClasses)) {
-
-				throw new fProgrammerException(
-					'The class %s has already been initialized.', $class
-				);
-
-			} else {
-
-				self::$initializedClasses[] = $class;
+				return TRUE;
 			}
 
 			$init_callback = array($class, self::INITIALIZATION_METHOD);
-
+			//
 			// If there's no __init we're done
+			//
 			if (!is_callable($init_callback)) {
 				return TRUE;
 			}
 
 			$method  = end($init_callback);
 			$rmethod = new ReflectionMethod($class, $method);
-
+			//
 			// If __init is not custom, we're done
+			//
 			if ($rmethod->getDeclaringClass()->getName() != $class) {
 				return TRUE;
 			}
@@ -1086,7 +1063,14 @@
 				? self::$config[$element]
 				: array();
 
-			return call_user_func($init_callback, $class_config, $element);
+			try {
+				if (call_user_func($init_callback, $class_config, $element)) {
+					self::$initializedClasses[] = $class;
+					return TRUE;
+				}
+			} catch (Exception $e) {}
+
+			return FALSE;
 		}
 
 		/**

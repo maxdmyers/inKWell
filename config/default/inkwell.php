@@ -15,12 +15,11 @@
 
 		'execution_mode' => 'development',
 
-		// This is the writable directory where everything from sessions
-		// to file uploads will be stored.  The default .htaccess file
-		// forbids access to any file beginning with sess_ which is the PHP
-		// default for storing sessions.
+		// This is the writable directory where caches, file uploads, images,
+		// etc. can be stored.  getWriteDirectory() will supply this, or a
+		// sub-directory of this.
 
-		'write_directory' => 'writable',
+		'write_directory' => 'assets',
 
 		// Here you can configure whether or not to display errors, or e-mail
 		// them to you.  During development you will likely want to keep
@@ -39,6 +38,11 @@
 
 		'persistent_sessions' => FALSE,
 		'session_length'      => '1 day',
+
+		// You can store sessions in a custom directory for security purposes
+		// or for network filesystem access, relative to writable directory
+
+		'session_path' => NULL,
 
 		// Default timezones follow the standard PHP notation, a list of
 		// these can be located here: http://php.net/manual/en/timezones.php
