@@ -21,9 +21,8 @@
 
 		const DEFAULT_WRITE_DIRECTORY  = 'assets';
 
-		const REGEX_ABSOLUTE_DIRECTORY = '/^(\\/|\\\\|.\:[\\/|\\\\])(.*)$/';
+		const REGEX_ABSOLUTE_PATH      = '#^(/|\\\\|[a-z]:(\\\\|/)|\\\\|//|\./|\.\\\\)#i';
 		const REGEX_VARIABLE           = '/[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/';
-		const REGEX_ABS_PATH           = '#^(/|\\\\|[a-z]:(\\\\|/)|\\\\|//|\./|\.\\\\)#i';
 
 		/**
 		 * The cached configuration array
@@ -162,7 +161,7 @@
 			if ($directory === NULL) {
 				$directory = iw::getRoot('config');
 			} elseif (is_string($directory)) {
-				if (!preg_match(self::REGEX_ABSOLUTE_DIRECTORY, $directory)) {
+				if (!preg_match(self::REGEX_ABSOLUTE_PATH, $directory)) {
 					$directory = realpath(implode(DIRECTORY_SEPARATOR, array(
 						iw::getRoot('config'),
 						$directory
@@ -237,7 +236,7 @@
 				$file = '.' . self::DEFAULT_CONFIG;
 			}
 
-			if (!preg_match(self::REGEX_ABSOLUTE_DIRECTORY, $file)) {
+			if (!preg_match(self::REGEX_ABSOLUTE_PATH, $file)) {
 				$file = realpath(iw::getRoot('config') . DIRECTORY_SEPARATOR . $file);
 			}
 
