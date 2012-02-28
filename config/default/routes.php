@@ -9,5 +9,5 @@
 	 */
 
 	return iw::createConfig('Core', array(
-
+		'system' => 'phpinfo'
 	));
