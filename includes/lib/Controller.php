@@ -1,18 +1,17 @@
 <?php
 
 	/**
-	 * A base controller class which provides facilities for triggering various
-	 * responses, and building higher level controllers.
+	 * A base controller class which provides facilities for triggering various responses, and
+	 * building higher level controllers.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
-	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
-	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 * @copyright Copyright (c) 2012, Matthew J. Sahagian
+	 * @license Please reference the LICENSE.txt file at the root of this distribution
 	 *
 	 * @package inKWell
 	 */
 	class Controller extends MoorBaseController implements inkwell
 	{
-
 		const SUFFIX                      = __CLASS__;
 
 		const DEFAULT_CONTROLLER_ROOT     = 'user/controllers';
@@ -158,8 +157,8 @@
 		}
 
 		/**
-		 * Initializes the global controller namely by establishing error
-		 * handlers, headers, and messages.
+		 * Initializes the Controller class namely by establishing error handlers, headers, and
+		 * messages.
 		 *
 		 * @static
 		 * @access public
@@ -372,49 +371,55 @@
 		}
 
 		/**
-		 * Sends the appropriate headers.  Headers will be determined by
-		 * the use of the acceptTypes() method.  If it has not been run prior
-		 * to this method, it will be run with configured default accept types.
+		 * Sends the appropriate headers.  Headers will be determined by the use of the
+		 * acceptTypes() method.  If it has not been run prior to this method, it will be run with
+		 * configured default accept types.
 		 *
 		 * @static
 		 * @access protected
 		 * @param array $headers Additional headers aside from content type to send
+		 * @param boolean $send_content_type Whether or not we should send the content type header
 		 * @return void
 		 */
-		static protected function sendHeader($headers = array())
+		static protected function sendHeader($headers = array(), $send_content_type = TRUE)
 		{
-			if (!self::$typeHeadersSent) {
+			if (!self::$typeHeadersSent && $send_content_type) {
 
 				if (!self::$contentType) {
+					//
 					// The below block implies accepTypes() was never called
+					//
 					if ($format = self::getRequestFormat()) {
 						$format_types      = self::getFormatTypes($format);
 						self::$contentType = ($format_types)
 							? array_shift($format_types)
 							: 'text/html';
 					} else {
+						//
+						// The user never specified acceptTypes() so we'll accept defaults and
+						// hope for the best
+						//
 						self::acceptTypes();
 					}
 				}
 
 				header('Content-Type: ' . self::$contentType);
-				foreach ($headers as $header => $value) {
-					header($header . ': ' . $value);
-				}
 				self::$typeHeadersSent = TRUE;
+			}
+
+			foreach ($headers as $header => $value) {
+				header($header . ': ' . $value);
 			}
 		}
 
 		/**
-		 * Determines whether or not we should accept the request based on
-		 * the mime type accepted by the user agent.  If no array or an empty
-		 * array is passed the configured default accept types will be used.
-		 * If the request_format is provided in the request and the list of
-		 * acceptable types does not support the provided accept headers a
-		 * not_found error will be triggerd.  If no request_format is provided
-		 * in the request and the list of acceptable types does not support the
-		 * provided accept headers the method will trigger a 'not_acceptable'
-		 * error.
+		 * Determines whether or not we should accept the request based on the mime type accepted
+		 * by the user agent.  If no array or an empty array is passed the configured default
+		 * accept types will be used.  If the request_format is provided in the request and the
+		 * list of acceptable types does not support the provided accept headers a not_found error
+		 * will be triggerd.  If no request_format is provided in the request and the list of
+		 * acceptable types does not support the provided accept headers the method will trigger
+		 * a 'not_acceptable' error.
 		 *
 		 * @static
 		 * @access protected
@@ -492,13 +497,13 @@
 		}
 
 		/**
-		 * Determines whether or not we should accept the request based on
-		 * the languages accepted by the user agent.
+		 * Determines whether or not we should accept the request based on the languages accepted
+		 * by the user agent.
 		 *
 		 * @static
 		 * @access protected
 		 * @param array $language An array of acceptable languages
-		 * @return mixed The method will trigger a 'not_accepted' error on failure, will return the best type upon success.
+		 * @return mixed The method will trigger the 'not_accepted' error on failure, will return the best type upon success.
 		 */
 		static protected function acceptLanguages(array $languages)
 		{
@@ -508,9 +513,9 @@
 		}
 
 		/**
-		 * Determines whether or not accept the request method is allowed.  If
-		 * the current request method is not in the list of allowed methods,
-		 * the method will trigger the error 'not_allowed'
+		 * Determines whether or not accept the request method is allowed.  If the current request
+		 * method is not in the list of allowed methods, the method will trigger the 'not_allowed'
+		 * error.
 		 *
 		 * @static
 		 * @access protected
@@ -594,10 +599,9 @@
 		}
 
 		/**
-		 * Attempts to execute a target within the context of of Controller.
-		 * By default the execution of the target is optional, meaning the
-		 * target need not exist.  You can wrap this function in ::demand()
-		 * in order to require it.
+		 * Attempts to execute a target within the context of of Controller.  By default the
+		 * execution of the target is optional, meaning the target need not exist.  You can wrap
+		 * this function in Controller::demand() in order to require it.
 		 *
 		 * @static
 		 * @access protected
@@ -616,10 +620,9 @@
 		}
 
 		/**
-		 * Attempts to delegate control to a file within the context of
-		 * Controller.  By default the delegation is optional, meaning the
-		 * file need not exist.  You can wrap this function in ::demand() in
-		 * order to require it.
+		 * Attempts to delegate control to a file within the context of Controller.  By default the
+		 * delegation is optional, meaning the file need not exist.  You can wrap this function in
+		 * Controller::demand() in order to require it.
 		 *
 		 * @static
 		 * @access protected
@@ -692,8 +695,7 @@
 		}
 
 		/**
-		 * Determines the base path of the controller from the controller root
-		 * and base URL.
+		 * Determines the base path of the controller from the controller root and base URL.
 		 *
 		 * @static
 		 * @access protected
@@ -712,9 +714,9 @@
 		}
 
 		/**
-		 * Determines the request format for the resource.  The request format
-		 * can be taken is as a get or URL parameter with the simple name
-		 * 'request_format', but must be explicitly set on routes.
+		 * Determines the request format for the resource.  The request format can be taken is as
+		 * a get or URL parameter with the simple name 'request_format', but must be explicitly set
+		 * on routes.
 		 *
 		 * If the request format is provided and the HTTP Accept header does
 		 * not accept the appropriate mime-type a not_acceptable error will be
@@ -743,7 +745,7 @@
 		}
 
 		/**
-		 * Gets the current directly accessed action
+		 * Gets the current directly accessed action.
 		 *
 		 * @static
 		 * @access protected
@@ -769,7 +771,7 @@
 		}
 
 		/**
-		 * A quick way to check against the current base URL
+		 * A quick way to check against the current base URL.
 		 *
 		 * @static
 		 * @access protected
@@ -795,8 +797,8 @@
 		}
 
 		/**
-		 * Determines whether or not a particular class is the entry class
-		 * being used by the router.
+		 * Determines whether or not a particular class is the entry class being used by the
+		 * router.
 		 *
 		 * @static
 		 * @access protected
@@ -809,8 +811,7 @@
 		}
 
 		/**
-		 * Determines whether or not a particular method is the action being
-		 * used by the router.
+		 * Determines whether or not a particular method is the action being used by the router.
 		 *
 		 * @static
 		 * @access protected
@@ -823,8 +824,8 @@
 		}
 
 		/**
-		 * Determines whether or not a particular class and method is the
-		 * entry and action for the router.
+		 * Determines whether or not a particular class and method is the entry and action for the
+		 * router.
 		 *
 		 * @static
 		 * @access protected
@@ -837,11 +838,10 @@
 		}
 
 		/**
-		 * Triggers a standard error which will attempt to use whatever error
-		 * handlers have been assigned.  If the error is unknown an HTTP/1.0
-		 * 500 Internal Server Error header will be sent.  Otherwise headers
-		 * will be matched against any set error headers or the defaults.  If
-		 * no handler is set a hard error will be triggered.
+		 * Triggers a standard error which will attempt to use whatever error handlers have been
+		 * assigned.  If the error is unknown an HTTP/1.0 500 Internal Server Error header will be
+		 * sent.  Otherwise headers will be matched against any set error headers or the defaults.
+		 * If no handler is set a hard error will be triggered.
 		 *
 		 * @static
 		 * @access protected
@@ -889,9 +889,8 @@
 		}
 
 		/**
-		 * Triggers a hard error doing little more than outputting the message
-		 * on the screen, this should not be called except by extended error
-		 * handlers or by Controller::triggerError()
+		 * Triggers a hard error doing little more than outputting the message on the screen, this
+		 * should not be called except by extended error handlers or by Controller::triggerError()
 		 *
 		 * @static
 		 * @access protected
@@ -916,28 +915,9 @@
 		}
 
 		/**
-		 * Sets error information for the Controller
-		 *
-		 * @static
-		 * @access protected
-		 * @param string $error The error to set a handler for
-		 * @param string $handler An inKWell target to execute if the error is triggered
-		 * @param string $header The HTTP header to output if the error is triggered
-		 * @param string $message A default message to display explaining the error
-		 * @return void
-		 */
-		static private function setError($error, $handler = NULL, $header = NULL, $message = NULL)
-		{
-			self::$errors[$error]['handler'] = $handler;
-			self::$errors[$error]['header']  = $header;
-			self::$errors[$error]['message'] = $message;
-		}
-
-		/**
-		 * Builds a new controller by assigning it a local view and running
-		 * prepare if it exists.  Only static methods on controllers can
-		 * instantiate a new controller object, and all standard __construct()
-		 * functionality should be moved to prepare().
+		 * Builds a new controller by assigning it a local view and running prepare if it exists.
+		 * Only static methods on controllers can instantiate a new controller object, and all
+		 * standard __construct() functionality should be moved to prepare().
 		 *
 		 * @deprecated
 		 * @final
@@ -960,8 +940,7 @@
 		}
 
 		/**
-		 * Prepares a new controller by establishing any shared object
-		 * information
+		 * Prepares a new controller by establishing any shared object information.
 		 *
 		 * @deprecated
 		 * @access protected
@@ -980,4 +959,21 @@
 				-> push ('title',   $title);
 		}
 
+		/**
+		 * Sets error information for the Controller.
+		 *
+		 * @static
+		 * @access protected
+		 * @param string $error The error to set a handler for
+		 * @param string $handler An inKWell target to execute if the error is triggered
+		 * @param string $header The HTTP header to output if the error is triggered
+		 * @param string $message A default message to display explaining the error
+		 * @return void
+		 */
+		static private function setError($error, $handler = NULL, $header = NULL, $message = NULL)
+		{
+			self::$errors[$error]['handler'] = $handler;
+			self::$errors[$error]['header']  = $header;
+			self::$errors[$error]['message'] = $message;
+		}
 	}

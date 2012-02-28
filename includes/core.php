@@ -1,19 +1,17 @@
 <?php
 
 	/**
-	 * IW is the core inKWell class responsible for all shared functionality
-	 * of all it's components.  It is a purely static class and is not meant
-	 * to be instantiated or extended.
+	 * IW is the core inKWell class responsible for all shared functionality of all its components.
+	 * Tt is a purely static class and is not meant to be instantiated or extended publically.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
-	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
-	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 * @copyright Copyright (c) 2012, Matthew J. Sahagian
+	 * @license Please reference the LICENSE.txt file at the root of this distribution
 	 *
 	 * @package inKWell
 	 */
 	class iw
 	{
-
 		const DEFAULT_CONFIG_PATH      = 'config';
 		const DEFAULT_CONFIG           = 'default';
 
@@ -118,8 +116,8 @@
 		static private $roots = array();
 
 		/**
-		 * Constructing an iw object is not allowed, this is purely for
-		 * namespacing and static controls.
+		 * Constructing an iw object is not allowed, this is purely for namespacing and static
+		 * controls.
 		 *
 		 * @final
 		 * @access private
@@ -131,9 +129,8 @@
 		}
 
 		/**
-		 * Creates a configuration array, and sets the config type element to
-		 * match the specified $type provided by the user for later use with
-		 * iw::getConfigsByType()
+		 * Creates a configuration array, and sets the config type element to match the specified
+		 * $type provided by the user for later use with iw::getConfigsByType()
 		 *
 		 * @static
 		 * @access public
@@ -147,11 +144,10 @@
 		}
 
 		/**
-		 * Builds a configuration from a series of separate configuration
-		 * files loaded from a single directory.  Each configuration key in the
-		 * final $config array is named after the file from which it is loaded.
-		 * Configuration files should be valid PHP scripts which return
-		 * it's local configuration options (for include).
+		 * Builds a configuration from a series of separate configuration files loaded from a
+		 * single directory.  Each configuration key in the final $config array is named after the
+		 * file from which it is loaded.  Configuration files should be valid PHP scripts which
+		 * return it's local configuration options (for include).
 		 *
 		 * @static
 		 * @access public
@@ -210,11 +206,11 @@
 				$config['__types'][$type][] = $config_element;
 				$config[$config_element]  = $current_config;
 			}
-
+			//
 			// Ensures we recusively scan all directories and merge all
 			// configurations.  Directory names do not play a role in the
 			// configuration key name.
-
+			//
 			foreach (glob($directory . '*', GLOB_ONLYDIR) as $sub_directory) {
 				$config = array_merge_recursive(
 					$config,
@@ -623,9 +619,8 @@
 		}
 
 		/**
-		 * Returns a list of available interfaces.  Optionally this will exclude
-		 * any interfaces which were added by inKWell (i.e. which didn't exist)
-		 * in PHP itself.
+		 * Returns a list of available interfaces.  Optionally this will exclude any interfaces
+		 * which were added by inKWell (i.e. which didn't exist) in PHP itself.
 		 *
 		 * @param boolean $native Get only native interfaces, default is FALSE
 		 * @return array The list of interfaces
@@ -640,9 +635,9 @@
 		}
 
 		/**
-		 * Get configuration information. If no $element is specified
-		 * the full inKwell configuration is returned.  You can specify
-		 * multiple sub_elements as multiple parameters.
+		 * Get configuration information. If no $element is specified the full inKwell
+		 * configuration is returned.  You can specify multiple sub_elements as multiple
+		 * parameters.
 		 *
 		 * @static
 		 * @access public
@@ -679,9 +674,9 @@
 		}
 
 		/**
-		 * Get all the configurations matching a certain type.  If one or more
-		 * sub elements are defined as additional parameters the returned array
-		 * will contain only the specific information for each config element.
+		 * Get all the configurations matching a certain type.  If one or more sub elements are
+		 * defined as additional parameters the returned array will contain only the specific
+		 * information for each config element.
 		 *
 		 * @static
 		 * @access public
@@ -729,10 +724,9 @@
 		}
 
 		/**
-		 * Gets the requested write directory.  If the optional parameter is
-		 * entered it will attempt to get it as a sub directory of the overall
-		 * write directory.  If the sub directory does not exist, it will create
-		 * it with owner and group writable permissions.
+		 * Gets a write directory.  If the optional parameter is entered it will attempt to get it
+		 * as a sub directory of the overall write directory.  If the sub directory does not exist,
+		 * it will create it with owner and group writable permissions.
 		 *
 		 * @static
 		 * @access public
@@ -770,7 +764,7 @@
 		}
 
 		/**
-		 * Gets a configured root directory for the list of available roots
+		 * Gets a configured root directory from the list of available roots
 		 *
 		 * @static
 		 * @access public
@@ -821,8 +815,8 @@
 		}
 
 		/**
-		 * Creates a target identifier from an entry and action.  If the entry
-		 * consists of the term 'link' then the action is treated as a URL.
+		 * Creates a target identifier from an entry and action.  If the entry consists of the
+		 * term 'link' then the action is treated as a URL.
 		 *
 		 * @static
 		 * @access public
@@ -876,8 +870,7 @@
 		}
 
 		/**
-		 * Creates a unique failure token which can then be checked with
-		 * checkFailureToken().
+		 * Creates a unique failure token which can then be checked with checkFailureToken().
 		 *
 		 * @static
 		 * @access public
@@ -903,12 +896,12 @@
 		}
 
 		/**
-		 * Checks the SAPI name
+		 * Checks the current SAPI name
 		 *
 		 * @static
 		 * @access public
 		 * @param string $sapi The SAPI to verify running
-		 * @return bollean TRUE if the running SAPI matches, FALSE otherwise
+		 * @return boolean TRUE if the running SAPI matches, FALSE otherwise
 		 */
 		static public function checkSAPI($sapi)
 		{
@@ -916,8 +909,8 @@
 		}
 
 		/**
-		 * The inKWell conditional autoloader which allows for auto loading
-		 * based on dynamic class name matches.
+		 * The inKWell conditional autoloader which allows for auto loading based on dynamic class
+		 * name matches.
 		 *
 		 * @static
 		 * @access public
@@ -983,7 +976,6 @@
 			return FALSE;
 		}
 
-
 		/**
  		 * Renders various data types and objects to the screen.
 		 *
@@ -1021,15 +1013,14 @@
 			}
 		}
 
-
 		/**
-		 * Initializes a class by calling it's __init() method if it has one
-		 * and returning its return value.
+		 * Initializes a class by calling it's __init() method if it has one and returning its
+		 * return value.
 		 *
 		 * @static
 		 * @access protected
 		 * @param string $class The class to initialize
-		 * @return mixed The return value of the __init function, usually boolean
+		 * @return bool Whether or not the initialization was successful
 		 */
 		static protected function initializeClass($class)
 		{
@@ -1074,8 +1065,7 @@
 		}
 
 		/**
-		 * Adds a database to the database index for retrieval with
-		 * getDatabase() method.
+		 * Adds a database to the database index for retrieval with getDatabase() method.
 		 *
 		 * @static
 		 * @access private

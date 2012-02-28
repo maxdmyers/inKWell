@@ -1,11 +1,15 @@
 <?php
 
 	/**
-	 * The inKWell scaffolder
+	 * The inKWell Scaffolder
+	 *
+	 * The Scaffolder class is an extremely lightweight "templating" class designed to allow you
+	 * to easily template PHP within PHP.  It has a few helper methods for cleaning up variables
+	 * and validating variable names as well as the primary make and build methods.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
-	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
-	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 * @copyright Copyright (c) 2012, Matthew J. Sahagian
+	 * @license Please reference the LICENSE.txt file at the root of this distribution
 	 *
 	 * @package inKWell
 	 */
@@ -130,7 +134,7 @@
 		 * @access public
 		 * @param string $builder A valid class or template name
 		 * @param string $target A valid class name or file location
-		 * @param string 
+		 * @param string
 		 * @return void
 		 */
 		static public function build($builder, $target, $template_vars = array())
@@ -253,8 +257,8 @@
 		}
 
 		/**
-		 * Exports variables in the same sense as var_export(), however does
-		 * some cleanup for arrays and other types.
+		 * Exports variables in the same sense as var_export(), however does some cleanup for
+		 * arrays and other types.
 		 *
 		 * @static
 		 * @access private

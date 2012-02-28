@@ -5,14 +5,13 @@
 	 * It provides a series of common methods used by common Controller objects.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
-	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
-	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 * @copyright Copyright (c) 2012, Matthew J. Sahagian
+	 * @license Please reference the LICENSE.txt file at the root of this distribution
 	 *
 	 * @package inKWell
 	 */
 	abstract class ActiveRecord extends fActiveRecord implements inkwell, JSONSerializable
 	{
-
 		const DEFAULT_FIELD_SEPARATOR = '-';
 		const DEFAULT_WORD_SEPARATOR  = '_';
 

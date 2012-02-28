@@ -1,18 +1,20 @@
 <?php
 
 	/**
-	 * The view class is responsible for interfacing Controllers with actual
-	 * view files / templates.
+	 * The inKWELL view class
+	 *
+	 * Views are instantiated objects which loosely couple data to templated languages.  These
+	 * objects are primarily designed to work with HTML, so a number of helper methods are provided
+	 * to more easily work with markup.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
-	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
-	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 * @copyright Copyright (c) 2012, Matthew J. Sahagian
+	 * @license Please reference the LICENSE.txt file at the root of this distribution
 	 *
 	 * @package inKWell
 	 */
 	class View extends fTemplating implements inkwell
 	{
-
 		const DEFAULT_VIEW_ROOT     = 'views';
 		const DEFAULT_CACHE_DIR     = 'cache';
 		const PRIMARY_VIEW_ELEMENT  = '__main__'; // This must match Flourish
@@ -187,7 +189,7 @@
 		}
 
 		/**
-		 * Creates a new templating object.
+		 * Creates a new view object.
 		 *
 		 * @access public
 		 * @param string $view_root The root directory for views
@@ -219,8 +221,8 @@
 		}
 
 		/**
-		 * Gets the output of the view or a particular view element. allowing for
-		 * filters to be applied.
+		 * Gets the output of the view or a particular view element. allowing for filters to be
+		 * applied.
 		 *
 		 * @param string $element An optional name of an element to output
 		 * @param array $filters A list of callbacks to filter the rendered view through
@@ -295,11 +297,9 @@
 		}
 
 		/**
-		 * Loads a view file.  If the file begins with a '/' it will be looked
-		 * for relative to the document root.  If the file does not it will be
-		 * relative to the configured view root.  If the first parameter
-		 * may be an array of files, of which, the first one to exist will be
-		 * used.
+		 * Loads a view file.  If the file begins with a '/' it will be looked for relative to the
+		 * document root.  If the file does not it will be relative to the configured view root.
+		 * If the first parameter is an array of files, the first one to exist will be used.
 		 *
 		 * @access public
 		 * @param string|array $file The path to the view file or an array of candidate files
@@ -342,11 +342,10 @@
 		}
 
 		/**
-		 * Adds string content to a view element, such that when the element
-		 * is placed the content is directly outputted.  In short, this is
-		 * for non-data elements which do not have template files.  If the
-		 * second parameter is NULL content will be loaded directly into the
-		 * view.
+		 * Adds string content to a view element, such that when the element is placed the content
+		 * is directly outputted.  In short, this is for non-data elements which do not have
+		 * template files.  If the second parameter is NULL content will be loaded directly into
+		 * the view.
 		 *
 		 * @access public
 		 * @param string $element The name of the element, or content for primary element
@@ -369,8 +368,8 @@
 		}
 
 		/**
-		 * Pack's data into the view's data storage area destroying any
-		 * existing keys which may be in it's way
+		 * Pack's data into the view's data storage area destroying any existing keys which may be
+		 * in it's way
 		 *
 		 * @access public
 		 * @param string|array $data_set A string indicating the data set to pack into
@@ -389,8 +388,8 @@
 		}
 
 		/**
-		 * Pushes data onto the end of the data storage arrays given keys.
-		 * If an element is pushed on which is not an array, it will become one.
+		 * Pushes data onto the end of the data storage arrays given keys. If an element is pushed
+		 * on which is not an array, it will become one.
 		 *
 		 * @access public
 		 * @param string $data_set A string indicating the data set to push into
@@ -415,9 +414,9 @@
 		 }
 
 		/**
-		 * Pulls data referenced by a key from the view's data storage array.
-		 * Optionally the data can be destroyed after being pulled and will no
-		 * longer be accessible through future calls.
+		 * Pulls data referenced by a key from the view's data storage array.  Optionally the data
+		 * can be destroyed after being pulled and will no longer be accessible through future
+		 * calls.
 		 *
 		 * @access public
 		 * @param string $key The key of the data to try an pull
@@ -447,9 +446,9 @@
 		}
 
 		/**
-		 * Peels data off the end of referenced data storage array.  Optionally
-		 * the data can be destroyed.  Please note, that if the data is not
-		 * an array this becomes functionally equivalent to pull.
+		 * Peels data off the end of referenced data storage array.  Optionally the data can be
+		 * destroyed.  Please note, that if the data is not an array this becomes functionally
+		 * equivalent to pull.
 		 *
 		 * @access public
 		 * @param string $key The key of the data from which to pop a value
@@ -483,12 +482,11 @@
 		}
 
 		/**
-		 * Iterates over an element and outputs a provided partial or callable
-		 * emitter for each child element.  If the emitter is a callback it
-		 * can accept up to two arguments, the first being the child element
-		 * during each call, and the second being the current view.  If the
-		 * emitter is an array, the key is used as the child element variable
-		 * within the partial, while the value is the view partial.
+		 * Iterates over an element and outputs a provided partial or callable emitter for each
+		 * child element.  If the emitter is a callback it can accept up to two arguments, the
+		 * first being the child element during each call, and the second being the current view.
+		 * If the emitter is an array, the key is used as the child element variable within the
+		 * partial, while the value is the view partial.
 		 *
 		 * Examples:
 		 *
@@ -561,11 +559,10 @@
 		}
 
 		/**
-		 * Verifies/Checks view data.  View data is checked by ensuring that
-		 * all elements identified by the keys of $matches equal their
-		 * respective value in $matches, or if the value is an array, whether
-		 * or not the value identified by the element/key is contained in the
-		 * array.
+		 * Verifies/Checks view data.  View data is checked by ensuring that all elements
+		 * identified by the keys of $matches equal their respective value in $matches, or if the
+		 * value is an array, whether or not the value identified by the element/key is contained
+		 * in the array.
 		 *
 		 * @access public
 		 * @param array $matches An array of key (data element) to value (to match against) pairs.
@@ -591,9 +588,8 @@
 		}
 
 		/**
-		 * Allows for 'selecting' in the view if all data identified
-		 * by the keys of $matches contains (if array) or is equal to their
-		 * respective value in $matches.
+		 * Allows for 'selecting' in the view if all data identified by the keys of $matches
+		 * contains (if array) or is equal to their respective value in $matches.
 		 *
 		 * @access public
 		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
@@ -610,9 +606,8 @@
 		}
 
 		/**
-		 * Allows for 'disabling' in the view if all data identified by
-		 * the keys of $matches contains (if array) or is equal to their
-		 * respective value in $matches.
+		 * Allows for 'disabling' in the view if all data identified by the keys of $matches
+		 * contains (if array) or is equal to their respective value in $matches.
 		 *
 		 * @access public
 		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
@@ -629,9 +624,8 @@
 		}
 
 		/**
-		 * Allows for 'highlighting' in the view if all data identified
-		 * by the keys of $matches contains (if array) or is equal to their
-		 * respective value in $matches.
+		 * Allows for 'highlighting' in the view if all data identified by the keys of $matches
+		 * contains (if array) or is equal to their respective value in $matches.
 		 *
 		 * @access public
 		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
@@ -647,8 +641,8 @@
 		}
 
 		/**
-		 * Determines position information about $current_value in the array or
-		 * iterator identified by $key in the data storage area.
+		 * Determines position information about $current_value in the array or iterator identified
+		 * by $key in the data storage area.
 		 *
 		 * @access public
 		 * @param string $key The key of the iterator in the data storage area
@@ -687,8 +681,7 @@
 		}
 
 		/**
-		 * Combines the view element $element together with the separate
-		 * provided by $separator.
+		 * Combines the view element $element together with the separate provided by $separator.
 		 *
 		 * @access public
 		 * @param string $element The name of the element to combine
@@ -708,8 +701,8 @@
 		}
 
 		/**
-		 * Reverse combines the view element $element together with the
-		 * separator provided by $separator.
+		 * Reverse combines the view element $element together with the separator provided by
+		 * $separator.
 		 *
 		 * @access public
 		 * @param string $key The key of the data which to combine
