@@ -47,20 +47,6 @@
 		static private $minificationMode = NULL;
 
 		/**
-		 * A simple factory method for creating new views based on a file.
-		 *
-		 * @static
-		 * @access public
-		 * @param string $view_file The file to load
-		 * @return View The view object with the view file loaded
-		 */
-		static public function create($view_file)
-		{
-			$view = new self();
-			return $view->load($view_file);
-		}
-
-		/**
 		 * The data storage area
 		 *
 		 * @access private
@@ -135,6 +121,24 @@
 					self::$minificationMode = iw::getExecutionMode();
 				}
 			}
+		}
+
+		/**
+		 * A simple factory method for creating new views based on a file.
+		 *
+		 * @static
+		 * @access public
+		 * @param string|array $view_file The view file or an array of candidate view files to load
+		 * @param array $data An optional array of initial data
+		 * @return View The view object with the view file loaded
+		 */
+		static public function create($view_file, $data = array())
+		{
+			$view = new self();
+			$view->load($view_file);
+			$view->pack($data);
+
+			return $view;
 		}
 
 		/**
