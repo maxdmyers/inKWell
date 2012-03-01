@@ -246,67 +246,14 @@ git clone --recursive git://github.com/dotink/inKWell.git ./
 					<h3>Samples</h3>
 
 					<figure>
-						<pre><code>
-return iw::createConfig('ActiveRecord', array(
-
-	'table'     => 'auth.users',
-	'id_column' => 'username',
-
-	'password_columns' => array(
-		'login_password'
-	),
-
-	'fixed_columns' => array(
-		'date_created',
-		'date_last_accessed',
-		'last_acccessed_from'
-	),
-
-	'order' => array(
-		'id' => 'asc'
-	),
-));
-							</code></pre>
+						<pre><code><%= fHTML::encode(file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/assets/config.sample')) %></pre></code>
 						<figcaption>
 							A configuration for a user model using all standard configuration keys.
 						</figcaption>
 					</figure>
 
 					<figure>
-						<pre><code>
-class UsersController extends Controller
-{
-	/**
-	 * Gets a list user
-	 */
-	static public function list($page = 1, $limit = 15)
-	{
-		$page   = fRequest::get('page', 'integer', $page);
-		$limit  = fRequest::get('limit', 'integer', $limit);
-		$offset = ($page - 1) * $limit;
-
-		$filter = array('active=' => TRUE);
-		$order  = array('last_login_date' => 'desc');
-
-		$users  = Users::build($filter, $order, $limit, $offset);
-
-		$view   = View::create('users/list.php', array(
-			'title' => 'Active Users',
-			'page'  => $page,
-			'users' => $users
-		));
-
-		switch (self::acceptTypes()) {
-			case 'text/html':
-				return $view;
-			case 'application/json':
-				return fJSON::encode($view);
-			default:
-				self::triggerError('not_acceptable');
-		}
-	}
-}
-						</code></pre>
+						<pre><code><%= fHTML::encode(file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/assets/controller.sample')) %></pre></code>
 						<figcaption>
 							A simple controller with a single list method
 						</figcaption>
@@ -314,24 +261,7 @@ class UsersController extends Controller
 
 
 					<figure>
-						<pre><code>
-&lt;h1>
-	<%= $this->pull('title') %> (Page <%= $this->pull('page') %>)
-&lt;/h1>
-&lt;ul>
-	<% $this->repeat('users', function($user, $view) { %>
-		&lt;li>
-			&lt;h2>
-				<%= (string) $user %>
-			&lt;/h2>
-			&lt;p>
-				This account was created on:
-				<%= $user->prepareDateCreated('F jS, Y') %>
-			&lt;/p>
-		&lt;/li>
-	<% }); %>
-&lt;/ul>
-						</code></pre>
+						<pre><code><%= fHTML::encode(file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/assets/view.sample')) %></pre></code>
 						<figcaption>
 							A view using the repeat method with a PHP 5.3 anonymous function for an emitter
 						</figcaption>
