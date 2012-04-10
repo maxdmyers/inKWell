@@ -1013,7 +1013,7 @@
 		 * @return bool Whether or not the initialization was successful
 		 */
 		static protected function initializeClass($class)
-		{
+		{	echo $class;
 			//
 			// Classes cannot be initialized twice
 			//
