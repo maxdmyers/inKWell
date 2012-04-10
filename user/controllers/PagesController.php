@@ -59,11 +59,12 @@
 
 		static public function show()
 		{
+			if (fRequest::check('create') || fRequest::check('edit')) {
+				return self::edit();
+			}
+
 			try {
-				$page = new fFile(self::$pagesDirectory . DIRECTORY_SEPARATOR . self::$pagePath);
-
-				return View::create('default.php')->digest('content', MarkdownExtended($page->read()));
-
+				return View::create('default.php')->digest('content', MarkdownExtended(self::loadURI()->read()));
 			} catch (fValidationException $e) {
 				return self::triggerError('not_found');
 			}
@@ -71,12 +72,23 @@
 
 		static public function edit()
 		{
+			$source = NULL;
 
+			try {			
+				$source = self::loadURI()->read();
+			} catch (fValidationException $e) {}
+
+			return view::create('default.php')->set('content', 'edit.php')->pack('source', $source); 
 		}
 
 		static public function notFound()
 		{
 			return View::create('default.php')->set('content', 'not_found.php');
+		}
+
+		static private loadURI()
+		{
+			return new fFile(self::$pagesDirectory . DIRECTORY_SEPARATOR . self::$pagePath);
 		}
 
 	}
