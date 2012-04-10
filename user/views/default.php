@@ -29,9 +29,15 @@
 				margin: auto;
 			}
 
-			body > .torso {
+
+			body#home > .torso {
 				min-width: 980px;
 				max-width: 1396px;
+			}
+
+			body > .torso {
+				min-width: 640px;
+				max-width: 640px;
 				padding: 0 15px;
 			}
 
