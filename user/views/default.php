@@ -120,7 +120,7 @@
 
 			code {
 				color: #aaa;
-				font-size: 12px;
+				font-size: 14px;
 			}
 
 			pre code {
