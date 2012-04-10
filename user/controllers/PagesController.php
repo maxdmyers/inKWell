@@ -10,7 +10,7 @@
 	{
 
 		static private $pagesDirectory = NULL;
-		static private $pagePath = NULL;
+		static private $pagePath       = NULL;
 
 		/**
 		 * Prepares a new PagesController for running actions.
@@ -45,7 +45,7 @@
 			// configuration.
 
 			self::$pagesDirectory = iw::getWriteDirectory('pages');
-			self::$pagePath       = $_SERVER['REQUEST_URI'];
+			self::$pagePath       = fURL::get();
 
 			if (strpos(self::$pagePath, '/../') !== FALSE) {
 				fURL::redirect(str_replace('/../', '/', self::$pagePath));
