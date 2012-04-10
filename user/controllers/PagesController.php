@@ -65,7 +65,7 @@
 				return View::create('default.php')->digest('content', MarkdownExtended($page->read()));
 
 			} catch (fValidationException $e) {
-				self::triggerError('not_found');
+				return self::triggerError('not_found');
 			}
 		}
 
@@ -76,9 +76,7 @@
 
 		static public function notFound()
 		{
-			return View::create('default.php', array(
-				'content' => View::create('not_found.php')
-			));
+			return View::create('default.php')->set('content', 'not_found.php');
 		}
 
 	}
