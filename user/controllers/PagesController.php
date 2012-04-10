@@ -86,7 +86,7 @@
 			return View::create('default.php')->set('content', 'not_found.php');
 		}
 
-		static private loadURI()
+		static private function loadURI()
 		{
 			return new fFile(self::$pagesDirectory . DIRECTORY_SEPARATOR . self::$pagePath);
 		}
