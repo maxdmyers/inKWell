@@ -62,9 +62,8 @@
 			try {
 				$page = new fFile(self::$pagesDirectory . DIRECTORY_SEPARATOR . self::$pagePath);
 
-				return View::create('default.php', array(
-					'content' => MarkdownExtended($page->read())
-				));
+				return View::create('default.php')->digest('content', MarkdownExtended($page->read()));
+
 			} catch (fValidationException $e) {
 				self::triggerError('not_found');
 			}
