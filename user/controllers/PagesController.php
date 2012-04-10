@@ -62,7 +62,8 @@
 			}
 
 			try {
-				return View::create('default.php')->digest('content', MarkdownExtended(self::loadURI()->read()));
+				$parser = new MarkdownExtraExtended_Parser();
+				return View::create('default.php')->digest('content', $parser->transform(self::loadURI()->read()));
 			} catch (fValidationException $e) {
 				return self::triggerError('not_found');
 			}
