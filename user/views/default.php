@@ -82,7 +82,7 @@
 			}
 
 			header h1 {
-				background: transparent center url('inkwell_logo.png');
+				background: transparent center url('/inkwell_logo.png');
 				width: 500px;
 				height: 245px;
 				margin: auto;
@@ -144,6 +144,13 @@
 		</header>
 		<div class="torso">
 			<% $this->place('content'); %>
+			<% if (fSession::get('source')) { %>
+				<form action="" method="post">
+					<input type="hidden" name="source" value="<%= fHTML::encode(fSession::delete('source')) %>" />
+					<button type="submit" name="action" value="save">Save</button>
+					<button type="submit" name="edit" value="">Edit</button>
+				</form>
+			<% } %>
 		</div>
 		<footer>
 		</footer>

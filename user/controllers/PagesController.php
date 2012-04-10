@@ -63,11 +63,16 @@
 
 			try {
 				$parser = new MarkdownExtraExtended_Parser();
-				$source = ($source)
-					? $source
-					: self::loadURI()->read();
 
-				return View::create('default.php')->digest('content', $parser->transform($source));
+				if ($source) {
+					fSession::set('source', $source);
+					$source = $parser->transform($source);
+				} else {
+					$source = $parser->transform(self::loadURI()->read());
+				}
+
+				return View::create('default.php')->digest('content', $source);
+
 			} catch (fValidationException $e) {
 				return self::triggerError('not_found');
 			}
@@ -115,7 +120,7 @@
 		static private function loadURI($create = FALSE)
 		{
 			$file = self::$pagesDirectory . DIRECTORY_SEPARATOR . self::$pagePath;
-			echo $file;
+
 			return ($create)
 				? fFile::create($file, '')
 				: new fFile($file);
