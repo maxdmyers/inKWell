@@ -111,6 +111,10 @@
 				border-top: solid 1px rgb(50,50,50);
 			}
 
+			code {
+				color: #aaa;
+			}
+
 			pre code {
 				border-radius: .5em .5em .5em .5em;
 				padding: 1% 2.5%;
@@ -137,7 +141,7 @@
 
 		</style>
 	</head>
-	<body>
+	<body id="<%= $this->pull('id', NULL) %>">
 		<header>
 			<hgroup>
 				<h1>inKWell</h1>
