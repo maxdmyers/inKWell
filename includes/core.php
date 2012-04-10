@@ -959,6 +959,8 @@
 						ltrim(str_replace('\\', DIRECTORY_SEPARATOR, $class), '\\') . '.php'
 					));
 
+					echo $file;
+
 					if (file_exists($file)) {
 
 						include $file;
