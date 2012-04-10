@@ -21,7 +21,7 @@
 
 			body {
 				color: #aaa;
-				font-size: 1.4em;
+				font-size: 1.6em;
 			}
 
 			body > header,
@@ -120,7 +120,7 @@
 
 			code {
 				color: #aaa;
-				font-size: 11px;
+				font-size: 12px;
 			}
 
 			pre code {
