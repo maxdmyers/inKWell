@@ -104,14 +104,14 @@ git clone --recursive git://github.com/dotink/inKWell.git ./
 					<h3>Samples</h3>
 
 					<figure>
-						<pre><code><%= fHTML::encode(file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/assets/config.sample')) %></code></pre>
+						<pre><code><%= fHTML::encode(file_get_contents($_SERVER['DOCUMENT_ROOT'] . 'assets/config.sample')) %></code></pre>
 						<figcaption>
 							A configuration for a user model using all standard configuration keys.
 						</figcaption>
 					</figure>
 
 					<figure>
-						<pre><code><%= fHTML::encode(file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/assets/controller.sample')) %></code></pre>
+						<pre><code><%= fHTML::encode(file_get_contents($_SERVER['DOCUMENT_ROOT'] . 'assets/controller.sample')) %></code></pre>
 						<figcaption>
 							A simple controller with a single list method
 						</figcaption>
@@ -119,7 +119,7 @@ git clone --recursive git://github.com/dotink/inKWell.git ./
 
 
 					<figure>
-						<pre><code><%= fHTML::encode(file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/assets/view.sample')) %></code></pre>
+						<pre><code><%= fHTML::encode(file_get_contents($_SERVER['DOCUMENT_ROOT'] . 'assets/view.sample')) %></code></pre>
 						<figcaption>
 							A view using the repeat method with a PHP 5.3 anonymous function for an emitter
 						</figcaption>
