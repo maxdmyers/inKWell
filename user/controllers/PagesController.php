@@ -83,32 +83,29 @@
 			$source = fRequest::get('source', 'string', NULL);
 
 			if (fRequest::isPost()) {
+				switch(fRequest::get('action', 'string', 'save')) {
+					case 'preview':
+						return self::show($source);
+					case 'save':
+						try {
+							$file = self::loadURI();
+						} catch (fValidationException $e) {
+							$file = self::loadURI(TRUE);
+						}
 
-				$action = fRequest::get('action', 'string', 'save');
+						try {
+							$file->write($source);
+						} catch (fException $e) {}
 
-				if ($action == 'preview') {
-					return self::show($source);
+						fURL::redirect();
 				}
 
-				try {
-					$file = self::loadURI();
-				} catch (fValidationException $e) {
-					$file = self::loadURI(TRUE);
-				}
-
-				try {
-					$file->write($source);
-				} catch (fException $e) {
-
-				}
-
-				fURL::redirect();
 			}
 
-			try {			
-				$source = self::loadURI()->read();
-			} catch (fValidationException $e) {
-				echo $e->getMessage();
+			if (!$source) {
+				try {			
+					$source = self::loadURI()->read();
+				} catch (fValidationException $e) {}
 			}
 
 			return View::create('default.php')->set('content', 'edit.php')->pack('source', $source); 
