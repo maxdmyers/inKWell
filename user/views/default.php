@@ -117,10 +117,12 @@
 				tab-size: 4;
 				box-shadow: inset 0 0 1em rgb(80,80,80);
 				-moz-tab-size: 4;
+				margin-bottom: 2em;
 			}
 
 			figure pre code {
 				border-radius: .5em .5em 0 0;
+				margin-bottom: 0;
 			}
 
 			.featurette.group > div {
