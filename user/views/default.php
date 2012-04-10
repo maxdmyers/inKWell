@@ -20,7 +20,8 @@
 			}
 
 			body {
-				color: rgb(220,220,220);
+				color: #aaa;
+				font-size: 1.4em;
 			}
 
 			body > header,
@@ -36,8 +37,8 @@
 			}
 
 			body > .torso {
-				min-width: 640px;
-				max-width: 640px;
+				min-width: 800px;
+				max-width: 800px;
 				padding: 0 15px;
 			}
 
@@ -66,7 +67,7 @@
 			}
 
 			a {
-				color: rgb(155, 170, 175);
+				color: #abbacf;
 				text-decoration: underline;
 			}
 
@@ -84,7 +85,7 @@
 			}
 
 			h3,h4 {
-				color: rgb(250,250,230);
+				color: rgb(230,230,210);
 			}
 
 			header h1 {
@@ -119,6 +120,7 @@
 
 			code {
 				color: #aaa;
+				font-size: 11px;
 			}
 
 			pre code {
