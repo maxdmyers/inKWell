@@ -985,17 +985,8 @@
 		 */
 		static public function render($data)
 		{
-			if (is_string($data)) {
-				echo $data;
-			} elseif (is_numeric($data)) {
-				echo $data;
-			} elseif (is_array($data)) {
-				echo JSON::encode($data);
-			} elseif (is_object($data)) {
+			if (is_object($data)) {
 				switch(strtolower(get_class($data))) {
-					case 'stdclass':
-						echo fJSON::encode($data);
-						break;
 					case 'view':
 						$data->render();
 						break;
@@ -1004,11 +995,11 @@
 						$data->output(FALSE);
 						break;
 					default:
-						echo (string) $data;
+						echo serialize($data);
 						break;
 				}
 			} else {
-				echo serialize($data);
+				echo $data;
 			}
 		}
 
