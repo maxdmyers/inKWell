@@ -880,12 +880,11 @@
 					$message = fText::compose($message);
 
 					fMessaging::create($message_type, $handler, $message);
-					self::exec($handler);
-					return;
+					return self::exec($handler);
 				}
 			}
 
-			self::triggerHardError($error, $error_info['message']);
+			return self::triggerHardError($error, $error_info['message']);
 		}
 
 		/**
@@ -904,14 +903,11 @@
 			$title   = fText::compose(fGrammar::humanize($error));
 			$message = fText::compose($message);
 
-			$self->view
+			return $self->view
 				-> pack   ('id',       $error)
 				-> push   ('classes',  self::MSG_TYPE_ERROR)
 				-> push   ('title',    $title)
 				-> digest ('contents', $message);
-
-			$self->view->render();
-			exit();
 		}
 
 		/**
