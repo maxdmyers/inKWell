@@ -11,6 +11,9 @@
 	return iw::createConfig('Core', array(
 		'/system' => 'phpinfo',
 		'/' => function() {
-			return View::create('inkwell.php');
-		}
+			return View::create('default.php', array(
+				'content' => View::create('inkwell.php')
+			));
+		},
+		'*' => 'PagesController::show'
 	));

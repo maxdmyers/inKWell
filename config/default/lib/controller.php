@@ -79,7 +79,7 @@
 			),
 
 			'not_found'      => array(
-				'handler'    => NULL,
+				'handler'    => 'PagesController::notFound',
 				'header'     => $_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found',
 				'message'    => 'The requested resource could not be found'
 			),
