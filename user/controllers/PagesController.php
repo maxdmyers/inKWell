@@ -55,15 +55,19 @@
 		}
 
 
-		static public function show()
+		static public function show($source = NULL)
 		{
-			if (fRequest::check('create') || fRequest::check('edit')) {
+			if (!$source && (fRequest::check('create') || fRequest::check('edit'))) {
 				return self::edit();
 			}
 
 			try {
 				$parser = new MarkdownExtraExtended_Parser();
-				return View::create('default.php')->digest('content', $parser->transform(self::loadURI()->read()));
+				$source = ($source)
+					? $source
+					: self::loadURI()->read();
+
+				return View::create('default.php')->digest('content', $parser->transform($source));
 			} catch (fValidationException $e) {
 				return self::triggerError('not_found');
 			}
@@ -71,7 +75,30 @@
 
 		static public function edit()
 		{
-			$source = NULL;
+			$source = fRequest::get('source', 'string', NULL);
+
+			if (fRequest::isPost()) {
+
+				$action = fRequest::get('action', 'string', 'save');
+
+				if ($action == 'preview') {
+					return self::show($source);
+				}
+
+				try {
+					$file = self::loadURI();
+				} catch (fValidationException $e) {
+					$file = self::loadURI(TRUE);
+				}
+
+				try {
+					$file->write($source);
+				} catch (fException $e) {
+
+				}
+
+				fURL::redirect();
+			}
 
 			try {			
 				$source = self::loadURI()->read();
@@ -85,9 +112,13 @@
 			return View::create('default.php')->set('content', 'not_found.php');
 		}
 
-		static private function loadURI()
+		static private function loadURI($create = FALSE)
 		{
-			return new fFile(self::$pagesDirectory . DIRECTORY_SEPARATOR . self::$pagePath);
+			$file = self::$pagesDirectory . DIRECTORY_SEPARATOR . str_replace('/', '_', self::$pagePath);
+
+			return ($create)
+				? fFile::create($file, '')
+				: new fFile($file);
 		}
 
 	}
