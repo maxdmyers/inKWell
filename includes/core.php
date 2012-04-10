@@ -919,6 +919,7 @@
 		 */
 		static public function loadClass($class, array $loaders = array())
 		{
+			echo $class;
 			//
 			// If we're called manually, we want to make sure the class isn't already loaded
 			//
@@ -1013,7 +1014,7 @@
 		 * @return bool Whether or not the initialization was successful
 		 */
 		static protected function initializeClass($class)
-		{	echo $class;
+		{
 			//
 			// Classes cannot be initialized twice
 			//
