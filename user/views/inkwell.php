@@ -26,16 +26,16 @@ git clone --recursive git://github.com/dotink/inKWell.git ./
 							<h4>Getting Started</h4>
 							<ul>
 								<li>
-									Configuration
+									<a href="/configuration">Configuration</a>
 								</li>
 								<li>
-									Routing
+									<a href="/routing">Routing</a>
 								</li>
 								<li>
-									Scaffolding
+									<a href="/scaffolding">Scaffolding</a>
 								</li>
 								<li>
-									Known Issues
+									<a href="/issues">Known Issues</a>
 								</li>
 							</ul>
 						</section>
@@ -43,22 +43,22 @@ git clone --recursive git://github.com/dotink/inKWell.git ./
 							<h4>Documentation</h4>
 							<ul>
 								<li>
-									Creating a Controller
+									<a href="/docs/creating_a_controller">Creating a Controller</a>
 								</li>
 								<li>
-									Handling Common HTTP Headers
+									<a href="/docs/http_support">Handling Common HTTP Headers</a>
 								</li>
 								<li>
-									Displaying a View
+									<a href="/docs/displaying_views">Displaying a View</a>
 								</li>
 								<li>
-									Working with View Data
+									<a href="/docs/view_data">Working with View Data</a>
 								</li>
 								<li>
-									Configuring a Database
+									<a href="/docs/database_configuration">Configuring a Database</a>
 								</li>
 								<li>
-									Using Models and Recordsets
+									<a href="/docs/using_models">Using Models and Recordsets</a>
 								</li>
 							</ul>
 						</section>
@@ -66,13 +66,13 @@ git clone --recursive git://github.com/dotink/inKWell.git ./
 							<h4>Architecture</h4>
 							<ul>
 								<li>
-									Autoloading
+									<a href="/architecture/autoloading">Autoloading</a>
 								</li>
 								<li>
-									Peer Controllers
+									<a href="/architecture/peer_controllers">Peer Controllers</a>
 								</li>
 								<li>
-									The inKWell Interface
+									<a href="/architecture/inkwell_interface">The inKWell Interface</a>
 								</li>
 							</ul>
 						</section>
