@@ -49,7 +49,6 @@
 
 		'f*'           => 'includes/lib/flourish/classes',
 		'Moor*'        => 'includes/lib/moor',
-		'MarkDown*'    => 'includes/lib/markdown_extended',
 
 		// A non-wilcard string which does not represent a class means that an
 		// attempt will be made to load any class from this directory.
