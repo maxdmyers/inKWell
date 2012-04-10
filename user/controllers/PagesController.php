@@ -77,7 +77,7 @@
 				$source = self::loadURI()->read();
 			} catch (fValidationException $e) {}
 
-			return view::create('default.php')->set('content', 'edit.php')->pack('source', $source); 
+			return View::create('default.php')->set('content', 'edit.php')->pack('source', $source); 
 		}
 
 		static public function notFound()

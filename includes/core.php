@@ -919,7 +919,6 @@
 		 */
 		static public function loadClass($class, array $loaders = array())
 		{
-			echo $class;
 			//
 			// If we're called manually, we want to make sure the class isn't already loaded
 			//
