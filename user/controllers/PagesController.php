@@ -13,22 +13,6 @@
 		static private $pagePath       = NULL;
 
 		/**
-		 * Prepares a new PagesController for running actions.
-		 *
-		 * @access protected
-		 * @param string void
-		 * @return void
-		 */
-		protected function prepare()
-		{
-			// The controller prepare method should be called only if you
-			// are building out full pages or responses, not for controllers
-			// which only provide embeddable views.
-			//
-			// return parent::prepare(__CLASS__);
-		}
-
-		/**
 		 * Initializes all static class information for the PagesController class
 		 *
 		 * @static
@@ -49,12 +33,19 @@
 
 			if (strpos(self::$pagePath, '/../') !== FALSE) {
 				fURL::redirect(str_replace('/../', '/', self::$pagePath));
-			} 
+			}
 
 			return TRUE;
 		}
 
-
+		/**
+		 * Shows the requested resource or a preview if provided Markdown source
+		 *
+		 * @static
+		 * @access public
+		 * @param string Source to preview instead of loading from the URI
+		 * @return View
+		 */
 		static public function show($source = NULL)
 		{
 			if (!$source && (fRequest::check('create') || fRequest::check('edit'))) {
@@ -78,6 +69,14 @@
 			}
 		}
 
+		/**
+		 * Provides the edit functionality for displaying a file for edit or storing it
+		 *
+		 * @static
+		 * @access public
+		 * @param void
+		 * @return view
+		 */
 		static public function edit()
 		{
 			$source = fRequest::get('source', 'string', NULL);
@@ -102,19 +101,36 @@
 			}
 
 			if (!$source) {
-				try {			
+				try {
 					$source = self::loadURI()->read();
 				} catch (fValidationException $e) {}
 			}
 
-			return View::create('default.php')->set('content', 'edit.php')->pack('source', $source); 
+			return View::create('default.php')->set('content', 'edit.php')->pack('source', $source);
 		}
 
+		/**
+		 * The not found handler
+		 *
+		 * @static
+		 * @access public
+		 * @param void
+		 * @return View The not found view
+		 */
 		static public function notFound()
 		{
 			return View::create('default.php')->set('content', 'not_found.php');
 		}
 
+		/**
+		 * Loads or creates a file resource based on the pages directory and page path which is
+		 * derived from the URL.
+		 *
+		 * @static
+		 * @access private
+		 * @param boolean Whether or not the file needs to be created
+		 * @return fFile The file resource
+		 */
 		static private function loadURI($create = FALSE)
 		{
 			$file = self::$pagesDirectory . DIRECTORY_SEPARATOR . self::$pagePath;
@@ -123,5 +139,4 @@
 				? fFile::create($file, '')
 				: new fFile($file);
 		}
-
 	}

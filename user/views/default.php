@@ -9,6 +9,13 @@
 			hljs.initHighlightingOnLoad();
 		</script>
 
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+		<script type="text/javascript" src="/assets/scripts/markitup/jquery.markitup.js"></script>
+		<script type="text/javascript" src="/assets/scripts/markitup/sets/default/set.js"></script>
+
+		<link rel="stylesheet" type="text/css" href="/assets/scripts/markitup/skins/markitup/style.css" />
+		<link rel="stylesheet" type="text/css" href="/assets/scripts/markitup/sets/default/style.css" />
+
 		<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bitter:400,700" type="text/css" media="screen" />
 		<link rel="stylesheet" href="http://dotink.github.com/inKLing/inkling.css" type="text/css" media="screen" />
 		<link rel="stylesheet" href="http://yandex.st/highlightjs/6.1/styles/dark.css" type="text/css" />
