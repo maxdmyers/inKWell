@@ -1,6 +1,6 @@
 <script type="text/javascript" >
    $(document).ready(function() {
-      $("textarea.md_editor").markItUp();
+      $("textarea.md_editor").markItUp(mySettings);
    });
 </script>
 
