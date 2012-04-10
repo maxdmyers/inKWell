@@ -99,7 +99,6 @@
 
 						fURL::redirect();
 				}
-
 			}
 
 			if (!$source) {
