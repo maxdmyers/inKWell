@@ -45,7 +45,7 @@
 			// configuration.
 
 			self::$pagesDirectory = iw::getWriteDirectory('pages');
-			self::$pagePath       = fURL::get();
+			self::$pagePath       = trim(str_replace('/', '_', fURL::get()), '_');
 
 			if (strpos(self::$pagePath, '/../') !== FALSE) {
 				fURL::redirect(str_replace('/../', '/', self::$pagePath));
@@ -114,7 +114,7 @@
 
 		static private function loadURI($create = FALSE)
 		{
-			$file = self::$pagesDirectory . DIRECTORY_SEPARATOR . trim(str_replace('/', '_', self::$pagePath), '_');
+			$file = self::$pagesDirectory . DIRECTORY_SEPARATOR . self::$pagePath;
 			echo $file;
 			return ($create)
 				? fFile::create($file, '')
