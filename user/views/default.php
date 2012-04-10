@@ -145,6 +145,10 @@
 				padding: 0 1.5%;
 			}
 
+			hr {
+				margin-bottom: 1em;
+			}
+
 		</style>
 	</head>
 	<body id="<%= $this->pull('id', NULL) %>">
