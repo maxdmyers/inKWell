@@ -11,7 +11,7 @@
 
 		<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bitter:400,700" type="text/css" media="screen" />
 		<link rel="stylesheet" href="http://dotink.github.com/inKLing/inkling.css" type="text/css" media="screen" />
-		<link rel="stylesheet" href="http://yandex.st/highlightjs/6.1/styles/zenburn.css" type="text/css" />
+		<link rel="stylesheet" href="http://yandex.st/highlightjs/6.1/styles/dark.css" type="text/css" />
 
 		<style type="text/css">
 
@@ -119,8 +119,8 @@
 			}
 
 			code {
-				color: #aaa;
-				font-size: 14px;
+				color: #baccdd;
+				font-size: 13px;
 			}
 
 			pre code {
