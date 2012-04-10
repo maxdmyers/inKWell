@@ -114,8 +114,8 @@
 
 		static private function loadURI($create = FALSE)
 		{
-			$file = self::$pagesDirectory . DIRECTORY_SEPARATOR . str_replace('/', '_', self::$pagePath);
-
+			$file = self::$pagesDirectory . DIRECTORY_SEPARATOR . trim(str_replace('/', '_', self::$pagePath), '_');
+			echo $file;
 			return ($create)
 				? fFile::create($file, '')
 				: new fFile($file);
