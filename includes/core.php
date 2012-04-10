@@ -945,7 +945,7 @@
 					$match = TRUE;
 				}
 
-				if ($match !== FALSE) {
+				if ($match) {
 
 					$file = implode(DIRECTORY_SEPARATOR, array(
 						iw::getRoot(),
