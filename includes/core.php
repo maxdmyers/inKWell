@@ -935,7 +935,6 @@
 				if (strpos($test, '*') !== FALSE) {
 					$regex = str_replace('*', '(.*?)', str_replace('\\', '\\\\', $test));
 					$match = preg_match('/' . $regex . '/', $class);
-					echo $regex . '::' . $class . '::' . ((string) $match) . "\n";
 				} elseif (class_exists($test)) {
 					$test  = self::makeTarget($test, self::MATCH_CLASS_METHOD);
 					$match = is_callable($test)
@@ -959,8 +958,6 @@
 						//
 						ltrim(str_replace('\\', DIRECTORY_SEPARATOR, $class), '\\') . '.php'
 					));
-
-					echo $file . "\n";
 
 					if (file_exists($file)) {
 
