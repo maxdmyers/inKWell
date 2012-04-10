@@ -44,8 +44,8 @@
 			}
 
 			body > .torso {
-				min-width: 960px;
-				max-width: 960px;
+				min-width: 800px;
+				max-width: 800px;
 				padding: 0 15px;
 			}
 
