@@ -935,7 +935,7 @@
 				if (strpos($test, '*') !== FALSE) {
 					$regex = str_replace('*', '(.*?)', str_replace('\\', '\\\\', $test));
 					$match = preg_match('/' . $regex . '/', $class);
-					echo $regex . '::' . $class . "\n";
+					echo $regex . '::' . $class . '::' . ((string) $match) . "\n";
 				} elseif (class_exists($test)) {
 					$test  = self::makeTarget($test, self::MATCH_CLASS_METHOD);
 					$match = is_callable($test)
