@@ -145,7 +145,7 @@
 		<div class="torso">
 			<% $this->place('content'); %>
 			<% if (fSession::get('source')) { %>
-				<form action="?edit" method="post">
+				<form action="" method="post">
 					<input type="hidden" name="source" value="<%= fHTML::encode(fSession::delete('source')) %>" />
 					<button type="submit" name="action" value="save">Save</button>
 					<button type="submit">Edit</button>
