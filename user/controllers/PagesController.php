@@ -47,6 +47,8 @@
 			self::$pagesDirectory = iw::getWriteDirectory('pages');
 			self::$pagePath       = $_SERVER['REQUEST_URI'];
 
+			echo self::$pagePath;
+
 			var_dump(iw::loadClass('MarkdownExtra_Parser',         array('includes/lib/markdown_extended')));
 			var_dump(iw::loadClass('MarkdownExtraExtended_Parser', array('includes/lib/markdown_extended')));
 
