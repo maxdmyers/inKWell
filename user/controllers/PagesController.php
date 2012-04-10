@@ -107,7 +107,9 @@
 
 			try {			
 				$source = self::loadURI()->read();
-			} catch (fValidationException $e) {}
+			} catch (fValidationException $e) {
+				echo $e->getMessage();
+			}
 
 			return View::create('default.php')->set('content', 'edit.php')->pack('source', $source); 
 		}
