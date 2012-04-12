@@ -104,6 +104,15 @@
 				overflow: hidden;
 			}
 
+			pre + h1,
+			pre + h2,
+			pre + h3,
+			pre + h4,
+			pre + h5,
+			pre + h6 {
+				margin-top: .5em;
+			}
+
 			ul > li {
 				list-style-image: url(http://cdn.dustball.com/bullet_go.png);
 			}
