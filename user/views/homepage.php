@@ -58,7 +58,7 @@ git clone --recursive git://github.com/dotink/inKWell.git ./
 									<a href="/docs/database_configuration">Configuring a Database</a>
 								</li>
 								<li>
-									<a href="/docs/using_models">Using Models and Recordsets</a>
+									<a href="/docs/using_models">Using Models and RecordSets</a>
 								</li>
 							</ul>
 						</section>
@@ -83,7 +83,7 @@ git clone --recursive git://github.com/dotink/inKWell.git ./
 						</h3>
 						<ol>
 							<li>
-								How can I get my applciation files out of the document root?
+								How can I get my application files out of the document root?
 							</li>
 							<li>
 								Why are my URLs preceded with /index.php?
