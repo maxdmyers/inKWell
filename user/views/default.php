@@ -186,6 +186,9 @@
 				</form>
 			<% } %>
 		</div>
+		<% if ($this->get('comments')) { %>
+			<% $this->place('comments') %>
+		<% } %>
 		<footer>
 		</footer>
 	</body>

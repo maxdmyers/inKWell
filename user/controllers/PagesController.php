@@ -62,7 +62,9 @@
 					$source = $parser->transform(self::loadURI()->read());
 				}
 
-				return View::create('default.php')->digest('content', $source);
+				return View::create('default.php')
+					-> digest ('content',  $source)
+					-> set    ('comments', 'comments.php');
 
 			} catch (fValidationException $e) {
 				return self::triggerError('not_found');
