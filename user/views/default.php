@@ -185,10 +185,10 @@
 					<button type="submit" name="action" value="edit">Edit</button>
 				</form>
 			<% } %>
+			<% if ($this->get('comments')) { %>
+				<% $this->place('comments') %>
+			<% } %>
 		</div>
-		<% if ($this->get('comments')) { %>
-			<% $this->place('comments') %>
-		<% } %>
 		<footer>
 		</footer>
 	</body>
