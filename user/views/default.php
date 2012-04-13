@@ -52,6 +52,7 @@
 			body > header,
 			body > footer {
 				width: 100%;
+				min-height: 200px;
 			}
 
 			body > header {
@@ -165,6 +166,10 @@
 
 			hr {
 				margin-bottom: 1em;
+			}
+
+			#disqus_thread ul {
+				list-style-type: none;
 			}
 
 		</style>
