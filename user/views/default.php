@@ -168,8 +168,10 @@
 				margin-bottom: 1em;
 			}
 
-			#disqus_thread ul {
+			#disqus_thread ul,
+			#disqus_thread li {
 				list-style-type: none;
+				list-style-image: none;
 			}
 
 		</style>
