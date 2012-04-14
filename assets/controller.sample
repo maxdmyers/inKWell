@@ -26,7 +26,7 @@ class UsersController extends Controller
 			case 'application/json':
 				return fJSON::encode($view);
 			default:
-				return self::triggerError('not_acceptable');
+				self::triggerError('not_acceptable');
 		}
 	}
 }
