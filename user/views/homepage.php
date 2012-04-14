@@ -55,6 +55,9 @@ git clone --recursive git://github.com/dotink/inKWell.git ./
 									<a href="/docs/view_data">Working with View Data</a>
 								</li>
 								<li>
+									<a href="/docs/view_content">Working with View Content</a>
+								</li>
+								<li>
 									<a href="/docs/database_configuration">Configuring a Database</a>
 								</li>
 								<li>
