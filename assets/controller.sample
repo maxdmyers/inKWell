@@ -1,7 +1,7 @@
 class UsersController extends Controller
 {
 	/**
-	 * Gets a list user
+	 * Gets a list of users
 	 */
 	static public function list($page = 1, $limit = 15)
 	{
@@ -26,7 +26,7 @@ class UsersController extends Controller
 			case 'application/json':
 				return fJSON::encode($view);
 			default:
-				self::triggerError('not_acceptable');
+				return self::triggerError('not_acceptable');
 		}
 	}
 }
