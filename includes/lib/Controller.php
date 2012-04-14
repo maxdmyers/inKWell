@@ -877,7 +877,7 @@
 				}
 
 				if ($handler = $error_info['handler']) {
-					$view    = return self::exec($handler);
+					$view = self::exec($handler);
 
 					View::attach($view, View::MASTER);
 
