@@ -96,6 +96,22 @@
 				color: rgb(230,230,210);
 			}
 
+			h5,h6 {
+				color: rgb(200, 200, 180);
+			}
+
+			h4 {
+				font-size: 1.4em;
+			}
+
+			h5 {
+				font-size: 1.2em;
+			}
+
+			h6 {
+				font-size: 1.1em;
+			}
+
 			header h1 {
 				background: transparent center url('/inkwell_logo.png');
 				width: 500px;
