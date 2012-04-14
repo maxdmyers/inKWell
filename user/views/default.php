@@ -187,7 +187,7 @@
 			ul a,
 			ol a {
 				text-decoration: none;
-				color: #dd8888;
+				color: #bb6666;
 			}
 
 
