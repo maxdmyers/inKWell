@@ -168,6 +168,15 @@
 				margin-bottom: 1em;
 			}
 
+
+			#disqus_thread {
+				background-color: #333333;
+				border-radius: 1em 1em 1em 1em;
+				margin-bottom: 20px;
+				margin-top: 2.5em;
+				padding: 20px;
+			}
+
 			#disqus_thread ul,
 			#disqus_thread li {
 				list-style-type: none;
