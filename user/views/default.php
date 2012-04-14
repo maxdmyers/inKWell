@@ -187,7 +187,8 @@
 			ul a,
 			ol a {
 				text-decoration: none;
-				color: #bb6666;
+				color: #bb9595;
+				font-size: .95em;
 			}
 
 
