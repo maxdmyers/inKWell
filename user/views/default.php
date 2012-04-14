@@ -184,6 +184,12 @@
 				margin-bottom: 1em;
 			}
 
+			ul a,
+			ol a {
+				text-decoration: none;
+				color: #123456;
+			}
+
 
 			#disqus_thread {
 				background-color: #333333;
