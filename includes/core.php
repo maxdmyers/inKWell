@@ -976,34 +976,6 @@
 		}
 
 		/**
- 		 * Renders various data types and objects to the screen.
-		 *
-		 * @static
-		 * @access public
-		 * @param mixed $data The data to render
-		 * @return void
-		 */
-		static public function render($data)
-		{
-			if (is_object($data)) {
-				switch(strtolower(get_class($data))) {
-					case 'view':
-						$data->render();
-						break;
-					case 'ffile':
-					case 'fimage':
-						$data->output(FALSE);
-						break;
-					default:
-						echo serialize($data);
-						break;
-				}
-			} else {
-				echo $data;
-			}
-		}
-
-		/**
 		 * Initializes a class by calling it's __init() method if it has one and returning its
 		 * return value.
 		 *

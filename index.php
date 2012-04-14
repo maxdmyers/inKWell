@@ -41,4 +41,25 @@
 	//
 	// Run the router and render its return value
 	//
-	iw::render(Moor::run());
+	if (!($data = Moor::run())) {
+		try {
+			$data = self::render(View::retrieve(View::MASTER));
+		} catch (fProgrammerException $e) {}
+	}
+
+	if (is_object($data)) {
+		switch(strtolower(get_class($data))) {
+			case 'view':
+				$data->render();
+				break;
+			case 'ffile':
+			case 'fimage':
+				$data->output(FALSE);
+				break;
+			default:
+				echo serialize($data);
+				break;
+		}
+	} else {
+		echo $data;
+	}
