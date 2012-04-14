@@ -18,6 +18,7 @@
 		const DEFAULT_VIEW_ROOT     = 'views';
 		const DEFAULT_CACHE_DIR     = 'cache';
 		const PRIMARY_VIEW_ELEMENT  = '__main__'; // This must match Flourish
+		const MASTER                 = 'master';
 
 		/**
 		 * The path from which relative views are loaded
@@ -130,13 +131,15 @@
 		 * @access public
 		 * @param string|array $view_file The view file or an array of candidate view files to load
 		 * @param array $data An optional array of initial data
+		 * @param array $elements An optional array of child elements
 		 * @return View The view object with the view file loaded
 		 */
-		static public function create($view_file, $data = array())
+		static public function create($view_file, $data = array(), $elements = array())
 		{
 			$view = new self();
 			$view->load($view_file);
 			$view->pack($data);
+			$view->set($elements);
 
 			return $view;
 		}
@@ -152,7 +155,7 @@
 		 */
 		static public function exists($view_file)
 		{
-			if ($view_file[0] !== '/' && $view_file[0] !== '\\') {
+			if (preg_match(iw::REGEX_ABS_PATH, $view_file)) {
 				$view_file = implode(DIRECTORY_SEPARATOR, array(
 					self::$viewRoot,
 					$view_file
@@ -196,8 +199,7 @@
 		 * Creates a new view object.
 		 *
 		 * @access public
-		 * @param string $view_root The root directory for views
-		 * @param string $cache_dir A directory where cached views can be stored
+		 * @param string $view_root The root directory for views, defaults to configured root_directory
 		 * @return void
 		 */
 		public function __construct($view_root = NULL) {
@@ -221,7 +223,30 @@
 					self::$cacheDirectory
 				);
 			}
+		}
 
+		/**
+		 * Loads a view file.  If the file begins with a '/' it will be looked for relative to the
+		 * document root.  If the file does not it will be relative to the configured view root.
+		 * If the first parameter is an array of files, the first one to exist will be used.
+		 *
+		 * @access public
+		 * @param string|array $file The path to the view file or an array of candidate files
+		 * @return View The view object, to allow for method chaining
+		 */
+		public function load($file)
+		{
+			if (is_array($file)) {
+				foreach ($file as $candidate_file) {
+					if (self::exists($candidate_file)) {
+						$file = $candidate_file;
+						break;
+					}
+				}
+			}
+
+			$this->set(self::PRIMARY_VIEW_ELEMENT, $file);
+			return $this;
 		}
 
 		/**
@@ -293,35 +318,13 @@
 					'method'    => $callback,
 					'arguments' => array_slice(func_get_args(), 1)
 				);
+
+				return $this;
 			} else {
 				throw new fProgrammerException (
 					'Callback must be public or accessible by view.'
 				);
 			}
-		}
-
-		/**
-		 * Loads a view file.  If the file begins with a '/' it will be looked for relative to the
-		 * document root.  If the file does not it will be relative to the configured view root.
-		 * If the first parameter is an array of files, the first one to exist will be used.
-		 *
-		 * @access public
-		 * @param string|array $file The path to the view file or an array of candidate files
-		 * @return View The view object, to allow for method chaining
-		 */
-		public function load($file)
-		{
-			if (is_array($file)) {
-				foreach ($file as $candidate_file) {
-					if (self::exists($candidate_file)) {
-						$file = $candidate_file;
-						break;
-					}
-				}
-			}
-
-			$this->set(self::PRIMARY_VIEW_ELEMENT, $file);
-			return $this;
 		}
 
 		/**
@@ -735,5 +738,4 @@
 		{
 			return (object) $this->data;
 		}
-
 	}

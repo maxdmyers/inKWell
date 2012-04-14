@@ -868,7 +868,7 @@
 
 			if (isset(self::$errors[$error])) {
 				$error_info = array_merge($error_info, self::$errors[$error]);
-				$message    = ($message) ? $message : $error_info['message'];
+				$message    = fText::compose(($message) ? $message : $error_info['message']);
 
 				@header($error_info['header']);
 
@@ -877,10 +877,11 @@
 				}
 
 				if ($handler = $error_info['handler']) {
-					$message = fText::compose($message);
+					$view    = return self::exec($handler);
 
-					fMessaging::create($message_type, $handler, $message);
-					return self::exec($handler);
+					View::attach($view, View::MASTER);
+
+					return $view;
 				}
 			}
 
@@ -902,12 +903,29 @@
 			$self    = new self();
 			$title   = fText::compose(fGrammar::humanize($error));
 			$message = fText::compose($message);
+			$data    = array(
+				'id'      => $error,
+				'classes' => array(self::MSG_TYPE_ERROR),
+				'title'   => $message
+			);
 
-			return $self->view
-				-> pack   ('id',       $error)
-				-> push   ('classes',  self::MSG_TYPE_ERROR)
-				-> push   ('title',    $title)
-				-> digest ('contents', $message);
+			switch (self::acceptTypes()) {
+				case 'text/html':
+					$view = View::create('html.php', array($data))->digest('contents', $message);
+					break;
+				case 'application/json':
+					$view = fJSON::encode(array_merge($data, array('contents', $message)));
+					break;
+				case 'application/xml':
+					$view = fXML::encode(array_merge($data, array('contents', $message)));
+					break;
+				default:
+					echo $message;
+			}
+
+			View::attach($view, View::MASTER);
+
+			return $view;
 		}
 
 		/**
@@ -933,26 +951,6 @@
 				$arguments        = func_get_args();
 				call_user_func_array($prepare_callback, $arguments);
 			}
-		}
-
-		/**
-		 * Prepares a new controller by establishing any shared object information.
-		 *
-		 * @deprecated
-		 * @access protected
-		 * @param void
-		 * @return void
-		 */
-		protected function prepare()
-		{
-			$section = self::getBaseURL();
-			$title   = (isset(self::$siteSections[$section]['title']))
-				? self::$siteSections[$section]['title']
-				: self::DEFAULT_SITE_TITLE;
-
-			$this->view
-				-> load (self::getRequestFormat() . '.php')
-				-> push ('title',   $title);
 		}
 
 		/**
