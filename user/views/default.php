@@ -199,7 +199,7 @@
 			ul a,
 			ol a {
 				text-decoration: none;
-				color: #bb9595;
+				color: #fff;
 				font-size: .95em;
 			}
 

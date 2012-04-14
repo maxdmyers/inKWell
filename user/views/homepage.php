@@ -12,7 +12,7 @@ git clone --recursive git://github.com/dotink/inKWell.git ./
 					<section>
 						<h3>A Quick Introduction</h3>
 						<p>
-							inKWell is a battle-tested beta framework built on <a href="#">wbond</a>'s <a href="#">Flourish library</a> and <a href="#">jeffturcotte</a>'s <a href="#">Moor</a> router.  It began in mid-2010 as a solution for the rapid development, easy maintenance, and modular extensibility required for freelance positions.
+							inKWell is a battle-tested beta framework built on <a href="http://www.github.com/wbond">wbond</a>'s <a href="http://www.github.com/wbond/flourish">Flourish library</a> and <a href="http://www.github.com/jeffturcotte">jeffturcotte</a>'s <a href="http://www.github.com/jeffturcotte/moor">Moor</a> router.  It began in mid-2010 as a solution for the rapid development, easy maintenance, and modular extensibility required for freelance positions.
 						</p>
 						<p>
 							Over the past two years it has grown into a stable and robust framework which abandons the cargo-cult mentality of existing MVC and HMVC frameworks, favoring configurability and developer accessibility over hyped up design and development patterns.
