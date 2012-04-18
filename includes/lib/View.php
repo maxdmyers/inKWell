@@ -18,7 +18,7 @@
 		const DEFAULT_VIEW_ROOT     = 'views';
 		const DEFAULT_CACHE_DIR     = 'cache';
 		const PRIMARY_VIEW_ELEMENT  = '__main__'; // This must match Flourish
-		const MASTER                 = 'master';
+		const MASTER                = 'default';
 
 		/**
 		 * The path from which relative views are loaded
