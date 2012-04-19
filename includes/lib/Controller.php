@@ -296,7 +296,8 @@
 				),
 
 				'js'    => array(
-					'text/javascript'
+					'text/javascript',
+					'applicaiton/javascript'
 				),
 
 				'txt'   => array(
@@ -305,7 +306,7 @@
 
 				'json' => array(
 					'application/json',
-					'application/x-javascript',
+					'application/x-javascript'
 				),
 
 				'xml'   => array(
