@@ -340,39 +340,6 @@
 		}
 
 		/**
-		 * Sends the appropriate headers.  Headers will be determined by the use of the
-		 * acceptTypes() method.  If it has not been run prior to this method, it will be run with
-		 * configured default accept types.
-		 *
-		 * @static
-		 * @access protected
-		 * @param array $headers Additional headers aside from content type to send
-		 * @param boolean $send_content_type Whether or not we should send the content type header
-		 * @return void
-		 */
-		static protected function sendHeader($headers = array(), $send_content_type = TRUE)
-		{
-			if (!self::$typeHeadersSent && $send_content_type) {
-
-				if (!self::$contentType) {
-					//
-					// If the contentType is not set then acceptTypes was never called.
-					// we can call it now with the default accept types which will set
-					// both the request format and the contentType.
-					//
-					self::acceptTypes();
-				}
-
-				header('Content-Type: ' . self::$contentType);
-				self::$typeHeadersSent = TRUE;
-			}
-
-			foreach ($headers as $header => $value) {
-				header($header . ': ' . $value);
-			}
-		}
-
-		/**
 		 * Determines whether or not we should accept the request based on the mime type accepted
 		 * by the user agent.  If no array or an empty array is passed the configured default
 		 * accept types will be used.  If the request_format is provided in the request and the
@@ -391,10 +358,12 @@
 			if (!count($accept_types)) {
 				$accept_types = self::$defaultAcceptTypes;
 			}
-
-			// The below mapping is used solely to normalize the request
-			// format to retrieve the above listed format accept types
-
+			//
+			// The below mapping is used solely to normalize the request format to retrieve
+			// the above listed format accept types.  This makes 'htm' equivalent to 'html'
+			// and 'jpeg' equivalent to 'jpg'.  It's a bit verbose for what it does but it
+			// is clear for extending for future supported types.
+			//
 			switch ($request_format = self::getRequestFormat()) {
 				case 'htm':
 				case 'html':
@@ -495,6 +464,39 @@
 			}
 
 			return TRUE;
+		}
+
+		/**
+		 * Sends the appropriate headers.  Headers will be determined by the use of the
+		 * acceptTypes() method.  If it has not been run prior to this method, it will be run with
+		 * configured default accept types.
+		 *
+		 * @static
+		 * @access protected
+		 * @param array $headers Additional headers aside from content type to send
+		 * @param boolean $send_content_type Whether or not we should send the content type header
+		 * @return void
+		 */
+		static protected function sendHeader($headers = array(), $send_content_type = TRUE)
+		{
+			if (!self::$typeHeadersSent && $send_content_type) {
+
+				if (!self::$contentType) {
+					//
+					// If the contentType is not set then acceptTypes was never called.
+					// we can call it now with the default accept types which will set
+					// both the request format and the contentType.
+					//
+					self::acceptTypes();
+				}
+
+				header('Content-Type: ' . self::$contentType);
+				self::$typeHeadersSent = TRUE;
+			}
+
+			foreach ($headers as $header => $value) {
+				header($header . ': ' . $value);
+			}
 		}
 
 		/**
