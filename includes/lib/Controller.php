@@ -16,9 +16,6 @@
 
 		const DEFAULT_CONTROLLER_ROOT     = 'user/controllers';
 
-		const DEFAULT_REQUEST_FORMAT      = 'html';
-		const DEFAULT_AJAX_REQUEST_FORMAT = 'json';
-
 		const DEFAULT_SITE_SECTION        = 'default';
 		const DEFAULT_SITE_TITLE          = 'inKWell Site';
 		const DEFAULT_USE_SSL             = FALSE;
@@ -62,15 +59,6 @@
 		 * @var array
 		 */
 		static private $defaultAcceptTypes = array();
-
-		/**
-		 * The default request format for standard requests
-		 *
-		 * @static
-		 * @access private
-		 * @var string
-		 */
-		static private $defaultRequestFormat = NULL;
 
 		/**
 		 * The default request format for AJAX requests
@@ -201,26 +189,6 @@
 					'text/html',
 					'application/json',
 					'application/xml'
-				);
-			}
-
-			// Configure default request format
-
-			self::$defaultRequestFormat = self::DEFAULT_REQUEST_FORMAT;
-
-			if (isset($config['default_request_format'])) {
-				self::$defaultRequestFormat = strtolower(
-					$config['default_request_format']
-				);
-			}
-
-			// Configure default AJAX request format
-
-			self::$defaultAjaxRequestFormat = self::DEFAULT_AJAX_REQUEST_FORMAT;
-
-			if (isset($config['default_ajax_request_format'])) {
-				self::$defaultAjaxRequestFormat = strtolower(
-					$config['default_ajax_request_format']
 				);
 			}
 
@@ -387,20 +355,11 @@
 
 				if (!self::$contentType) {
 					//
-					// The below block implies accepTypes() was never called
+					// If the contentType is not set then acceptTypes was never called.
+					// we can call it now with the default accept types which will set
+					// both the request format and the contentType.
 					//
-					if ($format = self::getRequestFormat()) {
-						$format_types      = self::getFormatTypes($format);
-						self::$contentType = ($format_types)
-							? array_shift($format_types)
-							: 'text/html';
-					} else {
-						//
-						// The user never specified acceptTypes() so we'll accept defaults and
-						// hope for the best
-						//
-						self::acceptTypes();
-					}
+					self::acceptTypes();
 				}
 
 				header('Content-Type: ' . self::$contentType);
@@ -734,10 +693,6 @@
 
 				if ($format) {
 					self::$requestFormat = $format;
-				} elseif (fRequest::isAjax()) {
-					self::$requestFormat = self::$defaultAjaxRequestFormat;
-				} else {
-					self::$requestFormat = self::$defaultRequestFormat;
 				}
 			}
 
