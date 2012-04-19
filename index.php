@@ -54,7 +54,7 @@
 				break;
 			case 'ffile':
 			case 'fimage':
-				$data->output(FALSE);
+				$data->output();
 				break;
 			default:
 				echo serialize($data);
