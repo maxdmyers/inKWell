@@ -88,6 +88,15 @@
 		static private $baseURL = NULL;
 
 		/**
+		 * The client address
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $clientAddress = NULL;
+
+		/**
 		 * The request path for the request as sent by the client
 		 *
 		 * @static
@@ -350,11 +359,15 @@
 		 *
 		 * @static
 		 * @access protected
-		 * @param array $accept_types An array of acceptable mime types
+		 * @param array|string $accept_types An array of acceptable mime types
 		 * @return mixed The best type upon request
 		 */
-		static protected function acceptTypes(array $accept_types = array())
+		static protected function acceptTypes($accept_types = array())
 		{
+			if (!is_array($accept_types)) {
+				$accept_types = func_get_args();
+			}
+
 			if (!count($accept_types)) {
 				$accept_types = self::$defaultAcceptTypes;
 			}
@@ -676,6 +689,30 @@
 		}
 
 		/**
+	 	 * Determines the client IP address, taking into account proxy information
+		 *
+		 * @static
+		 * @access protected
+		 * @param void
+		 * @return string The client IP	address
+		 */
+		static protected function getClientIP()
+		{
+			if (self::$clientAddress) {
+				return self::$clientAddress;
+			}
+
+			$address = $_SERVER['REMOTE_ADDR'];
+
+			if (isset($_SERVER['X_FORWARDED_FOR']))	{
+					$sources = explode(',',	$_SERVER['X_FORWARDED_FOR']);
+					$address = reset($sources);
+			}
+
+			return (self::$clientAddress = $address);
+		}
+
+		/**
 		 * Determines the request format for the resource.  The request format can be taken is as
 		 * a get or URL parameter with the simple name 'request_format', but must be explicitly set
 		 * on routes.
@@ -899,9 +936,6 @@
 		 */
 		final protected function __construct()
 		{
-			//
-			// TODO: Determine request format
-			//
 			$this->view = new View();
 
 			if (method_exists($this, 'prepare')) {
