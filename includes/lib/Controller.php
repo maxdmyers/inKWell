@@ -851,7 +851,9 @@
 			$error_info = array(
 				'handler' => NULL,
 				'header'  => $_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error',
-				'message' => 'An Unknown error occurred.'
+				'message' => ($message)
+					? $message
+					: 'An Unknown error occurred.'
 			);
 
 			if (isset(self::$errors[$error])) {
@@ -861,12 +863,10 @@
 				}
 
 				if (isset(self::$errors[$error]['header'])) {
-					$error_info['handler'] = self::$errors[$error]['header'];
+					$error_info['header'] = self::$errors[$error]['header'];
 				}
 
-				if ($message) {
-					$error_info['message'] = $message;
-				} elseif (isset(self::$errors[$error]['message'])) {
+				if (isset(self::$errors[$error]['message']) && !$message) {
 					$error_info['message'] = self::$errors[$error]['message'];
 				}
 
@@ -883,7 +883,7 @@
 				}
 			}
 
-			return self::triggerHardError($error, $message);
+			return self::triggerHardError($error, $error_info['message']);
 		}
 
 		/**
@@ -903,7 +903,7 @@
 			$data    = array(
 				'id'      => $error,
 				'classes' => array(self::MSG_TYPE_ERROR),
-				'title'   => $message
+				'title'   => $title
 			);
 
 			switch (self::acceptTypes()) {
@@ -911,10 +911,10 @@
 					$view = View::create('html.php', $data)->digest('contents', $message);
 					break;
 				case 'application/json':
-					$view = fJSON::encode(array_merge($data, array('contents', $message)));
+					$view = fJSON::encode(array_merge($data, array('contents' => $message)));
 					break;
 				case 'application/xml':
-					$view = fXML::encode(array_merge($data, array('contents', $message)));
+					$view = fXML::encode(array_merge($data, array('contents' => $message)));
 					break;
 				default:
 					echo $message;
