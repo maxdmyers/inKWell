@@ -874,8 +874,7 @@
 				if ($handler = $error_info['handler']) {
 					$view = self::exec($handler);
 
-					View::attach($view, View::MASTER);
-
+					View::attach($view);
 					return $view;
 				}
 			}
@@ -906,7 +905,7 @@
 
 			switch (self::acceptTypes()) {
 				case 'text/html':
-					$view = View::create('html.php', array($data))->digest('contents', $message);
+					$view = View::create('html.php', $data)->digest('contents', $message);
 					break;
 				case 'application/json':
 					$view = fJSON::encode(array_merge($data, array('contents', $message)));
