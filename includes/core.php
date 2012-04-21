@@ -350,12 +350,12 @@
 			if (isset(self::$config['inkwell']['display_errors'])) {
 				if (self::$config['inkwell']['display_errors']) {
 					fCore::enableErrorHandling('html');
-					fCore::enableExceptionHandling('html');
+					fCore::enableExceptionHandling('html', 'time');
 					ini_set('display_errors', 1);
 				} elseif (isset(self::$config['inkwell']['error_email_to'])) {
 					$admin_email = self::$config['inkwell']['error_email_to'];
 					fCore::enableErrorHandling($admin_email);
-					fCore::enableExceptionHandling($admin_email);
+					fCore::enableExceptionHandling($admin_email, 'time');
 					ini_set('display_errors', 0);
 				} else {
 					ini_set('display_errors', 0);

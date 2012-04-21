@@ -41,30 +41,37 @@
 	//
 	// Run the router and render its return value
 	//
-	if (($data = Moor::run()) == NULL) {
-		try {
-			$data = View::retrieve();
-		} catch (fException $e) {
-			//
-			// It is possible that no view has been attached, so
-			// we will handle that gracefully.
-			//
-		}
+	try {
+		$data = NULL;
+		$data = ($data !== NULL) ? $data : Moor::run();
+		$data = ($data !== NULL) ? $data : View::retrieve();
+	} catch (Exception $e) {
+		//
+		// Panic here, attempt to determine what state we're in, see if some
+		// errors handlers are callable or if we're totally fucked.  In the
+		// end, throw the exception and let Flourish handle it appropriately.
+		//
+		throw $e;
 	}
-
-	if (is_object($data)) {
-		switch(strtolower(get_class($data))) {
-			case 'view':
-				$data->render();
-				break;
-			case 'ffile':
-			case 'fimage':
-				$data->output();
-				break;
-			default:
-				echo serialize($data);
-				break;
-		}
-	} else {
+	//
+	// Handle outputting of non-object data
+	//
+	if (!is_object($data)) {
 		echo $data;
+		exit(1);
+	}
+	//
+	// Output different objects differently
+	//
+	switch(strtolower(get_class($data))) {
+		case 'view':
+			$data->render();
+			exit(1);
+		case 'ffile':
+		case 'fimage':
+			$data->output(FALSE);
+			exit(1);
+		default:
+			echo serialize($data);
+			exit(1);
 	}
