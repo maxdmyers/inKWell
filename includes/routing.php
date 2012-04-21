@@ -21,7 +21,7 @@
 			$_SERVER['REQUEST_URI'] = $_SERVER['PHP_SELF'];
 		}
 
-		if (!isset($_SERVER['PATH_TRANSLATED'])) {
+		if (!isset($_SERVER['PATH_TRANSLATED']) && isset($_SERVER['PATH_INFO'])) {
 			$_SERVER['PATH_TRANSLATED'] = $_SERVER['SCRIPT_FILENAME'];
 		}
 	} elseif (isset($_SERVER['PATH_INFO'])) {
