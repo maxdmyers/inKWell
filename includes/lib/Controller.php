@@ -906,18 +906,29 @@
 				'title'   => $title
 			);
 
-			switch (self::acceptTypes()) {
+			$accept_types = self::getRequestFormat()
+				? self::getFormatTypes(self::getRequestFormat())
+				: array();
+
+			switch (fRequest::getBestAcceptType($accept_types)) {
 				case 'text/html':
-					$view = View::create('html.php', $data)->digest('contents', $message);
+					$view = View::create('html.php', $data)
+						->digest('contents', $message);
 					break;
 				case 'application/json':
-					$view = fJSON::encode(array_merge($data, array('contents' => $message)));
+					$view = fJSON::encode(array_merge(
+						$data,
+						array('contents' => $message)
+					));
 					break;
 				case 'application/xml':
-					$view = fXML::encode(array_merge($data, array('contents' => $message)));
+					$view = fXML::encode(array_merge(
+						$data, array('contents' => $message)
+					));
 					break;
 				default:
 					$view = $message;
+					break;
 			}
 
 			View::attach($view);
