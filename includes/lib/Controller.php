@@ -17,7 +17,6 @@
 		const DEFAULT_CONTROLLER_ROOT     = 'user/controllers';
 
 		const DEFAULT_SITE_SECTION        = 'default';
-		const DEFAULT_SITE_TITLE          = 'inKWell Site';
 		const DEFAULT_USE_SSL             = FALSE;
 
 		const MSG_TYPE_ERROR              = 'error';
@@ -253,7 +252,9 @@
 						: NULL;
 
 
-					self::setError($error, $handler, $header, $message);
+					self::$errors[$error]['handler'] = $handler;
+					self::$errors[$error]['header']  = $header;
+					self::$errors[$error]['message'] = $message;
 				}
 			}
 		}
@@ -841,29 +842,33 @@
 		 * @static
 		 * @access protected
 		 * @param string $error The error to be triggered.
-		 * @param string $message_type The type of message to display
 		 * @param string $message The message to be displayed
 		 * @param array  $added_headers Additional headers to output after the initial header
 		 * @return void
 		 */
-		static protected function triggerError($error, $message_type = NULL, $message = NULL, array $added_headers = array())
+		static protected function triggerError($error, $message = NULL, array $added_headers = array())
 		{
-			self::$requestFormat = FALSE;
-			self::acceptTypes();
-
-			$message_type = ($message_type)
-				? $message_type
-				: self::MSG_TYPE_ERROR;
-
-			$error_info   = array(
+			$error_info = array(
 				'handler' => NULL,
 				'header'  => $_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error',
 				'message' => 'An Unknown error occurred.'
 			);
 
 			if (isset(self::$errors[$error])) {
-				$error_info = array_merge($error_info, self::$errors[$error]);
-				$message    = fText::compose(($message) ? $message : $error_info['message']);
+
+				if (isset(self::$errors[$error]['handler'])) {
+					$error_info['handler'] = self::$errors[$error]['handler'];
+				}
+
+				if (isset(self::$errors[$error]['header'])) {
+					$error_info['handler'] = self::$errors[$error]['header'];
+				}
+
+				if ($message) {
+					$error_info['message'] = $message;
+				} elseif (isset(self::$errors[$error]['message'])) {
+					$error_info['message'] = self::$errors[$error]['message'];
+				}
 
 				@header($error_info['header']);
 
@@ -871,15 +876,14 @@
 					@header($header);
 				}
 
-				if ($handler = $error_info['handler']) {
-					$view = self::exec($handler);
-
+				if ($error_info['handler']) {
+					$view = self::exec($error_info['handler']);
 					View::attach($view);
 					return $view;
 				}
 			}
 
-			return self::triggerHardError($error, $error_info['message']);
+			return self::triggerHardError($error, $message);
 		}
 
 		/**
@@ -894,7 +898,6 @@
 		 */
 		static protected function triggerHardError($error, $message)
 		{
-			$self    = new self();
 			$title   = fText::compose(fGrammar::humanize($error));
 			$message = fText::compose($message);
 			$data    = array(
@@ -917,48 +920,18 @@
 					echo $message;
 			}
 
-			View::attach($view, View::MASTER);
+			View::attach($view);
 
 			return $view;
 		}
 
 		/**
-		 * Builds a new controller by assigning it a local view and running prepare if it exists.
-		 * Only static methods on controllers can instantiate a new controller object, and all
-		 * standard __construct() functionality should be moved to prepare().
+		 * Do not instantiate controllers
 		 *
-		 * @deprecated
 		 * @final
 		 * @access protected
 		 * @param void
 		 * @return void
 		 */
-		final protected function __construct()
-		{
-			$this->view = new View();
-
-			if (method_exists($this, 'prepare')) {
-				$prepare_callback = array($this, 'prepare');
-				$arguments        = func_get_args();
-				call_user_func_array($prepare_callback, $arguments);
-			}
-		}
-
-		/**
-		 * Sets error information for the Controller.
-		 *
-		 * @static
-		 * @access protected
-		 * @param string $error The error to set a handler for
-		 * @param string $handler An inKWell target to execute if the error is triggered
-		 * @param string $header The HTTP header to output if the error is triggered
-		 * @param string $message A default message to display explaining the error
-		 * @return void
-		 */
-		static private function setError($error, $handler = NULL, $header = NULL, $message = NULL)
-		{
-			self::$errors[$error]['handler'] = $handler;
-			self::$errors[$error]['header']  = $header;
-			self::$errors[$error]['message'] = $message;
-		}
+		final private function __construct() {}
 	}
