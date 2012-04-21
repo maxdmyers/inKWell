@@ -6,7 +6,7 @@
 						</h3>
 						<pre><code>
 cd $DOCUMENT_ROOT
-git clone --recursive git://github.com/dotink/inKWell.git ./
+git clone --recursive https://github.com/dotink/inKWell.git ./
 						</code></pre>
 					</section>
 					<section>
