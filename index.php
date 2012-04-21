@@ -41,8 +41,10 @@
 	//
 	// Run the router and render its return value
 	//
-	if (!($data = Moor::run())) {
-		$data = View::retrieve();
+	if (($data = Moor::run()) == NULL) {
+		try {
+			$data = View::retrieve();
+		} catch (fException $e) {}
 	}
 
 	if (is_object($data)) {
