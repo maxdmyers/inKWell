@@ -704,8 +704,8 @@
 
 			$address = $_SERVER['REMOTE_ADDR'];
 
-			if (isset($_SERVER['X_FORWARDED_FOR']))	{
-					$sources = explode(',',	$_SERVER['X_FORWARDED_FOR']);
+			if (isset($_SERVER['HTTP_X_FORWARDED_FOR']))	{
+					$sources = explode(',',	$_SERVER['HTTP_X_FORWARDED_FOR']);
 					$address = reset($sources);
 			}
 
