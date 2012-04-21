@@ -28,7 +28,7 @@
 	//
 	// See if we have a custom not_found handler
 	//
-	if (($not_found = iw::getConfig('controller', 'errors', 'not_found', 'handler')) {
+	if (($not_found = iw::getConfig('controller', 'errors', 'not_found', 'handler'))) {
 		Moor::setNotFoundCallback($not_found);
 	}
 	//
