@@ -44,7 +44,12 @@
 	if (($data = Moor::run()) == NULL) {
 		try {
 			$data = View::retrieve();
-		} catch (fException $e) {}
+		} catch (fException $e) {
+			//
+			// It is possible that no view has been attached, so
+			// we will handle that gracefully.
+			//
+		}
 	}
 
 	if (is_object($data)) {

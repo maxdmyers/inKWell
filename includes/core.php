@@ -20,6 +20,7 @@
 		const CONFIG_TYPE_ELEMENT      = '__type';
 
 		const DEFAULT_WRITE_DIRECTORY  = 'assets';
+		const DEFAULT_EXECUTION_MODE   = 'development';
 
 		const REGEX_ABSOLUTE_PATH      = '#^(/|\\\\|[a-z]:(\\\\|/)|\\\\|//|\./|\.\\\\)#i';
 		const REGEX_VARIABLE           = '/[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/';
