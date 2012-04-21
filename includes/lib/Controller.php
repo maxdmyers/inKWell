@@ -917,7 +917,7 @@
 					$view = fXML::encode(array_merge($data, array('contents' => $message)));
 					break;
 				default:
-					echo $message;
+					$view = $message;
 			}
 
 			View::attach($view);
