@@ -41,10 +41,10 @@
 	//
 	// Run the router and render its return value
 	//
-	if (!($data = Moor::run())) {
+	if (($data = Moor::run()) == NULL) {
 		try {
-			$data = self::render(View::retrieve(View::MASTER));
-		} catch (fProgrammerException $e) {}
+			$data = View::retrieve();
+		} catch (fException $e) {}
 	}
 
 	if (is_object($data)) {
@@ -54,7 +54,7 @@
 				break;
 			case 'ffile':
 			case 'fimage':
-				$data->output(FALSE);
+				$data->output();
 				break;
 			default:
 				echo serialize($data);

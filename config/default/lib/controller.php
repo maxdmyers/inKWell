@@ -25,19 +25,11 @@
 			'application/xml'
 		),
 
-		// The default request format for standard browser based requests.
-
-		'default_request_format' => 'html',
-
-		// The default request format for AJAX/XHR browser based requests.
-
-		'default_ajax_request_format' => 'json',
-
 		// The sections array allows you to define any number of base URLs
 		// with different properties.  These properties will determine some
 		// default controller behavior.
 
-		'sections'        => array(
+		'sections' => array(
 
 			'default'     => array(
 				'use_ssl' => FALSE

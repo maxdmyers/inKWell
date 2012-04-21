@@ -16,9 +16,6 @@
 
 		const DEFAULT_CONTROLLER_ROOT     = 'user/controllers';
 
-		const DEFAULT_REQUEST_FORMAT      = 'html';
-		const DEFAULT_AJAX_REQUEST_FORMAT = 'json';
-
 		const DEFAULT_SITE_SECTION        = 'default';
 		const DEFAULT_SITE_TITLE          = 'inKWell Site';
 		const DEFAULT_USE_SSL             = FALSE;
@@ -64,15 +61,6 @@
 		static private $defaultAcceptTypes = array();
 
 		/**
-		 * The default request format for standard requests
-		 *
-		 * @static
-		 * @access private
-		 * @var string
-		 */
-		static private $defaultRequestFormat = NULL;
-
-		/**
 		 * The default request format for AJAX requests
 		 *
 		 * @static
@@ -98,6 +86,15 @@
 		 * @var string
 		 */
 		static private $baseURL = NULL;
+
+		/**
+		 * The client address
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $clientAddress = NULL;
 
 		/**
 		 * The request path for the request as sent by the client
@@ -201,26 +198,6 @@
 					'text/html',
 					'application/json',
 					'application/xml'
-				);
-			}
-
-			// Configure default request format
-
-			self::$defaultRequestFormat = self::DEFAULT_REQUEST_FORMAT;
-
-			if (isset($config['default_request_format'])) {
-				self::$defaultRequestFormat = strtolower(
-					$config['default_request_format']
-				);
-			}
-
-			// Configure default AJAX request format
-
-			self::$defaultAjaxRequestFormat = self::DEFAULT_AJAX_REQUEST_FORMAT;
-
-			if (isset($config['default_ajax_request_format'])) {
-				self::$defaultAjaxRequestFormat = strtolower(
-					$config['default_ajax_request_format']
 				);
 			}
 
@@ -328,7 +305,8 @@
 				),
 
 				'js'    => array(
-					'text/javascript'
+					'text/javascript',
+					'applicaiton/javascript'
 				),
 
 				'txt'   => array(
@@ -337,7 +315,7 @@
 
 				'json' => array(
 					'application/json',
-					'application/x-javascript',
+					'application/x-javascript'
 				),
 
 				'xml'   => array(
@@ -371,48 +349,6 @@
 		}
 
 		/**
-		 * Sends the appropriate headers.  Headers will be determined by the use of the
-		 * acceptTypes() method.  If it has not been run prior to this method, it will be run with
-		 * configured default accept types.
-		 *
-		 * @static
-		 * @access protected
-		 * @param array $headers Additional headers aside from content type to send
-		 * @param boolean $send_content_type Whether or not we should send the content type header
-		 * @return void
-		 */
-		static protected function sendHeader($headers = array(), $send_content_type = TRUE)
-		{
-			if (!self::$typeHeadersSent && $send_content_type) {
-
-				if (!self::$contentType) {
-					//
-					// The below block implies accepTypes() was never called
-					//
-					if ($format = self::getRequestFormat()) {
-						$format_types      = self::getFormatTypes($format);
-						self::$contentType = ($format_types)
-							? array_shift($format_types)
-							: 'text/html';
-					} else {
-						//
-						// The user never specified acceptTypes() so we'll accept defaults and
-						// hope for the best
-						//
-						self::acceptTypes();
-					}
-				}
-
-				header('Content-Type: ' . self::$contentType);
-				self::$typeHeadersSent = TRUE;
-			}
-
-			foreach ($headers as $header => $value) {
-				header($header . ': ' . $value);
-			}
-		}
-
-		/**
 		 * Determines whether or not we should accept the request based on the mime type accepted
 		 * by the user agent.  If no array or an empty array is passed the configured default
 		 * accept types will be used.  If the request_format is provided in the request and the
@@ -423,18 +359,24 @@
 		 *
 		 * @static
 		 * @access protected
-		 * @param array $accept_types An array of acceptable mime types
+		 * @param array|string $accept_types An array of acceptable mime types
 		 * @return mixed The best type upon request
 		 */
-		static protected function acceptTypes(array $accept_types = array())
+		static protected function acceptTypes($accept_types = array())
 		{
+			if (!is_array($accept_types)) {
+				$accept_types = func_get_args();
+			}
+
 			if (!count($accept_types)) {
 				$accept_types = self::$defaultAcceptTypes;
 			}
-
-			// The below mapping is used solely to normalize the request
-			// format to retrieve the above listed format accept types
-
+			//
+			// The below mapping is used solely to normalize the request format to retrieve
+			// the above listed format accept types.  This makes 'htm' equivalent to 'html'
+			// and 'jpeg' equivalent to 'jpg'.  It's a bit verbose for what it does but it
+			// is clear for extending for future supported types.
+			//
 			switch ($request_format = self::getRequestFormat()) {
 				case 'htm':
 				case 'html':
@@ -535,6 +477,39 @@
 			}
 
 			return TRUE;
+		}
+
+		/**
+		 * Sends the appropriate headers.  Headers will be determined by the use of the
+		 * acceptTypes() method.  If it has not been run prior to this method, it will be run with
+		 * configured default accept types.
+		 *
+		 * @static
+		 * @access protected
+		 * @param array $headers Additional headers aside from content type to send
+		 * @param boolean $send_content_type Whether or not we should send the content type header
+		 * @return void
+		 */
+		static protected function sendHeader($headers = array(), $send_content_type = TRUE)
+		{
+			if (!self::$typeHeadersSent && $send_content_type) {
+
+				if (!self::$contentType) {
+					//
+					// If the contentType is not set then acceptTypes was never called.
+					// we can call it now with the default accept types which will set
+					// both the request format and the contentType.
+					//
+					self::acceptTypes();
+				}
+
+				header('Content-Type: ' . self::$contentType);
+				self::$typeHeadersSent = TRUE;
+			}
+
+			foreach ($headers as $header => $value) {
+				header($header . ': ' . $value);
+			}
 		}
 
 		/**
@@ -714,6 +689,30 @@
 		}
 
 		/**
+	 	 * Determines the client IP address, taking into account proxy information
+		 *
+		 * @static
+		 * @access protected
+		 * @param void
+		 * @return string The client IP	address
+		 */
+		static protected function getClientIP()
+		{
+			if (self::$clientAddress) {
+				return self::$clientAddress;
+			}
+
+			$address = $_SERVER['REMOTE_ADDR'];
+
+			if (isset($_SERVER['HTTP_X_FORWARDED_FOR']))	{
+					$sources = explode(',',	$_SERVER['HTTP_X_FORWARDED_FOR']);
+					$address = reset($sources);
+			}
+
+			return (self::$clientAddress = $address);
+		}
+
+		/**
 		 * Determines the request format for the resource.  The request format can be taken is as
 		 * a get or URL parameter with the simple name 'request_format', but must be explicitly set
 		 * on routes.
@@ -734,10 +733,6 @@
 
 				if ($format) {
 					self::$requestFormat = $format;
-				} elseif (fRequest::isAjax()) {
-					self::$requestFormat = self::$defaultAjaxRequestFormat;
-				} else {
-					self::$requestFormat = self::$defaultRequestFormat;
 				}
 			}
 
@@ -941,9 +936,6 @@
 		 */
 		final protected function __construct()
 		{
-			//
-			// TODO: Determine request format
-			//
 			$this->view = new View();
 
 			if (method_exists($this, 'prepare')) {
