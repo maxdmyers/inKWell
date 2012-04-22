@@ -7,23 +7,6 @@
 	class <%= self::validateVariable($class) %> extends <%= self::validateVariable($build_class) %>
 
 	{
-
-		/**
-		 * Prepares a new <%= $class %> for running actions.
-		 *
-		 * @access protected
-		 * @param string void
-		 * @return void
-		 */
-		protected function prepare()
-		{
-			// The controller prepare method should be called only if you
-			// are building out full pages or responses, not for controllers
-			// which only provide embeddable views.
-			//
-			// return parent::prepare(__CLASS__);
-		}
-
 		/**
 		 * Initializes all static class information for the <%= $class %> class
 		 *

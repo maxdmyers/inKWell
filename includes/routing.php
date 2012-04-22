@@ -1,15 +1,32 @@
 <?php
 	//
-	// Handle '/' via a proxy URI.
+	// Redirect extraneous root URLs to '/'
+	//
+	if (preg_match('#^(/index\.php(/?)?)$#', fURL::get())) {
+		header($_SERVER['SERVER_PROTOCOL'] . ' 301 Moved Permanently');
+		fURL::redirect(($query = fURL::getQueryString())
+			? '/?' . $query
+			: '/'
+		);
+	}
+	//
+	// Not every server supports rewriting.  In particular we want to fake PATH_INFO
+	// for routers that handle it.  And normalize PATH_TRANSLATED.  If we do support
+	// it we shouldn't be using either.
 	//
 	if (!isset($_SERVER['REWRITE_ENABLED']) || !$_SERVER['REWRITE_ENABLED']) {
-		if (in_array($_SERVER['REQUEST_URI'], array('', '/', '/index.php'))) {
+
+		if ($_SERVER['REQUEST_URI'] == '/') {
 			$_SERVER['PATH_INFO']   = '/';
 			$_SERVER['REQUEST_URI'] = $_SERVER['PHP_SELF'];
 		}
+
+		if (!isset($_SERVER['PATH_TRANSLATED']) && isset($_SERVER['PATH_INFO'])) {
+			$_SERVER['PATH_TRANSLATED'] = $_SERVER['SCRIPT_FILENAME'];
+		}
 	} elseif (isset($_SERVER['PATH_INFO'])) {
-		$_SERVER['REQUEST_URI'] .= $_SERVER['PATH_INFO'];
-		$_SERVER['PATH_INFO']    = NULL;
+		unset($_SERVER['PATH_INFO']);
+		unset($_SERVER['PATH_TRANSLATED']);
 	}
 	//
 	// Enable debugging depending on execution mode
@@ -25,6 +42,12 @@
 		: '[A-Za-z0-9_-]+';
 
 	Moor::setRequestParamPattern($request_param_pattern);
+	//
+	// See if we have a custom not_found handler
+	//
+	if (($not_found = iw::getConfig('controller', 'errors', 'not_found', 'handler'))) {
+		Moor::setNotFoundCallback($not_found);
+	}
 	//
 	// Register all of our custom routes first
 	//
