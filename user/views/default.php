@@ -16,21 +16,32 @@
 			})();
 		</script>
 
+		<!-- Common -->
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+		<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bitter:400,700" type="text/css" media="screen" />
+		<link rel="stylesheet" href="http://dotink.github.com/inKLing/inkling.css" type="text/css" media="screen" />
+
+		<!-- Highlight.js -->
+
 		<script src="http://yandex.st/highlightjs/6.1/highlight.min.js" type="text/javascript"></script>
 		<script type="text/javascript">
 			hljs.initHighlightingOnLoad();
 		</script>
+		<link rel="stylesheet" href="http://yandex.st/highlightjs/6.1/styles/dark.css" type="text/css" />
 
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+
+		<!-- MarkItUp -->
+
 		<script type="text/javascript" src="/assets/scripts/markitup/jquery.markitup.js"></script>
 		<script type="text/javascript" src="/assets/scripts/markitup/sets/default/set.js"></script>
-
 		<link rel="stylesheet" type="text/css" href="/assets/scripts/markitup/skins/markitup/style.css" />
 		<link rel="stylesheet" type="text/css" href="/assets/scripts/markitup/sets/default/style.css" />
 
-		<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bitter:400,700" type="text/css" media="screen" />
-		<link rel="stylesheet" href="http://dotink.github.com/inKLing/inkling.css" type="text/css" media="screen" />
-		<link rel="stylesheet" href="http://yandex.st/highlightjs/6.1/styles/dark.css" type="text/css" />
+		<!-- prettyPhoto -->
+
+		<script type="text/javascript" src="/assets/scripts/jquery.prettyPhoto.js"></script>
+		<link rel="stylesheet" type="text/css" href="/assets/styles/prettyPhoto.css" />
 
 		<style type="text/css">
 
@@ -125,7 +136,7 @@
 			}
 
 			header h1 {
-				background: transparent center url('/inkwell_logo.png');
+				background: transparent center url('/assets/images/inkwell_logo.png');
 				width: 500px;
 				height: 245px;
 				margin: auto;
@@ -201,6 +212,39 @@
 				text-decoration: none;
 				color: #fff;
 				font-size: .95em;
+			}
+
+
+			a.button {
+				border-top: 1px solid #1f2224;
+				background: #914165;
+				background: -webkit-gradient(linear, left top, left bottom, from(#f296c7), to(#914165));
+				background: -webkit-linear-gradient(top, #f296c7, #914165);
+				background: -moz-linear-gradient(top, #f296c7, #914165);
+				background: -ms-linear-gradient(top, #f296c7, #914165);
+				background: -o-linear-gradient(top, #f296c7, #914165);
+				padding: 10.5px 21px;
+				-webkit-border-radius: 7px;
+				-moz-border-radius: 7px;
+				border-radius: 7px;
+				-webkit-box-shadow: rgba(0,0,0,1) 0 1px 0;
+				-moz-box-shadow: rgba(0,0,0,1) 0 1px 0;
+				box-shadow: rgba(0,0,0,1) 0 1px 0;
+				text-shadow: rgba(0,0,0,.4) 0 1px 0;
+				color: #ffffff;
+				font-size: 19px;
+				font-family: Helvetica, Arial, Sans-Serif;
+				text-decoration: none;
+				vertical-align: middle;
+			}
+			a.button:hover {
+				border-top-color: #f296c7;
+				background: #f296c7;
+				color: #ffffff;
+			}
+			a.button:active {
+				border-top-color: #f296c7;
+				background: #f296c7;
 			}
 
 

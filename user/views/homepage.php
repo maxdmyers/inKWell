@@ -8,6 +8,7 @@
 cd $DOCUMENT_ROOT
 git clone --recursive https://github.com/dotink/inKWell.git ./
 						</code></pre>
+<a class="button" href="https://vimeo.com/40832320" rel="prettyPhoto">Watch a Video</a>
 					</section>
 					<section>
 						<h3>A Quick Introduction</h3>
