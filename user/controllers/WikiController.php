@@ -41,6 +41,12 @@
 				fURL::redirect(str_replace('/../', '/', self::$pagePath));
 			}
 
+			$markdown_dirs = array('includes/lib/markdown_extended');
+
+			iw::loadClass('MarkdownExtra_Parser',         $markdown_dirs);
+			iw::loadClass('MarkdownExtraExtended_Parser', $markdown_dirs);
+
+
 			self::$title = isset($config['title'])
 				? $config['title']
 				: self::DEFAULT_TITLE;
