@@ -219,39 +219,51 @@
 				font-size: .95em;
 			}
 
-
-			a.button {
-				border-top: 1px solid #1f2224;
-				background: #914165;
-				background: -webkit-gradient(linear, left top, left bottom, from(#f296c7), to(#914165));
-				background: -webkit-linear-gradient(top, #f296c7, #914165);
-				background: -moz-linear-gradient(top, #f296c7, #914165);
-				background: -ms-linear-gradient(top, #f296c7, #914165);
-				background: -o-linear-gradient(top, #f296c7, #914165);
-				padding: 10.5px 21px;
-				-webkit-border-radius: 7px;
-				-moz-border-radius: 7px;
-				border-radius: 7px;
-				-webkit-box-shadow: rgba(0,0,0,1) 0 1px 0;
-				-moz-box-shadow: rgba(0,0,0,1) 0 1px 0;
-				box-shadow: rgba(0,0,0,1) 0 1px 0;
-				text-shadow: rgba(0,0,0,.4) 0 1px 0;
-				color: #ffffff;
-				font-size: 19px;
-				font-family: Helvetica, Arial, Sans-Serif;
+			.button {
+				display: inline-block;
+				zoom: 1; /* zoom and *display = ie7 hack for display:inline-block */
+				*display: inline;
+				vertical-align: baseline;
+				margin: 0 2px;
+				outline: none;
+				cursor: pointer;
+				text-align: center;
 				text-decoration: none;
-				vertical-align: middle;
-			}
-			a.button:hover {
-				border-top-color: #f296c7;
-				background: #f296c7;
-				color: #ffffff;
-			}
-			a.button:active {
-				border-top-color: #f296c7;
-				background: #f296c7;
+				font: 14px/100% Arial, Helvetica, sans-serif;
+				padding: .5em 2em .55em;
+				text-shadow: 0 1px 1px rgba(0,0,0,.3);
+				-webkit-border-radius: .5em;
+				-moz-border-radius: .5em;
+				border-radius: .5em;
+				-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+				-moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
+				box-shadow: 0 1px 2px rgba(0,0,0,.2);
+				color: #fae7e9;
+				border: solid 1px #b73948;
+				background: #da5867;
+				background: -webkit-gradient(linear, left top, left bottom, from(#f16c7c), to(#bf404f));
+				background: -moz-linear-gradient(top,  #f16c7c,  #bf404f);
+				filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#f16c7c', endColorstr='#bf404f');
+				font-weight: bold;
+				font-size: 1em;
 			}
 
+			.button:hover {
+				text-decoration: none;
+				background: #ba4b58;
+				background: -webkit-gradient(linear, left top, left bottom, from(#cf5d6a), to(#a53845));
+				background: -moz-linear-gradient(top,  #cf5d6a,  #a53845);
+				filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#cf5d6a', endColorstr='#a53845');
+			}
+
+			.button:active {
+				position: relative;
+				top: 1px;
+				color: #dca4ab;
+				background: -webkit-gradient(linear, left top, left bottom, from(#bf404f), to(#f16c7c));
+				background: -moz-linear-gradient(top,  #bf404f,  #f16c7c);
+				filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#bf404f', endColorstr='#f16c7c');
+			}
 
 			#disqus_thread {
 				background-color: #333333;
