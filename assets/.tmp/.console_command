@@ -1,1 +1,1 @@
-<?php ls
+<?php echo sha1(NULL);

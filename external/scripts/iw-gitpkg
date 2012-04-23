@@ -13,17 +13,17 @@ if [ -n "$1" ]; then
 	orig_path=`pwd`
 	temp_path="/tmp/$extension-`git rev-parse HEAD`"
 	if [ -d $temp_path ]; then
-		rm -rf $temp_path
+		rm -rf "$temp_path"
 	fi
-	mkdir $temp_path
-	git diff --diff-filter=A master > $temp_path/make
-	cd $temp_path
+	mkdir "$temp_path"
+	git diff --full-index --binary --diff-filter=A master > "$temp_path"/make
+	cd "$temp_path"
 	git apply --whitespace=nowarn < make
 	rm make
-	zip -r $extension.zip .
-	cp $extension.zip $package_store
-	cd $orig_path
-	rm -rf $temp_path
+	zip -r "$extension.zip" .
+	cp "$extension.zip" "$package_store"
+	cd "$orig_path"
+	rm -rf "$temp_path"
 else
 	echo 'Usage: iw-gitpkg <package_name> [<target_directory>]'
 fi

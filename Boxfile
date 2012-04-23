@@ -1,5 +1,0 @@
-web1: #component type & number
-  name: blog            #component settings
-  shared_writable_dirs:
-    - assets/pages
-  php_version: 5.3.8

@@ -1,19 +1,25 @@
 <?php
 
 	/**
-	 * The PagesController, a standard controller class.
+	 * The WikiController, a standard controller class.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
 	 */
-	class PagesController extends Controller
+	class WikiController extends Controller
 	{
 
+		const DEFAULT_STORAGE_PATH = 'simplewiki/pages';
+		const DEFAULT_TITLE = 'SimpleWiki';
+
 		static private $pagesDirectory = NULL;
-		static private $pagePath       = NULL;
+		static private $pagePath = NULL;
+		static private $title = NULL;
+		static private $disqusId = NULL;
+		static private $gaUaId = NULL;
 
 		/**
-		 * Initializes all static class information for the PagesController class
+		 * Initializes all static class information for the WikiController class
 		 *
 		 * @static
 		 * @access public
@@ -23,17 +29,29 @@
 		 */
 		static public function __init(array $config = array(), $element = NULL)
 		{
-			// All custom initialization goes here, make sure to check any
-			// configuration you're setting up for errors and return FALSE
-			// in the event the class cannot be initialized with the provided
-			// configuration.
+			self::$pagesDirectory = iw::getWriteDirectory(
+				isset($config['storage_path'])
+					? $config['storage_path']
+					: self::DEFAULT_STORAGE_PATH
+			);
 
-			self::$pagesDirectory = iw::getWriteDirectory('pages');
-			self::$pagePath       = trim(str_replace('/', '_', fURL::get()), '_');
+			self::$pagePath = trim(str_replace('/', '.', fURL::get()), '.');
 
 			if (strpos(self::$pagePath, '/../') !== FALSE) {
 				fURL::redirect(str_replace('/../', '/', self::$pagePath));
 			}
+
+			self::$title = isset($config['title'])
+				? $config['title']
+				: self::DEFAULT_TITLE;
+
+			self::$disqusId = isset($config['disqus_id'])
+				? $config['disqus_id']
+				: NULL;
+
+			self::$gaUaId = isset($config['ga_ua_id'])
+				? $config['ga_ua_id']
+				: NULL;
 
 			return TRUE;
 		}
@@ -62,12 +80,15 @@
 					$source = $parser->transform(self::loadURI()->read());
 				}
 
-				return View::create('default.php')
+				return View::create('simplewiki/default.php')
 					-> digest ('content',  $source)
-					-> set    ('comments', 'comments.php');
+					-> set    ('comments', 'simplewiki/comments.php')
+					-> pack   ('title', self::$title)
+					-> pack   ('disqus_id', self::$disqusId)
+					-> pack   ('ga_ua_id', self::$gaUaId);
 
 			} catch (fValidationException $e) {
-				return self::triggerError('not_found');
+				return self::notFound();
 			}
 		}
 
@@ -108,7 +129,11 @@
 				} catch (fValidationException $e) {}
 			}
 
-			return View::create('default.php')->set('content', 'edit.php')->pack('source', $source);
+			return View::create('simplewiki/default.php')
+				-> set  ('content', 'simplewiki/edit.php')
+				-> pack ('title', self::$title)
+				-> pack ('ga_ua_id', self::$gaUaId)
+				-> pack ('source', $source);
 		}
 
 		/**
@@ -121,7 +146,12 @@
 		 */
 		static public function notFound()
 		{
-			return View::create('default.php')->set('content', 'not_found.php');
+			header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found');
+			return View::create('simplewiki/default.php')
+				-> set  ('content', 'simplewiki/not_found.php')
+				-> pack ('title', self::$title . ' - Not Found')
+				-> pack ('ga_ua_id', self::$gaUaId);
+
 		}
 
 		/**

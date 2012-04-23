@@ -9,9 +9,5 @@
 	 */
 
 	return iw::createConfig('Core', array(
-		'/system' => 'phpinfo',
-		'/' => function() {
-			return View::create('default.php')->set('content', 'homepage.php')->pack('id', 'home');
-		},
-		'*' => 'PagesController::show'
+
 	));
