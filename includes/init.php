@@ -15,7 +15,7 @@
 	include 'functions.php';
 	include 'core.php';
 
-	$config = iw::init(CONFIGURATION);
+	iw::init(CONFIGURATION);
 
 	/**
 	 * CUSTOM INITIALIZATION LOGIC CAN FOLLOW
