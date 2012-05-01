@@ -15,7 +15,6 @@
 	// it we shouldn't be using either.
 	//
 	if (!isset($_SERVER['REWRITE_ENABLED']) || !$_SERVER['REWRITE_ENABLED']) {
-
 		if ($_SERVER['REQUEST_URI'] == '/') {
 			$_SERVER['PATH_INFO']   = '/';
 			$_SERVER['REQUEST_URI'] = $_SERVER['PHP_SELF'];
@@ -37,21 +36,22 @@
 	//
 	// Set the Request Param Pattern
 	//
-	$request_param_pattern = isset($config['inkwell']['request_param_pattern'])
-		? $config['inkwell']['request_param_pattern']
-		: '[A-Za-z0-9_-]+';
-
-	Moor::setRequestParamPattern($request_param_pattern);
+	Moor::setRequestParamPattern(iw::getConfig('inkwell', 'request_param_pattern')
+		? iw::getConfig('inkwell', 'request_param_pattern')
+		: '[A-Za-z0-9_-]+'
+	);
 	//
 	// See if we have a custom not_found handler
 	//
-	if (($not_found = iw::getConfig('controller', 'errors', 'not_found', 'handler'))) {
-		Moor::setNotFoundCallback($not_found);
+	if (is_callable(iw::getConfig('controller', 'errors', 'not_found', 'handler'))) {
+		Moor::setNotFoundCallback(
+			iw::getConfig('controller', 'errors', 'not_found', 'handler')
+		);
 	}
 	//
-	// Register all of our custom routes first
+	// Register all of our global priority routes first
 	//
-	foreach ($config['routes'] as $route => $target) {
+	foreach (iw::getConfig('routes') as $route => $target) {
 		Moor::route($route, $target);
 	}
 	//
