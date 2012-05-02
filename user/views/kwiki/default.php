@@ -62,7 +62,7 @@
 			<% } %>
 		</div>
 		<footer>
-			This wiki works only if you contribute! <% if (fRequest::check('edit')) { %> <a href="?edit">Edit this page!</a> <% } %>
+			This wiki works only if you contribute! <% if (!fRequest::check('edit')) { %> <a href="?edit">Edit this page!</a> <% } %>
 		</footer>
 	</body>
 </html>

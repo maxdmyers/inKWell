@@ -1,6 +1,121 @@
-@import url('http://fonts.googleapis.com/css?family=Bitter:400,700');
+@import url('http://fonts.googleapis.com/css?family=Droid+Sans:400,700');
 @import url('http://dotink.github.com/inKLing/inkling.css');
-@import url('http://yandex.st/highlightjs/6.1/styles/light.css');
+@import url('http://yandex.st/highlightjs/6.1/styles/github.css');
 @import url('pretty_photo.css');
 @import url('../scripts/markitup/skins/markitup/style.css');
 @import url('../scripts/markitup/sets/default/style.css');
+
+html {
+	background-color: #fff;
+}
+
+body {
+	font-family: "Droid Sans", Helvetica, sans-serif;
+	font-size: 1.6em;
+	width: 940px;
+	padding: 20px;
+	background-color: #f8f8f8;
+	border: solid 1px #ddd;
+	color: #222;
+	margin-bottom: 5em;
+}
+
+footer {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	padding: 15px 10%;
+	background-color: #222;
+	color: #f8f8f8;
+	text-align: center;
+	width: 80%;
+	box-shadow: 0 0 15px #666;
+	border-top: solid 1px #555;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	margin-top: .5em;
+	margin-bottom: 10px;
+	padding-bottom: 10px;
+	border-bottom: solid 1px #eee;
+	letter-spacing: -1px;
+	font-weight: normal;
+}
+
+h1 {
+	color: #332f22;
+}
+
+h2 {
+	color: #433f32;
+}
+
+h3 {
+	color: #534f42;
+}
+
+h4 {
+	color: #635f52;
+}
+
+h5 {
+	color: #736f62;
+}
+
+h6 {
+	color: #837f72;
+}
+
+
+a {
+	text-decoration: underline;
+	color: #547f8b;
+}
+
+body code {
+	background-color: #433f32;
+	color: #efefef;
+	padding: 3px 5px;
+	border: dotted 1px #837f72;
+	font-size: .90em;
+	vertical-align: top;
+}
+
+body pre code {
+	background-color: #f3f3f3;
+	color: #444;
+	padding: 25px;
+}
+
+body blockquote {
+	background-color: #FFFFF5;
+	padding: 1em 1em 0 2em;
+	border-top: dotted 1px #999;
+	border-bottom: dotted 1px #999;
+	margin-bottom: 1.5em;
+	position: relative;
+}
+
+body blockquote:before {
+	content: '\201c';
+	position: absolute;
+	font-size: 100px;
+	top: -20px;
+	left: -15px;
+	opacity: .50;
+	font-family: serif;
+}
+
+body ul {
+	list-style-image: url('http://cdn.dustball.com/tick.png');
+}
+
+body table,
+body table td,
+body table th {
+	border-color: #aaa;
+}
+
+body table th {
+	border-style: solid;
+}
