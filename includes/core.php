@@ -455,11 +455,12 @@
 			//
 			// Initialize the Databases
 			//
-			if (
+			$databases_enabled = (
 				isset(self::$config['database']['disabled'])
 				&& !self::$config['database']['disabled']
-				&& isset($config['database']['databases'])
-			)  {
+			);
+
+			if ($databases_enabled && isset(self::$config['database']['databases'])) {
 
 				if (!is_array(self::$config['database']['databases'])) {
 					throw new fProgrammerException (
