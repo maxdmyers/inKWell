@@ -21,8 +21,6 @@
 		<!-- Common -->
 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-		<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bitter:400,700" type="text/css" media="screen" />
-		<link rel="stylesheet" href="http://dotink.github.com/inKLing/inkling.css" type="text/css" media="screen" />
 		<link rel="stylesheet" href="/assets/styles/kwiki.css" type="text/css" media="screen" />
 
 		<!-- Highlight.js -->
@@ -31,8 +29,6 @@
 		<script type="text/javascript">
 			hljs.initHighlightingOnLoad();
 		</script>
-		<link rel="stylesheet" href="http://yandex.st/highlightjs/6.1/styles/dark.css" type="text/css" />
-
 
 		<!-- MarkItUp -->
 
@@ -44,16 +40,11 @@
 		<!-- prettyPhoto -->
 
 		<script type="text/javascript" src="/assets/scripts/jquery.prettyPhoto.js"></script>
-		<link rel="stylesheet" type="text/css" href="/assets/styles/pretty_photo.css" />
 		<script type="text/javascript" charset="utf-8">
 			$(document).ready(function(){
 				$("a[rel^='lightbox']").prettyPhoto();
 			});
 		</script>
-
-		<style type="text/css">
-
-		</style>
 	</head>
 	<body id="<%= $this->pull('id', NULL) %>">
 		<header>
