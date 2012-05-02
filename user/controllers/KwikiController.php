@@ -1,12 +1,12 @@
 <?php
 
 	/**
-	 * The WikiController, a standard controller class.
+	 * The KwikiController, a standard controller class.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
 	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
 	 */
-	class WikiController extends Controller
+	class KwikiController extends Controller
 	{
 
 		const DEFAULT_STORAGE_PATH = 'kwiki/pages';
