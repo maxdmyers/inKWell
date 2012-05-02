@@ -4,11 +4,11 @@
 		//
 		// Where to store pages.  This is as subdirectory of your writable folder.
 		//
-		'storage_path' => 'simplewiki/pages',
+		'storage_path' => 'kwiki/pages',
 		//
 		// The title of the wiki
 		//
-		'title' => 'SimpleWiki',
+		'title' => 'Kwiki',
 		//
 		// Your disqus shortname.  If this is set, comments will be enabled.
 		//
@@ -22,6 +22,6 @@
 		// your base directory.
 		//
 		'routes' => array(
-			'/wiki/*' => 'WikiController::show'
+			'/wiki/*' => 'KwikiController::show'
 		)
 	));

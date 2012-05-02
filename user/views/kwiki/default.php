@@ -23,7 +23,7 @@
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 		<link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Bitter:400,700" type="text/css" media="screen" />
 		<link rel="stylesheet" href="http://dotink.github.com/inKLing/inkling.css" type="text/css" media="screen" />
-		<link rel="stylesheet" href="/assets/styles/simplewiki.css" type="text/css" media="screen" />
+		<link rel="stylesheet" href="/assets/styles/kwiki.css" type="text/css" media="screen" />
 
 		<!-- Highlight.js -->
 
@@ -44,7 +44,7 @@
 		<!-- prettyPhoto -->
 
 		<script type="text/javascript" src="/assets/scripts/jquery.prettyPhoto.js"></script>
-		<link rel="stylesheet" type="text/css" href="/assets/styles/prettyPhoto.css" />
+		<link rel="stylesheet" type="text/css" href="/assets/styles/pretty_photo.css" />
 		<script type="text/javascript" charset="utf-8">
 			$(document).ready(function(){
 				$("a[rel^='lightbox']").prettyPhoto();
@@ -57,9 +57,7 @@
 	</head>
 	<body id="<%= $this->pull('id', NULL) %>">
 		<header>
-			<hgroup>
-				<h1><%= $this->pull('title') %></h1>
-			</hgroup>
+			<h1><%= $this->pull('title') %></h1>
 		</header>
 		<div class="torso">
 			<% $this->place('content'); %>
@@ -75,6 +73,7 @@
 			<% } %>
 		</div>
 		<footer>
+			This wiki works only if you contribute! <% if (fRequest::check('edit')) { %> <a href="?edit">Edit this page!</a> <% } %>
 		</footer>
 	</body>
 </html>

@@ -9,8 +9,8 @@
 	class WikiController extends Controller
 	{
 
-		const DEFAULT_STORAGE_PATH = 'simplewiki/pages';
-		const DEFAULT_TITLE = 'SimpleWiki';
+		const DEFAULT_STORAGE_PATH = 'kwiki/pages';
+		const DEFAULT_TITLE        = 'Kwiki';
 
 		static private $pagesDirectory = NULL;
 		static private $pagePath = NULL;
@@ -86,9 +86,9 @@
 					$source = $parser->transform(self::loadURI()->read());
 				}
 
-				return View::create('simplewiki/default.php')
+				return View::create('kwiki/default.php')
 					-> digest ('content',  $source)
-					-> set    ('comments', 'simplewiki/comments.php')
+					-> set    ('comments', 'kwiki/comments.php')
 					-> pack   ('title', self::$title)
 					-> pack   ('disqus_id', self::$disqusId)
 					-> pack   ('ga_ua_id', self::$gaUaId);
@@ -135,8 +135,8 @@
 				} catch (fValidationException $e) {}
 			}
 
-			return View::create('simplewiki/default.php')
-				-> set  ('content', 'simplewiki/edit.php')
+			return View::create('kwiki/default.php')
+				-> set  ('content', 'kwiki/edit.php')
 				-> pack ('title', self::$title)
 				-> pack ('ga_ua_id', self::$gaUaId)
 				-> pack ('source', $source);
@@ -153,8 +153,8 @@
 		static public function notFound()
 		{
 			header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found');
-			return View::create('simplewiki/default.php')
-				-> set  ('content', 'simplewiki/not_found.php')
+			return View::create('kwiki/default.php')
+				-> set  ('content', 'kwiki/not_found.php')
 				-> pack ('title', self::$title . ' - Not Found')
 				-> pack ('ga_ua_id', self::$gaUaId);
 
