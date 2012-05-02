@@ -34,8 +34,6 @@
 
 		<script type="text/javascript" src="/assets/scripts/markitup/jquery.markitup.js"></script>
 		<script type="text/javascript" src="/assets/scripts/markitup/sets/default/set.js"></script>
-		<link rel="stylesheet" type="text/css" href="/assets/scripts/markitup/skins/markitup/style.css" />
-		<link rel="stylesheet" type="text/css" href="/assets/scripts/markitup/sets/default/style.css" />
 
 		<!-- prettyPhoto -->
 

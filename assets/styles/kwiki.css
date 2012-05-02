@@ -2,5 +2,5 @@
 @import url('http://dotink.github.com/inKLing/inkling.css');
 @import url('http://yandex.st/highlightjs/6.1/styles/light.css');
 @import url('pretty_photo.css');
-
-
+@import url('../scripts/markitup/skins/markitup/style.css');
+@import url('../scripts/markitup/sets/default/style.css');
