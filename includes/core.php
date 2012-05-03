@@ -414,8 +414,8 @@
 			// Redirect if we're not the active domain.
 			//
 			$url_parts          = parse_url(fURL::getDomain());
-			self::$activeDomain = isset($config['inkwell']['active_domain'])
-				? $config['inkwell']['active_domain']
+			self::$activeDomain = isset(self::$config['inkwell']['active_domain'])
+				? self::$config['inkwell']['active_domain']
 				: $url_parts['host'];
 
 			if (!self::checkSAPI('cli') && $url_parts['host'] != self::$activeDomain) {
