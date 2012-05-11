@@ -1,10 +1,14 @@
 <?php
 
 	return iw::createConfig('Core', array(
-
+		//
+		// By default database support is disabled.  You should not set this to FALSE unless you
+		// configure at least one database below.
+		//
 		'disabled'  => TRUE,
-		'databases' => array(
 
+		'databases' => array(
+			//
 			// Multiple databases can be configured.  If database support is
 			// enabled above the default database is always 'default', but it
 			// is possible to add independent databases and then configure
@@ -17,9 +21,9 @@
 			//
 			// For more information about roles, please see Flourish's
 			// fORM Documentation.
-
+			//
 			'default::both' => array(
-
+				//
 				// The database types used/allowed by inKWell reflect whatever
 				// is currently supported by Flourish, examples at the time of
 				// creating this file include: db2, mssql, mysql, oracle,
@@ -27,15 +31,15 @@
 				//
 				// Both the type and name are required and should be a string
 				// value.
-
+				//
 				'type' => NULL,
 				'name' => NULL,
-
+				//
 				// Authentication information if required
-
+				//
 				'user'     => NULL,
 				'password' => NULL,
-
+				//
 				// If the host parameter is configured as an array then inKWell
 				// will select a random host to pull data from.  This can be
 				// good for "round-robin" hunting.  The particular database

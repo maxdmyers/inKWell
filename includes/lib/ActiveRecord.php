@@ -5,32 +5,15 @@
 	 * It provides a series of common methods used by common Controller objects.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
-	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
-	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 * @copyright Copyright (c) 2012, Matthew J. Sahagian
+	 * @license Please reference the LICENSE.txt file at the root of this distribution
 	 *
 	 * @package inKWell
 	 */
 	abstract class ActiveRecord extends fActiveRecord implements inkwell, JSONSerializable
 	{
-
 		const DEFAULT_FIELD_SEPARATOR = '-';
 		const DEFAULT_WORD_SEPARATOR  = '_';
-
-		/**
-		 * The cached slug
-		 *
-		 * @access private
-		 * @var string
-		 */
-		private $slug = NULL;
-
-		/**
-		 * The cached resource key
-		 *
-		 * @access private
-		 * @var string
-		 */
-		private $resourceKey = NULL;
 
 		/**
 		 * Cached information about the class built during __init()
@@ -123,6 +106,22 @@
 		static private $fileUploadDirectory = NULL;
 
 		/**
+		 * The cached slug
+		 *
+		 * @access private
+		 * @var string
+		 */
+		private $slug = NULL;
+
+		/**
+		 * The cached resource key
+		 *
+		 * @access private
+		 * @var string
+		 */
+		private $resourceKey = NULL;
+
+		/**
 		 * Matches whether or not a given class name is a potential
 		 * ActiveRecord by looking for an available matching ActiveRecord
 		 * configuration or the tablized form in the list of the default
@@ -161,7 +160,6 @@
 		 */
 		static public function __init(array $config = array(), $element = NULL)
 		{
-
 			if ($element == 'active_record') {
 
 				self::$imageUploadDirectory = iw::getWriteDirectory('images');
@@ -1185,11 +1183,10 @@
 		/**
 		 * Default method for converting active record objects to JSON.  This
 		 * will make all properties, normally private, publically available
-		 * and return the object as a JSON encoded string.  As always, it can
-		 * be overloaded.
+		 * and return the object.
 		 *
 		 * @access public
-		 * @return string The JSON encoded object with public properties
+		 * @return string The JSON encodable object with public properties
 		 */
 		public function jsonSerialize()
 		{
