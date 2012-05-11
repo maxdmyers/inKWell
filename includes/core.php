@@ -414,8 +414,8 @@
 			// Redirect if we're not the active domain.
 			//
 			$url_parts          = parse_url(fURL::getDomain());
-			self::$activeDomain = isset($config['inkwell']['active_domain'])
-				? $config['inkwell']['active_domain']
+			self::$activeDomain = isset(self::$config['inkwell']['active_domain'])
+				? self::$config['inkwell']['active_domain']
 				: $url_parts['host'];
 
 			if (!self::checkSAPI('cli') && $url_parts['host'] != self::$activeDomain) {
@@ -455,11 +455,12 @@
 			//
 			// Initialize the Databases
 			//
-			if (
+			$databases_enabled = (
 				isset(self::$config['database']['disabled'])
 				&& !self::$config['database']['disabled']
-				&& isset($config['database']['databases'])
-			)  {
+			);
+
+			if ($databases_enabled && isset(self::$config['database']['databases'])) {
 
 				if (!is_array(self::$config['database']['databases'])) {
 					throw new fProgrammerException (

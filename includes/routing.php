@@ -34,6 +34,12 @@
 		Moor::enableDebug();
 	}
 	//
+	// Enable restless depending on execution mode
+	//
+	if (iw::getExecutionMode() == 'production') {
+		Moor::enableRestlessURLs();
+	}
+	//
 	// Set the Request Param Pattern
 	//
 	Moor::setRequestParamPattern(iw::getConfig('inkwell', 'request_param_pattern')
