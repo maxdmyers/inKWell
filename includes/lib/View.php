@@ -1,45 +1,24 @@
 <?php
 
 	/**
-	 * The view class is responsible for interfacing Controllers with actual
-	 * view files / templates.
+	 * The inKWELL view class
+	 *
+	 * Views are instantiated objects which loosely couple data to templated languages.  These
+	 * objects are primarily designed to work with HTML, so a number of helper methods are provided
+	 * to more easily work with markup.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
-	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
-	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 * @copyright Copyright (c) 2012, Matthew J. Sahagian
+	 * @license Please reference the LICENSE.txt file at the root of this distribution
 	 *
 	 * @package inKWell
 	 */
 	class View extends fTemplating implements inkwell
 	{
-
 		const DEFAULT_VIEW_ROOT     = 'views';
 		const DEFAULT_CACHE_DIR     = 'cache';
-		const PRIMARY_VIEW_ELEMENT  = '__main__';
-
-		/**
-		 * The data storage area
-		 *
-		 * @access private
-		 * @var array
-		 */
-		private $data = array();
-
-		/**
-		 * A list of callbacks to call when render() is called
-		 *
-		 * @access private
-		 * @var array
-		 */
-		private $renderCallbacks = array();
-
-		/**
-		 * If the template represents string content
-		 *
-		 * @access private
-		 * @var boolean
-		 */
-		private $isFood = FALSE;
+		const PRIMARY_VIEW_ELEMENT  = '__main__'; // This must match Flourish
+		const MASTER                = 'default';
 
 		/**
 		 * The path from which relative views are loaded
@@ -69,11 +48,158 @@
 		static private $minificationMode = NULL;
 
 		/**
-		 * Creates a new templating object.
+		 * The data storage area
+		 *
+		 * @access private
+		 * @var array
+		 */
+		private $data = array();
+
+		/**
+		 * A list of callbacks to call when render() is called
+		 *
+		 * @access private
+		 * @var array
+		 */
+		private $renderCallbacks = array();
+
+		/**
+		 * If the template represents string content
+		 *
+		 * @access private
+		 * @var boolean
+		 */
+		private $isFood = FALSE;
+
+		/**
+		 * Initializes the templating engine
+		 *
+		 * @static
+		 * @access public
+		 * @param array $config The configuration array
+		 * @param string $element The element name of the configuration array
+		 * @return void
+		 */
+		static public function __init(array $config = array(), $element = NULL)
+		{
+
+			self::$viewRoot = implode(DIRECTORY_SEPARATOR, array(
+				iw::getRoot(),
+				($root_directory = iw::getRoot($element))
+					? $root_directory
+					: self::DEFAULT_SCAFFOLDING_ROOT
+			));
+
+			self::$viewRoot       = new fDirectory(self::$viewRoot);
+			self::$cacheDirectory = iw::getWriteDirectory(
+				isset($config['cache_directory'])
+					? $config['cache_directory']
+					: self::DEFAULT_CACHE_DIRECTORY
+			);
+
+			try {
+				self::$cacheDirectory = new fDirectory(self::$cacheDirectory);
+			} catch (fValidationException $e) {
+				throw new fEnvironmentException (
+					'Cache directory %s does not exist',
+					self::$cacheDirectory
+				);
+			}
+
+			if (!self::$cacheDirectory->isWritable()) {
+				throw new fEnvironmentException (
+					'Cache directory %s is not writable',
+					self::$cacheDirectory
+				);
+			}
+
+			if (!isset($config['disable_minification']) || !$config['disable_minification']) {
+				if (isset($config['minification_mode'])) {
+					if ($config['minification_mode']) {
+						self::$minificationMode = $config['minification_mode'];
+					}
+				} else {
+					self::$minificationMode = iw::getExecutionMode();
+				}
+			}
+		}
+
+		/**
+		 * A simple factory method for creating new views based on a file.
+		 *
+		 * @static
+		 * @access public
+		 * @param string|array $view_file The view file or an array of candidate view files to load
+		 * @param array $data An optional array of initial data
+		 * @param array $elements An optional array of child elements
+		 * @return View The view object with the view file loaded
+		 */
+		static public function create($view_file, $data = array(), $elements = array())
+		{
+			$view = new self();
+			$view->load($view_file);
+			$view->pack($data);
+			$view->set($elements);
+
+			return $view;
+		}
+
+		/**
+		 * Check whether or not a particular view file exists relative to the
+		 * view root.
+		 *
+		 * @static
+		 * @access public
+		 * @param string $view_file The relative path to the view file to check
+		 * @return boolean TRUE if the view file is readable, FALSE otherwise
+		 */
+		static public function exists($view_file)
+		{
+			if (preg_match(iw::REGEX_ABS_PATH, $view_file)) {
+				$view_file = implode(DIRECTORY_SEPARATOR, array(
+					self::$viewRoot,
+					$view_file
+				));
+			} else {
+				$view_file = implode(DIRECTORY_SEPARATOR, array(
+					$_SERVER['DOCUMENT_ROOT'],
+					$view_file
+				));
+			}
+
+			return is_readable($view_file);
+		}
+
+		/**
+		 * Normalizes a data set.
+		 *
+		 * @static
+		 * @access private
+		 * @param mixed $data_set The data set key or data set
+		 * @param mixed $value The value of $data_set if provided a key
+		 * @return array The data set represented as an array
+		 * @throws fProgrammerException if the data set is not valid.
+		 */
+		static private function normalizeDataSet($data_set, $value = NULL)
+		{
+			if (!is_array($data_set)) {
+				if (is_string($data_set) || is_int($data_set)) {
+					return $data_set = array($data_set => $value);
+				} else {
+					throw new fProgrammerException(
+						'Invalid data set supplied, must be a string or integer'
+					);
+				}
+			}
+
+			return $data_set;
+		}
+
+		/**
+		 * Creates a new view object.
 		 *
 		 * @access public
-		 * @param string $view_root The root directory for views
-		 * @param string $cache_dir A directory where cached views can be stored
+		 * @param string $view_root The root directory for views, defaults to configured root_directory
 		 * @return void
 		 */
 		public function __construct($view_root = NULL) {
@@ -97,12 +223,35 @@
 					self::$cacheDirectory
 				);
 			}
-
 		}
 
 		/**
-		 * Gets the output of the view or a particular view element. allowing for
-		 * filters to be applied.
+		 * Loads a view file.  If the file begins with a '/' it will be looked for relative to the
+		 * document root.  If the file does not it will be relative to the configured view root.
+		 * If the first parameter is an array of files, the first one to exist will be used.
+		 *
+		 * @access public
+		 * @param string|array $file The path to the view file or an array of candidate files
+		 * @return View The view object, to allow for method chaining
+		 */
+		public function load($file)
+		{
+			if (is_array($file)) {
+				foreach ($file as $candidate_file) {
+					if (self::exists($candidate_file)) {
+						$file = $candidate_file;
+						break;
+					}
+				}
+			}
+
+			$this->set(self::PRIMARY_VIEW_ELEMENT, $file);
+			return $this;
+		}
+
+		/**
+		 * Gets the output of the view or a particular view element. allowing for filters to be
+		 * applied.
 		 *
 		 * @param string $element An optional name of an element to output
 		 * @param array $filters A list of callbacks to filter the rendered view through
@@ -169,37 +318,13 @@
 					'method'    => $callback,
 					'arguments' => array_slice(func_get_args(), 1)
 				);
+
+				return $this;
 			} else {
 				throw new fProgrammerException (
 					'Callback must be public or accessible by view.'
 				);
 			}
-		}
-
-		/**
-		 * Loads a view file.  If the file begins with a '/' it will be looked
-		 * for relative to the document root.  If the file does not it will be
-		 * relative to the configured view root.  If the first parameter
-		 * may be an array of files, of which, the first one to exist will be
-		 * used.
-		 *
-		 * @access public
-		 * @param string|array $file The path to the view file or an array of candidate files
-		 * @return View The view object, to allow for method chaining
-		 */
-		public function load($file)
-		{
-			if (is_array($file)) {
-				foreach ($file as $candidate_file) {
-					if (self::exists($candidate_file)) {
-						$file = $candidate_file;
-						break;
-					}
-				}
-			}
-
-			$this->set(self::PRIMARY_VIEW_ELEMENT, $file);
-			return $this;
 		}
 
 		/**
@@ -224,11 +349,10 @@
 		}
 
 		/**
-		 * Adds string content to a view element, such that when the element
-		 * is placed the content is directly outputted.  In short, this is
-		 * for non-data elements which do not have template files.  If the
-		 * second parameter is NULL content will be loaded directly into the
-		 * view.
+		 * Adds string content to a view element, such that when the element is placed the content
+		 * is directly outputted.  In short, this is for non-data elements which do not have
+		 * template files.  If the second parameter is NULL content will be loaded directly into
+		 * the view.
 		 *
 		 * @access public
 		 * @param string $element The name of the element, or content for primary element
@@ -251,25 +375,17 @@
 		}
 
 		/**
-		 * Pack's data into the view's data storage area destroying any
-		 * existing keys which may be in it's way
+		 * Pack's data into the view's data storage area destroying any existing keys which may be
+		 * in it's way
 		 *
 		 * @access public
-		 * @param string $data_set A string indicating the data set to pack into
+		 * @param string|array $data_set A string indicating the data set to pack into
 		 * @param mixed $value The value to pack into the data set
 		 * @return View The view object to allow for method chaining
 		 */
 		public function pack($data_set, $value = NULL)
 		{
-			if (!is_array($data_set)) {
-				if (is_string($data_set) || is_int($data_set)) {
-					$data_set = array($data_set => $value);
-				} else {
-					throw new fProgrammerException(
-						'Invalid data set supplied, must be a string or integer'
-					);
-				}
-			}
+		 	$data_set = self::normalizeDataSet($data_set, $value);
 
 			foreach ($data_set as $key => $value) {
 				$this->data[$key] = $value;
@@ -279,8 +395,8 @@
 		}
 
 		/**
-		 * Pushes data onto the end of the data storage arrays given keys.
-		 * If an element is pushed on which is not an array, it will become one.
+		 * Pushes data onto the end of the data storage arrays given keys. If an element is pushed
+		 * on which is not an array, it will become one.
 		 *
 		 * @access public
 		 * @param string $data_set A string indicating the data set to push into
@@ -289,15 +405,7 @@
 		 */
 		 public function push($data_set, $value = NULL)
 		 {
-			if (!is_array($data_set)) {
-				if (is_string($data_set) || is_int($data_set)) {
-					$data_set = array($data_set => $value);
-				} else {
-					throw new fProgrammerException(
-						'Invalid data set supplied, must be a string or integer'
-					);
-				}
-			}
+		 	$data_set = self::normalizeDataSet($data_set, $value);
 
 		 	foreach ($data_set as $key => $value) {
 		 		if (!array_key_exists($key, $this->data)) {
@@ -313,9 +421,9 @@
 		 }
 
 		/**
-		 * Pulls data referenced by a key from the view's data storage array.
-		 * Optionally the data can be destroyed after being pulled and will no
-		 * longer be accessible through future calls.
+		 * Pulls data referenced by a key from the view's data storage array.  Optionally the data
+		 * can be destroyed after being pulled and will no longer be accessible through future
+		 * calls.
 		 *
 		 * @access public
 		 * @param string $key The key of the data to try an pull
@@ -345,9 +453,9 @@
 		}
 
 		/**
-		 * Peels data off the end of referenced data storage array.  Optionally
-		 * the data can be destroyed.  Please note, that if the data is not
-		 * an array this becomes functionally equivalent to pull.
+		 * Peels data off the end of referenced data storage array.  Optionally the data can be
+		 * destroyed.  Please note, that if the data is not an array this becomes functionally
+		 * equivalent to pull.
 		 *
 		 * @access public
 		 * @param string $key The key of the data from which to pop a value
@@ -381,12 +489,11 @@
 		}
 
 		/**
-		 * Iterates over an element and outputs a provided partial or callable
-		 * emitter for each child element.  If the emitter is a callback it
-		 * can accept up to two arguments, the first being the child element
-		 * during each call, and the second being the current view.  If the
-		 * emitter is an array, the key is used as the child element variable
-		 * within the partial, while the value is the view partial.
+		 * Iterates over an element and outputs a provided partial or callable emitter for each
+		 * child element.  If the emitter is a callback it can accept up to two arguments, the
+		 * first being the child element during each call, and the second being the current view.
+		 * If the emitter is an array, the key is used as the child element variable within the
+		 * partial, while the value is the view partial.
 		 *
 		 * Examples:
 		 *
@@ -459,11 +566,10 @@
 		}
 
 		/**
-		 * Verifies/Checks view data.  View data is checked by ensuring that
-		 * all elements identified by the keys of $matches equal their
-		 * respective value in $matches, or if the value is an array, whether
-		 * or not the value identified by the element/key is contained in the
-		 * array.
+		 * Verifies/Checks view data.  View data is checked by ensuring that all elements
+		 * identified by the keys of $matches equal their respective value in $matches, or if the
+		 * value is an array, whether or not the value identified by the element/key is contained
+		 * in the array.
 		 *
 		 * @access public
 		 * @param array $matches An array of key (data element) to value (to match against) pairs.
@@ -489,9 +595,8 @@
 		}
 
 		/**
-		 * Allows for 'selecting' in the view if all data identified
-		 * by the keys of $matches contains (if array) or is equal to their
-		 * respective value in $matches.
+		 * Allows for 'selecting' in the view if all data identified by the keys of $matches
+		 * contains (if array) or is equal to their respective value in $matches.
 		 *
 		 * @access public
 		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
@@ -508,9 +613,8 @@
 		}
 
 		/**
-		 * Allows for 'disabling' in the view if all data identified by
-		 * the keys of $matches contains (if array) or is equal to their
-		 * respective value in $matches.
+		 * Allows for 'disabling' in the view if all data identified by the keys of $matches
+		 * contains (if array) or is equal to their respective value in $matches.
 		 *
 		 * @access public
 		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
@@ -527,9 +631,8 @@
 		}
 
 		/**
-		 * Allows for 'highlighting' in the view if all data identified
-		 * by the keys of $matches contains (if array) or is equal to their
-		 * respective value in $matches.
+		 * Allows for 'highlighting' in the view if all data identified by the keys of $matches
+		 * contains (if array) or is equal to their respective value in $matches.
 		 *
 		 * @access public
 		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
@@ -545,8 +648,8 @@
 		}
 
 		/**
-		 * Determines position information about $current_value in the array or
-		 * iterator identified by $key in the data storage area.
+		 * Determines position information about $current_value in the array or iterator identified
+		 * by $key in the data storage area.
 		 *
 		 * @access public
 		 * @param string $key The key of the iterator in the data storage area
@@ -585,8 +688,7 @@
 		}
 
 		/**
-		 * Combines the view element $element together with the separate
-		 * provided by $separator.
+		 * Combines the view element $element together with the separate provided by $separator.
 		 *
 		 * @access public
 		 * @param string $element The name of the element to combine
@@ -606,8 +708,8 @@
 		}
 
 		/**
-		 * Reverse combines the view element $element together with the
-		 * separator provided by $separator.
+		 * Reverse combines the view element $element together with the separator provided by
+		 * $separator.
 		 *
 		 * @access public
 		 * @param string $key The key of the data which to combine
@@ -627,78 +729,13 @@
 		}
 
 		/**
-		 * Initializes the templating engine
+		 * Preps the View for JSON Serialization
 		 *
-		 * @static
 		 * @access public
-		 * @param array $config The configuration array
-		 * @param string $element The element name of the configuration array
-		 * @return void
+		 * @return object A JSON encodable object of all the data in the view
 		 */
-		static public function __init(array $config = array(), $element = NULL)
+		public function jsonSerialize()
 		{
-
-			self::$viewRoot = implode(DIRECTORY_SEPARATOR, array(
-				iw::getRoot(),
-				($root_directory = iw::getRoot($element))
-					? $root_directory
-					: self::DEFAULT_SCAFFOLDING_ROOT
-			));
-
-			self::$viewRoot       = new fDirectory(self::$viewRoot);
-			self::$cacheDirectory = iw::getWriteDirectory(
-				isset($config['cache_directory'])
-					? $config['cache_directory']
-					: self::DEFAULT_CACHE_DIRECTORY
-			);
-
-			try {
-				self::$cacheDirectory = new fDirectory(self::$cacheDirectory);
-			} catch (fValidationException $e) {
-				throw new fEnvironmentException (
-					'Cache directory %s does not exist',
-					self::$cacheDirectory
-				);
-			}
-
-			if (!self::$cacheDirectory->isWritable()) {
-				throw new fEnvironmentException (
-					'Cache directory %s is not writable',
-					self::$cacheDirectory
-				);
-			}
-
-			if (isset($config['minification_mode'])) {
-				if ($config['minification_mode']) {
-					self::$minificationMode = $config['minification_mode'];
-				}
-			}
+			return (object) $this->data;
 		}
-
-		/**
-		 * Check whether or not a particular view file exists relative to the
-		 * view root.
-		 *
-		 * @static
-		 * @access public
-		 * @param string $view_file The relative path to the view file to check
-		 * @return boolean TRUE if the view file is readable, FALSE otherwise
-		 */
-		static public function exists($view_file)
-		{
-			if ($view_file[0] !== '/' && $view_file[0] !== '\\') {
-				$view_file = implode(DIRECTORY_SEPARATOR, array(
-					self::$viewRoot,
-					$view_file
-				));
-			} else {
-				$view_file = implode(DIRECTORY_SEPARATOR, array(
-					$_SERVER['DOCUMENT_ROOT'],
-					$view_file
-				));
-			}
-
-			return is_readable($view_file);
-		}
-
 	}

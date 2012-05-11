@@ -1,40 +1,27 @@
 <?php
 
 	/**
-	 * A base controller class which provides facilities for triggering various
-	 * responses, and building higher level controllers.
+	 * A base controller class which provides facilities for triggering various responses, and
+	 * building higher level controllers.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
-	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
-	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 * @copyright Copyright (c) 2012, Matthew J. Sahagian
+	 * @license Please reference the LICENSE.txt file at the root of this distribution
 	 *
 	 * @package inKWell
 	 */
 	class Controller extends MoorBaseController implements inkwell
 	{
-
 		const SUFFIX                      = __CLASS__;
 
 		const DEFAULT_CONTROLLER_ROOT     = 'user/controllers';
 
-		const DEFAULT_REQUEST_FORMAT      = 'html';
-		const DEFAULT_AJAX_REQUEST_FORMAT = 'json';
-
 		const DEFAULT_SITE_SECTION        = 'default';
-		const DEFAULT_SITE_TITLE          = 'inKWell Site';
 		const DEFAULT_USE_SSL             = FALSE;
 
 		const MSG_TYPE_ERROR              = 'error';
 		const MSG_TYPE_ALERT              = 'alert';
 		const MSG_TYPE_SUCCESS            = 'success';
-
-		/**
-		 * The controller's view object
-		 *
-		 * @access protected
-		 * @var View
-		 */
-		protected $view = NULL;
 
 		/**
 		 * The path from which relative controllers are loaded
@@ -73,15 +60,6 @@
 		static private $defaultAcceptTypes = array();
 
 		/**
-		 * The default request format for standard requests
-		 *
-		 * @static
-		 * @access private
-		 * @var string
-		 */
-		static private $defaultRequestFormat = NULL;
-
-		/**
 		 * The default request format for AJAX requests
 		 *
 		 * @static
@@ -107,6 +85,15 @@
 		 * @var string
 		 */
 		static private $baseURL = NULL;
+
+		/**
+		 * The client address
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $clientAddress = NULL;
 
 		/**
 		 * The request path for the request as sent by the client
@@ -145,63 +132,12 @@
 		static private $typeHeadersSent = FALSE;
 
 		/**
-		 * Builds a new controller by assigning it a local view and running
-		 * prepare if it exists.  Only static methods on controllers can
-		 * instantiate a new controller object, and all standard __construct()
-		 * functionality should be moved to prepare().
-		 *
-		 * @final
-		 * @access protected
-		 * @param void
-		 * @return void
-		 */
-		final protected function __construct()
-		{
-			$this->view = new View();
-
-			if (method_exists($this, 'prepare')) {
-				$prepare_callback = array($this, 'prepare');
-				$arguments        = func_get_args();
-				call_user_func_array($prepare_callback, $arguments);
-			}
-		}
-
-		/**
-		 * Prepares a new controller by establishing any shared object
-		 * information
+		 * The controller's view object
 		 *
 		 * @access protected
-		 * @param void
-		 * @return void
+		 * @var View
 		 */
-		protected function prepare()
-		{
-			$section = self::getBaseURL();
-
-			$title   = (isset(self::$siteSections[$section]['title']))
-				? self::$siteSections[$section]['title']
-				: self::DEFAULT_SITE_TITLE;
-
-			$use_ssl = (isset(self::$siteSections[$section]['use_ssl']))
-				? self::$siteSections[$section]['use_ssl']
-				: self::DEFAULT_USE_SSL;
-
-			// Redirect to https:// if required for the section
-
-			if ($use_ssl && empty($_SERVER['HTTPS'])) {
-				$domain     = fURL::getDomain();
-				$request    = fURL::getWithQueryString();
-				$ssl_domain = str_replace('http://', 'https://', $domain);
-				fURL::redirect($ssl_domain . $request);
-			}
-
-			self::sendHeader();
-
-			$this->view
-				-> load (self::getRequestFormat() . '.php')
-				-> push ('title',   $title);
-		}
-
+		protected $view = NULL;
 
 		/**
 		 * Matches whether or not a given class name is a potential
@@ -217,8 +153,8 @@
 		}
 
 		/**
-		 * Initializes the global controller namely by establishing error
-		 * handlers, headers, and messages.
+		 * Initializes the Controller class namely by establishing error handlers, headers, and
+		 * messages.
 		 *
 		 * @static
 		 * @access public
@@ -228,6 +164,20 @@
 		 */
 		static public function __init(array $config = array(), $element = NULL)
 		{
+
+			$section = self::getBaseURL();
+			$use_ssl = (isset(self::$siteSections[$section]['use_ssl']))
+				? self::$siteSections[$section]['use_ssl']
+				: self::DEFAULT_USE_SSL;
+			//
+			// Redirect to https:// if required for the section
+			//
+			if ($use_ssl && empty($_SERVER['HTTPS'])) {
+				$domain     = fURL::getDomain();
+				$request    = fURL::getWithQueryString();
+				$ssl_domain = str_replace('http://', 'https://', $domain);
+				self::redirect($ssl_domain . $request, NULL, 301);
+			}
 
 			self::$controllerRoot = implode(DIRECTORY_SEPARATOR, array(
 				iw::getRoot(),
@@ -247,26 +197,6 @@
 					'text/html',
 					'application/json',
 					'application/xml'
-				);
-			}
-
-			// Configure default request format
-
-			self::$defaultRequestFormat = self::DEFAULT_REQUEST_FORMAT;
-
-			if (isset($config['default_request_format'])) {
-				self::$defaultRequestFormat = strtolower(
-					$config['default_request_format']
-				);
-			}
-
-			// Configure default AJAX request format
-
-			self::$defaultAjaxRequestFormat = self::DEFAULT_AJAX_REQUEST_FORMAT;
-
-			if (isset($config['default_ajax_request_format'])) {
-				self::$defaultAjaxRequestFormat = strtolower(
-					$config['default_ajax_request_format']
 				);
 			}
 
@@ -322,7 +252,9 @@
 						: NULL;
 
 
-					self::setError($error, $handler, $header, $message);
+					self::$errors[$error]['handler'] = $handler;
+					self::$errors[$error]['header']  = $header;
+					self::$errors[$error]['message'] = $message;
 				}
 			}
 		}
@@ -365,8 +297,21 @@
 		{
 			$format_types = array(
 
-				'html' => array(
+				'html'  => array(
 					'text/html'
+				),
+
+				'css'   => array(
+					'text/css'
+				),
+
+				'js'    => array(
+					'text/javascript',
+					'applicaiton/javascript'
+				),
+
+				'txt'   => array(
+					'text/plain'
 				),
 
 				'json' => array(
@@ -374,32 +319,24 @@
 					'application/x-javascript'
 				),
 
-				'xml'  => array(
+				'xml'   => array(
 					'application/xml'
 				),
 
-				'php'  => array(
+				'php'   => array(
 					'application/octet-stream'
 				),
 
-				'jpg'  => array(
+				'jpg'   => array(
 					'image/jpeg'
 				),
 
-				'gif'  => array(
+				'gif'   => array(
 					'image/gif'
 				),
 
-				'png'  => array(
+				'png'   => array(
 					'image/png'
-				),
-
-				'css'  => array(
-					'text/css'
-				),
-
-				'js'   => array(
-					'application/x-javascript'
 				)
 			);
 
@@ -413,68 +350,47 @@
 		}
 
 		/**
-		 * Sends the appropriate headers.  Headers will be determined by
-		 * the use of the acceptTypes() method.  If it has not been run prior
-		 * to this method, it will be run with configured default accept types.
+		 * Determines whether or not we should accept the request based on the mime type accepted
+		 * by the user agent.  If no array or an empty array is passed the configured default
+		 * accept types will be used.  If the request_format is provided in the request and the
+		 * list of acceptable types does not support the provided accept headers a not_found error
+		 * will be triggerd.  If no request_format is provided in the request and the list of
+		 * acceptable types does not support the provided accept headers the method will trigger
+		 * a 'not_acceptable' error.
 		 *
 		 * @static
 		 * @access protected
-		 * @param array $headers Additional headers aside from content type to send
-		 * @return void
-		 */
-		static protected function sendHeader($headers = array())
-		{
-			if (!self::$typeHeadersSent) {
-
-				if (!self::$contentType) {
-					// The below block implies accepTypes() was never called
-					if ($format = self::getRequestFormat()) {
-						$format_types      = self::getFormatTypes($format);
-						self::$contentType = ($format_types)
-							? array_shift($format_types)
-							: 'text/html';
-					} else {
-						self::acceptTypes();
-					}
-				}
-
-				header('Content-Type: ' . self::$contentType);
-				foreach ($headers as $header => $value) {
-					header($header . ': ' . $value);
-				}
-				self::$typeHeadersSent = TRUE;
-			}
-		}
-
-		/**
-		 * Determines whether or not we should accept the request based on
-		 * the mime type accepted by the user agent.  If no array or an empty
-		 * array is passed the configured default accept types will be used.
-		 * If the request_format is provided in the request and the list of
-		 * acceptable types does not support the provided accept headers a
-		 * not_found error will be triggerd.  If no request_format is provided
-		 * in the request and the list of acceptable types does not support the
-		 * provided accept headers the method will trigger a 'not_acceptable'
-		 * error.
-		 *
-		 * @static
-		 * @access protected
-		 * @param array $accept_types An array of acceptable mime types
+		 * @param array|string $accept_types An array of acceptable mime types
 		 * @return mixed The best type upon request
 		 */
-		static protected function acceptTypes(array $accept_types = array())
+		static protected function acceptTypes($accept_types = array())
 		{
+			if (!is_array($accept_types)) {
+				$accept_types = func_get_args();
+			}
+
 			if (!count($accept_types)) {
 				$accept_types = self::$defaultAcceptTypes;
 			}
-
-			// The below mapping is used solely to normalize the request
-			// format to retrieve the above listed format accept types
-
+			//
+			// The below mapping is used solely to normalize the request format to retrieve
+			// the above listed format accept types.  This makes 'htm' equivalent to 'html'
+			// and 'jpeg' equivalent to 'jpg'.  It's a bit verbose for what it does but it
+			// is clear for extending for future supported types.
+			//
 			switch ($request_format = self::getRequestFormat()) {
 				case 'htm':
 				case 'html':
 					$request_format_types = self::getFormatTypes('html');
+					break;
+				case 'txt':
+					$request_format_types = self::getFormatTypes('txt');
+					break;
+				case 'css':
+					$request_format_types = self::getFormatTypes('css');
+					break;
+				case 'js':
+					$request_format_types = self::getFormatTypes('js');
 					break;
 				case 'json':
 					$request_format_types = self::getFormatTypes('json');
@@ -524,25 +440,25 @@
 		}
 
 		/**
-		 * Determines whether or not we should accept the request based on
-		 * the languages accepted by the user agent.
+		 * Determines whether or not we should accept the request based on the languages accepted
+		 * by the user agent.
 		 *
 		 * @static
 		 * @access protected
 		 * @param array $language An array of acceptable languages
-		 * @return mixed The method will trigger a 'not_accepted' error on failure, will return the best type upon success.
+		 * @return mixed The method will trigger the 'not_accepted' error on failure, will return the best type upon success.
 		 */
 		static protected function acceptLanguages(array $languages)
 		{
-			return ($best_language = fRequest::getBestAcceptType($types))
+			return ($best_language = fRequest::getBestAcceptType($languages))
 				? $best_language
 				: self::triggerError('not_acceptable');
 		}
 
 		/**
-		 * Determines whether or not accept the request method is allowed.  If
-		 * the current request method is not in the list of allowed methods,
-		 * the method will trigger the error 'not_allowed'
+		 * Determines whether or not accept the request method is allowed.  If the current request
+		 * method is not in the list of allowed methods, the method will trigger the 'not_allowed'
+		 * error.
 		 *
 		 * @static
 		 * @access protected
@@ -565,16 +481,80 @@
 		}
 
 		/**
+		 * Sends the appropriate headers.  Headers will be determined by the use of the
+		 * acceptTypes() method.  If it has not been run prior to this method, it will be run with
+		 * configured default accept types.
+		 *
+		 * @static
+		 * @access protected
+		 * @param array $headers Additional headers aside from content type to send
+		 * @param boolean $send_content_type Whether or not we should send the content type header
+		 * @return void
+		 */
+		static protected function sendHeader($headers = array(), $send_content_type = TRUE)
+		{
+			if (!self::$typeHeadersSent && $send_content_type) {
+
+				if (!self::$contentType) {
+					//
+					// If the contentType is not set then acceptTypes was never called.
+					// we can call it now with the default accept types which will set
+					// both the request format and the contentType.
+					//
+					self::acceptTypes();
+				}
+
+				header('Content-Type: ' . self::$contentType);
+				self::$typeHeadersSent = TRUE;
+			}
+
+			foreach ($headers as $header => $value) {
+				header($header . ': ' . $value);
+			}
+		}
+
+		/**
 		 * Redirect to a controller target.
 		 *
 		 * @static
 		 * @access protected
 		 * @param string $target an inKWell target to redirect to
 		 * @param array $query an associative array containing parameters => values
-		 * @return mixed
+		 * @param int $type 3xx HTTP Code to send (normalized for HTTP version), default 302/303
+		 * @return void
 		 */
-		static protected function redirect($target, $query = array())
+		static protected function redirect($target, $query = array(), $type = 302)
 		{
+			$protocol = strtoupper($_SERVER['SERVER_PROTOCOL']);
+
+			if ($protocol == 'HTTP/1.0') {
+				switch ($type) {
+					case 301:
+						header('HTTP/1.0 Moved Permanently');
+						break;
+					case 302:
+					case 303:
+					case 307:
+						header('HTTP/1.0 302 Moved Temporarily');
+						break;
+				}
+			} elseif ($protocol == 'HTTP/1.1') {
+				switch ($type) {
+					case 301:
+						header('HTTP/1.1 Moved Permanently');
+						break;
+					case 302:
+						header('HTTP/1.1 302 Found');
+						break;
+					case 303:
+						header('HTTP/1.1 303 See Other');
+						break;
+					case 307:
+						header('HTTP/1.1 307 Temporary Redirect');
+						break;
+				}
+			}
+
 			fURL::redirect(iw::makeLink($target, $query));
 		}
 
@@ -583,22 +563,21 @@
 		 *
 		 * @static
 		 * @access protected
-		 * @param mixed $value The value to check.  If this matches the current iw::$failureToken the provided error will be triggered
+		 * @param mixed $action The to demand be completed.  The action should return iw::makeFailureToken() upon failing.
 		 * @param string $error The name of the error to trigger upon failure, defaults to 'not_found'
 		 * @return mixed The original value upon success
 		 */
-		static protected function demand($value, $error = 'not_found')
+		static protected function demand($action, $error = 'not_found')
 		{
-			return (iw::checkFailureToken($value))
+			return (iw::checkFailureToken($action))
 				? self::triggerError($error)
-				: $value;
+				: $action;
 		}
 
 		/**
-		 * Attempts to execute a target within the context of of Controller.
-		 * By default the execution of the target is optional, meaning the
-		 * target need not exist.  You can wrap this function in ::demand()
-		 * in order to require it.
+		 * Attempts to execute a target within the context of of Controller.  By default the
+		 * execution of the target is optional, meaning the target need not exist.  You can wrap
+		 * this function in Controller::demand() in order to require it.
 		 *
 		 * @static
 		 * @access protected
@@ -617,10 +596,9 @@
 		}
 
 		/**
-		 * Attempts to delegate control to a file within the context of
-		 * Controller.  By default the delegation is optional, meaning the
-		 * file need not exist.  You can wrap this function in ::demand() in
-		 * order to require it.
+		 * Attempts to delegate control to a file within the context of Controller.  By default the
+		 * delegation is optional, meaning the file need not exist.  You can wrap this function in
+		 * Controller::demand() in order to require it.
 		 *
 		 * @static
 		 * @access protected
@@ -693,8 +671,7 @@
 		}
 
 		/**
-		 * Determines the base path of the controller from the controller root
-		 * and base URL.
+		 * Determines the base path of the controller from the controller root and base URL.
 		 *
 		 * @static
 		 * @access protected
@@ -713,9 +690,33 @@
 		}
 
 		/**
-		 * Determines the request format for the resource.  The request format
-		 * can be taken is as a get or URL parameter with the simple name
-		 * 'request_format', but must be explicitly set on routes.
+	 	 * Determines the client IP address, taking into account proxy information
+		 *
+		 * @static
+		 * @access protected
+		 * @param void
+		 * @return string The client IP	address
+		 */
+		static protected function getClientIP()
+		{
+			if (self::$clientAddress) {
+				return self::$clientAddress;
+			}
+
+			$address = $_SERVER['REMOTE_ADDR'];
+
+			if (isset($_SERVER['HTTP_X_FORWARDED_FOR']))	{
+					$sources = explode(',',	$_SERVER['HTTP_X_FORWARDED_FOR']);
+					$address = reset($sources);
+			}
+
+			return (self::$clientAddress = $address);
+		}
+
+		/**
+		 * Determines the request format for the resource.  The request format can be taken is as
+		 * a get or URL parameter with the simple name 'request_format', but must be explicitly set
+		 * on routes.
 		 *
 		 * If the request format is provided and the HTTP Accept header does
 		 * not accept the appropriate mime-type a not_acceptable error will be
@@ -733,10 +734,6 @@
 
 				if ($format) {
 					self::$requestFormat = $format;
-				} elseif (fRequest::isAjax()) {
-					self::$requestFormat = self::$defaultAjaxRequestFormat;
-				} else {
-					self::$requestFormat = self::$defaultRequestFormat;
 				}
 			}
 
@@ -744,7 +741,7 @@
 		}
 
 		/**
-		 * Gets the current directly accessed action
+		 * Gets the current directly accessed action.
 		 *
 		 * @static
 		 * @access protected
@@ -770,7 +767,7 @@
 		}
 
 		/**
-		 * A quick way to check against the current base URL
+		 * A quick way to check against the current base URL.
 		 *
 		 * @static
 		 * @access protected
@@ -796,8 +793,8 @@
 		}
 
 		/**
-		 * Determines whether or not a particular class is the entry class
-		 * being used by the router.
+		 * Determines whether or not a particular class is the entry class being used by the
+		 * router.
 		 *
 		 * @static
 		 * @access protected
@@ -810,8 +807,7 @@
 		}
 
 		/**
-		 * Determines whether or not a particular method is the action being
-		 * used by the router.
+		 * Determines whether or not a particular method is the action being used by the router.
 		 *
 		 * @static
 		 * @access protected
@@ -824,8 +820,8 @@
 		}
 
 		/**
-		 * Determines whether or not a particular class and method is the
-		 * entry and action for the router.
+		 * Determines whether or not a particular class and method is the entry and action for the
+		 * router.
 		 *
 		 * @static
 		 * @access protected
@@ -838,38 +834,41 @@
 		}
 
 		/**
-		 * Triggers a standard error which will attempt to use whatever error
-		 * handlers have been assigned.  If the error is unknown an HTTP/1.0
-		 * 500 Internal Server Error header will be sent.  Otherwise headers
-		 * will be matched against any set error headers or the defaults.  If
-		 * no handler is set a hard error will be triggered.
+		 * Triggers a standard error which will attempt to use whatever error handlers have been
+		 * assigned.  If the error is unknown an HTTP/1.0 500 Internal Server Error header will be
+		 * sent.  Otherwise headers will be matched against any set error headers or the defaults.
+		 * If no handler is set a hard error will be triggered.
 		 *
 		 * @static
 		 * @access protected
 		 * @param string $error The error to be triggered.
-		 * @param string $message_type The type of message to display
 		 * @param string $message The message to be displayed
 		 * @param array  $added_headers Additional headers to output after the initial header
 		 * @return void
 		 */
-		static protected function triggerError($error, $message_type = NULL, $message = NULL, array $added_headers = array())
+		static protected function triggerError($error, $message = NULL, array $added_headers = array())
 		{
-			self::$requestFormat = FALSE;
-			self::acceptTypes();
-
-			$message_type = ($message_type)
-				? $message_type
-				: self::MSG_TYPE_ERROR;
-
-			$error_info   = array(
+			$error_info = array(
 				'handler' => NULL,
-				'header'  => 'HTTP/1.0 500 Internal Server Error',
-				'message' => 'An Unknown error occurred.'
+				'header'  => $_SERVER['SERVER_PROTOCOL'] . ' 500 Internal Server Error',
+				'message' => ($message)
+					? $message
+					: 'An Unknown error occurred.'
 			);
 
 			if (isset(self::$errors[$error])) {
-				$error_info = array_merge($error_info, self::$errors[$error]);
-				$message    = ($message) ? $message : $error_info['message'];
+
+				if (isset(self::$errors[$error]['handler'])) {
+					$error_info['handler'] = self::$errors[$error]['handler'];
+				}
+
+				if (isset(self::$errors[$error]['header'])) {
+					$error_info['header'] = self::$errors[$error]['header'];
+				}
+
+				if (isset(self::$errors[$error]['message']) && !$message) {
+					$error_info['message'] = self::$errors[$error]['message'];
+				}
 
 				@header($error_info['header']);
 
@@ -877,22 +876,19 @@
 					@header($header);
 				}
 
-				if ($handler = $error_info['handler']) {
-					$message = fText::compose($message);
-
-					fMessaging::create($message_type, $handler, $message);
-					self::exec($handler);
-					return;
+				if ($error_info['handler']) {
+					$view = self::exec($error_info['handler']);
+					View::attach($view);
+					return $view;
 				}
 			}
 
-			self::triggerHardError($error, $error_info['message']);
+			return self::triggerHardError($error, $error_info['message']);
 		}
 
 		/**
-		 * Triggers a hard error doing little more than outputting the message
-		 * on the screen, this should not be called except by extended error
-		 * handlers or by Controller::triggerError()
+		 * Triggers a hard error doing little more than outputting the message on the screen, this
+		 * should not be called except by extended error handlers or by Controller::triggerError()
 		 *
 		 * @static
 		 * @access protected
@@ -902,35 +898,51 @@
 		 */
 		static protected function triggerHardError($error, $message)
 		{
-			$self    = new self();
 			$title   = fText::compose(fGrammar::humanize($error));
 			$message = fText::compose($message);
+			$data    = array(
+				'id'      => $error,
+				'classes' => array(self::MSG_TYPE_ERROR),
+				'title'   => $title
+			);
 
-			$self->view
-				-> pack   ('id',       $error)
-				-> push   ('classes',  self::MSG_TYPE_ERROR)
-				-> push   ('title',    $title)
-				-> digest ('contents', $message);
+			$accept_types = self::getRequestFormat()
+				? self::getFormatTypes(self::getRequestFormat())
+				: array();
 
-			$self->view->render();
-			exit();
+			switch (fRequest::getBestAcceptType($accept_types)) {
+				case 'text/html':
+					$view = View::create('html.php', $data)
+						->digest('contents', $message);
+					break;
+				case 'application/json':
+					$view = fJSON::encode(array_merge(
+						$data,
+						array('contents' => $message)
+					));
+					break;
+				case 'application/xml':
+					$view = fXML::encode(array_merge(
+						$data, array('contents' => $message)
+					));
+					break;
+				default:
+					$view = $message;
+					break;
+			}
+
+			View::attach($view);
+
+			return $view;
 		}
 
 		/**
-		 * Sets error information for the Controller
+		 * Do not instantiate controllers
 		 *
-		 * @static
+		 * @final
 		 * @access protected
-		 * @param string $error The error to set a handler for
-		 * @param string $handler An inKWell target to execute if the error is triggered
-		 * @param string $header The HTTP header to output if the error is triggered
-		 * @param string $message A default message to display explaining the error
+		 * @param void
 		 * @return void
 		 */
-		static private function setError($error, $handler = NULL, $header = NULL, $message = NULL)
-		{
-			self::$errors[$error]['handler'] = $handler;
-			self::$errors[$error]['header']  = $header;
-			self::$errors[$error]['message'] = $message;
-		}
+		final private function __construct() {}
 	}

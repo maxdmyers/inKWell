@@ -47,7 +47,7 @@
 		// class matching.  In short, this means that attempts to load classes
 		// which do not match the provided prefixes will skip these directories.
 
-		'f*'           => 'includes/lib/flourish/classes',
+		'f*'           => 'includes/lib/flourish',
 		'Moor*'        => 'includes/lib/moor',
 
 		// A non-wilcard string which does not represent a class means that an

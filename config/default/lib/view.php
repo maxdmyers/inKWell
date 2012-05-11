@@ -12,16 +12,20 @@
 
 		'root_directory' => 'user/views',
 
+		// Disable minification completely
+
+		'disable_minification' => FALSE,
+
 		// As per Flourish's code minification, we can set minification modes
-		// of either 'developer' or 'production' -- The differences between
+		// of either 'development' or 'production' -- The differences between
 		// the two relate to caching and are outlined under the Minification
 		// section at: http://flourishlib.com/docs/fTemplating
 		//
-		// If set to NULL, no minification will take place at all.
+		// Default is NULL which means the current core execution mode will be used
 
-		'minification_mode' => 'development',
+		'minification_mode' => NULL,
 
-		// The cache directory is relative to the global write directory, 
+		// The cache directory is relative to the global write directory,
 		// default APPLICATION_ROOT/writable and is used to store
 		// cached versions of minified Javascript and CSS.
 
