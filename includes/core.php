@@ -1,30 +1,29 @@
 <?php
 
 	/**
-	 * IW is the core inKWell class responsible for all shared functionality
-	 * of all it's components.  It is a purely static class and is not meant
-	 * to be instantiated or extended.
+	 * IW is the core inKWell class responsible for all shared functionality of all its components.
+	 * Tt is a purely static class and is not meant to be instantiated or extended publically.
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
-	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
-	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 * @copyright Copyright (c) 2012, Matthew J. Sahagian
+	 * @license Please reference the LICENSE.txt file at the root of this distribution
 	 *
 	 * @package inKWell
 	 */
 	class iw
 	{
-
-		const DEFAULT_CONFIG           = 'config';
+		const DEFAULT_CONFIG_PATH      = 'config';
+		const DEFAULT_CONFIG           = 'default';
 
 		const INITIALIZATION_METHOD    = '__init';
 		const MATCH_CLASS_METHOD       = '__match';
 		const CONFIG_TYPE_ELEMENT      = '__type';
 
-		const DEFAULT_WRITE_DIRECTORY  = 'writable';
+		const DEFAULT_WRITE_DIRECTORY  = 'assets';
+		const DEFAULT_EXECUTION_MODE   = 'development';
 
-		const REGEX_ABSOLUTE_DIRECTORY = '/^(\\/|\\\\|.\:[\\/|\\\\])(.*)$/';
+		const REGEX_ABSOLUTE_PATH      = '#^(/|\\\\|[a-z]:(\\\\|/)|\\\\|//|\./|\.\\\\)#i';
 		const REGEX_VARIABLE           = '/[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/';
-		const REGEX_ABS_PATH           = '#^(/|\\\\|[a-z]:(\\\\|/)|\\\\|//|\./|\.\\\\)#i';
 
 		/**
 		 * The cached configuration array
@@ -45,13 +44,31 @@
 		static private $writeDirectory = NULL;
 
 		/**
-		 * The active domain for inkwell
+		 * The execution mode of inKWell
+		 *
+		 * @static
+		 * @access private
+		 * @var string
+		 */
+		static private $executionMode = NULL;
+
+		/**
+		 * The active domain for inKWell
 		 *
 		 * @static
 		 * @access private
 		 * @var string
 		 */
 		static private $activeDomain = NULL;
+
+		/**
+		 * The autoloaders list
+		 *
+		 * @static
+		 * @access private
+		 * @var array
+		 */
+		static private $autoLoaders = array();
 
 		/**
 		 * Index of classes which have been initialized
@@ -108,8 +125,7 @@
 		static private $roots = array();
 
 		/**
-		 * Constructing an iw object is not allowed, this is purely for
-		 * namespacing and static controls.
+		 * Construction not possible
 		 *
 		 * @final
 		 * @access private
@@ -121,9 +137,8 @@
 		}
 
 		/**
-		 * Creates a configuration array, and sets the config type element to
-		 * match the specified $type provided by the user for later use with
-		 * iw::getConfigsByType()
+		 * Creates a configuration array, and sets the config type element to match the specified
+		 * $type provided by the user for later use with ::getConfigsByType()
 		 *
 		 * @static
 		 * @access public
@@ -137,50 +152,48 @@
 		}
 
 		/**
-		 * Builds a configuration from a series of separate configuration
-		 * files loaded from a single directory.  Each configuration key in the
-		 * final $config array is named after the file from which it is loaded.
-		 * Configuration files should be valid PHP scripts which return
-		 * it's local configuration options (for include).
+		 * Builds a configuration from a series of separate configuration files loaded from a
+		 * single directory.  Each configuration key in the final $config array is named after the
+		 * file from which it is loaded.  Configuration files should be valid PHP scripts which
+		 * return it's local configuration options (for include).
 		 *
 		 * @static
 		 * @access public
 		 * @param string|fDirectory $directory The directory containing the configuration elements
-		 * @param boolean $quiet Whether or not to output information
+		 * @param boolean $quiet Whether or not to output information, defaulted to FALSE
 		 * @param array The configuration array which was built
 		 */
 		static public function buildConfig($directory = NULL, $quiet = FALSE)
 		{
 			$config = array();
 
-			if (!$directory) {
-				$directory = self::DEFAULT_CONFIG;
-			}
-
-			if ($directory instanceof fDirectory) {
-				$directory = $directory->getPath();
-			} else {
-				if (!preg_match(self::REGEX_ABSOLUTE_DIRECTORY, $directory)) {
-					$directory = APPLICATION_ROOT . DIRECTORY_SEPARATOR . $directory;
+			if ($directory === NULL) {
+				$directory = self::getRoot('config');
+			} elseif (is_string($directory)) {
+				if (!preg_match(self::REGEX_ABSOLUTE_PATH, $directory)) {
+					$directory = realpath(implode(DIRECTORY_SEPARATOR, array(
+						self::getRoot('config'),
+						$directory
+					)));
 				}
-
-				$directory = realpath($directory);
+			} elseif (class_exists('fDirectory', FALSE) && $directory instanceof fDirectory) {
+				$directory = $directory->getPath();
 			}
 
 			if (!is_dir($directory) || !is_readable($directory)) {
-				throw new Exception (sprintf(
+				throw new Exception(
 					'Cannot build configuration, directory "%s" is unreadable.',
 					$directory
-				));
+				);
 			}
 
 			$directory .= DIRECTORY_SEPARATOR;
-
+			//
 			// Loads each PHP file into a configuration element named after
 			// the file.  We check to see if the CONFIG_TYPE_ELEMENT is set
 			// to ensure configurations are added to their respective
 			// type in the $config['__types'] array.
-
+			//
 			foreach (glob($directory . '*.php') as $config_file) {
 
 				$config_element = pathinfo($config_file, PATHINFO_FILENAME);
@@ -199,13 +212,13 @@
 				}
 
 				$config['__types'][$type][] = $config_element;
-				$config[$config_element]  = $current_config;
+				$config[$config_element]    = $current_config;
 			}
-
+			//
 			// Ensures we recusively scan all directories and merge all
 			// configurations.  Directory names do not play a role in the
 			// configuration key name.
-
+			//
 			foreach (glob($directory . '*', GLOB_ONLYDIR) as $sub_directory) {
 				$config = array_merge_recursive(
 					$config,
@@ -222,14 +235,18 @@
 		 * @static
 		 * @access public
 		 * @param array $config The configuration array
-		 * @param string $file The file to write to
-		 * @param boolean $quiet Whether or not to output information
+		 * @param string $file The file to write to, optional if overwriting the default config
+		 * @param boolean $quiet Whether or not to output information, defaulted to FALSE
 		 * @return mixed Number of bytes written to file or FALSE on failure
 		 */
 		static public function writeConfig(array $config, $file = NULL, $quiet = FALSE)
 		{
 			if (!$file) {
-				$file = self::DEFAULT_CONFIG . '.php';
+				$file = '.' . self::DEFAULT_CONFIG;
+			}
+
+			if (!preg_match(self::REGEX_ABSOLUTE_PATH, $file)) {
+				$file = realpath(self::getRoot('config') . DIRECTORY_SEPARATOR . $file);
 			}
 
 			if (!$quiet) {
@@ -246,63 +263,57 @@
 		}
 
 		/**
-		 * Gets the defined/translated class for a particular name.  Words are usually lowercase
-		 * underscore notation, however, there is some leeway due to the algorithm.
+		 * Gets the defined/translated class for a particular element name.
 		 *
-		 * @param string $name The name to translate
-		 * @return string $class The name of the class which matches the original name
+		 * @param string $element The system element to translate
+		 * @return string The name of the class which matches the original element.
 		 */
-		static public function classize($name)
+		static public function classize($element)
 		{
-			if (isset(self::$classTranslations[$name])) {
-				return self::$classTranslations[$name];
+			if (isset(self::$classTranslations[$element])) {
+				return self::$classTranslations[$element];
 			} else {
-				return fGrammar::camelize($name, TRUE);
+				return fGrammar::camelize($element, TRUE);
 			}
 		}
 
 		/**
-		 * Initializes the inKWell system with a configuration
+		 * Initializes the inKWell system with a chosen configuration.  If not configuraiton is
+		 * specified it will result in the default configuration.
 		 *
 		 * @static
 		 * @access public
 		 * @param string $configuration The name of the configuration to use
-		 * @return void
+		 * @return array The loaded configuration
 		 */
 		static public function init($configuration = NULL)
 		{
-
 			if (!$configuration) {
 				$configuration = self::DEFAULT_CONFIG;
 			}
 
-			$file   = realpath($configuration . '.php');
-			$config = (is_readable($file))
-				? @unserialize(file_get_contents($file))
-				: NULL;
+			self::$roots['config'] = realpath(implode(DIRECTORY_SEPARATOR, array(
+				self::getRoot(),
+				self::DEFAULT_CONFIG_PATH
+			)));
 
-			if (!$config) {
-				$config = @self::buildConfig($configuration, TRUE);
+			$config_source = implode(DIRECTORY_SEPARATOR, array(
+				self::getRoot('config'),
+				'.' . $configuration
+			));
+
+			if (is_readable($config_source)) {
+				self::$config = @unserialize(file_get_contents($config_source));
 			}
 
-			self::$config          = $config;
-			self::$roots['config'] = realpath($configuration);
-
-			// Set up the inkwell root directory
-
-			if (isset(self::$config['inkwell']['root_directory'])) {
-				self::$roots['inkwell'] = rtrim(
-					$config['inkwell']['root_directory'],
-					'/\\' . DIRECTORY_SEPARATOR
-				);
-			} else {
-				self::$roots['inkwell'] = APPLICATION_ROOT;
+			if (!self::$config) {
+				self::$config = self::buildConfig($configuration, TRUE);
 			}
-
+			//
 			// Set up our write directory
-
+			//
 			self::$writeDirectory = implode(DIRECTORY_SEPARATOR, array(
-				iw::getRoot(),
+				self::getRoot(),
 				trim(
 					isset(self::$config['inkwell']['write_directory'])
 						? self::$config['inkwell']['write_directory']
@@ -310,23 +321,30 @@
 					'/\\' . DIRECTORY_SEPARATOR
 				)
 			));
-
+			//
 			// Configure our autoloaders
-
+			//
 			if (isset(self::$config['autoloaders'])) {
-				if(!is_array(self::$config['autoloaders'])) {
-					throw new fProgrammerException (
-						'Autoloaders must be configured as an array.'
-					);
+				if(is_array(self::$config['autoloaders'])) {
+					self::$autoLoaders = self::$config['autoloaders'];
 				}
-			} else {
-				self::$config['autoloaders'] = array();
 			}
 
-			spl_autoload_register('iw::loadClass');
+			spl_autoload_register(self::makeTarget(__CLASS__, 'loadClass'));
+			//
+			// Set up execution mode
+			//
+			$valid_execution_modes = array('development', 'production');
+			self::$executionMode   = self::DEFAULT_EXECUTION_MODE;
 
+			if (isset(self::$config['inkwell']['execution_mode'])) {
+				if (in_array(self::$config['inkwell']['execution_mode'], $valid_execution_modes)) {
+					self::$executionMode = self::$config['inkwell']['execution_mode'];
+				}
+			}
+			//
 			// Initialize Error Reporting
-
+			//
 			if (isset(self::$config['inkwell']['error_level'])) {
 				error_reporting(self::$config['inkwell']['error_level']);
 			}
@@ -334,27 +352,32 @@
 			if (isset(self::$config['inkwell']['display_errors'])) {
 				if (self::$config['inkwell']['display_errors']) {
 					fCore::enableErrorHandling('html');
-					fCore::enableExceptionHandling('html');
+					fCore::enableExceptionHandling('html', 'time');
 					ini_set('display_errors', 1);
 				} elseif (isset(self::$config['inkwell']['error_email_to'])) {
 					$admin_email = self::$config['inkwell']['error_email_to'];
 					fCore::enableErrorHandling($admin_email);
-					fCore::enableExceptionHandling($admin_email);
+					fCore::enableExceptionHandling($admin_email, 'time');
 					ini_set('display_errors', 0);
 				} else {
 					ini_set('display_errors', 0);
 				}
+			} elseif (self::getExecutionMode() == 'development') {
+				ini_set('display_errors', 1);
+			} else {
+				ini_set('display_errors', 0);
 			}
 
+			//
 			// Include any interfaces
-
+			//
 			if (isset(self::$config['inkwell']['interfaces'])) {
 
 				$interface_directories = self::$config['inkwell']['interfaces'];
 
 				foreach ($interface_directories as $interface_directory) {
 					$files = glob(implode(DIRECTORY_SEPARATOR, array(
-						iw::getRoot(),
+						self::getRoot(),
 						$interface_directory,
 						'*.php'
 					)));
@@ -370,42 +393,36 @@
 					}
 				}
 			}
-
+			//
 			// Initialize Date and Time Information, this has to be before any
 			// time related functions.
+			//
+			fTimestamp::setDefaultTimezone(
+				isset(self::$config['inkwell']['default_timezone'])
+					? self::$config['inkwell']['default_timezone']
+					: 'GMT'
+			);
 
-			if (isset(self::$config['inkwell']['default_timezone'])) {
-				fTimestamp::setDefaultTimezone(
-					self::$config['inkwell']['default_timezone']
-				);
-			} else {
-				throw new fProgrammerException(
-					'Please configure your timezone'
-				);
-			}
-
-			if (
-				   isset(self::$config['inkwell']['date_formats'])
-				&& is_array(self::$config['inkwell']['date_formats'])
-			) {
-				$date_formats = self::$config['inkwell']['date_formats'];
-				foreach ($date_formats as $name => $format) {
-					fTimestamp::defineFormat($name, $format);
+			if (isset(self::$config['inkwell']['date_formats'])) {
+				if (is_array($date_formats = self::$config['inkwell']['date_formats'])) {
+					foreach ($date_formats as $name => $format) {
+						fTimestamp::defineFormat($name, $format);
+					}
 				}
 			}
-
+			//
 			// Redirect if we're not the active domain.
+			//
 			$url_parts          = parse_url(fURL::getDomain());
-			self::$activeDomain = (isset($config['inkwell']['active_domain']))
-				? $config['inkwell']['active_domain']
+			self::$activeDomain = isset(self::$config['inkwell']['active_domain'])
+				? self::$config['inkwell']['active_domain']
 				: $url_parts['host'];
 
-			if (!iw::checkSAPI('cli') && $url_parts['host'] != self::$activeDomain) {
-				//TODO: Check on flourish support for user/pass in domain and handle it properly
-				$current_domain = $url_sections['host'];
-				$current_scheme = $url_sections['scheme'];
-				$current_port   = (isset($url_sections['port']))
-					? ':' . $url_sections['port']
+			if (!self::checkSAPI('cli') && $url_parts['host'] != self::$activeDomain) {
+				$current_domain = $url_parts['host'];
+				$current_scheme = $url_parts['scheme'];
+				$current_port   = isset($url_parts['port'])
+					? ':' . $url_parts['port']
 					: NULL;
 
 				fURL::redirect(
@@ -413,36 +430,37 @@
 					fURL::getWithQueryString()
 				);
 			}
-
+			//
 			// Initialize the Session
-
-			fSession::setPath(
-				iw::getWriteDirectory(implode(DIRECTORY_SEPARATOR, array(
-					'.tmp',
-					'sessions'
-				)))
-			);
+			//
+			if (isset(self::$config['inkwell']['session_path'])) {
+				fSession::setPath(self::getWriteDirectory(
+					self::$config['inkwell']['session_path']
+				));
+			}
 
 			$session_length = isset(self::$config['inkwell']['session_length'])
-				? $config['inkwell']['session_length']
+				? self::$config['inkwell']['session_length']
 				: '30 minutes';
 
-			if (isset(self::$config['inkwell']['persistent_session'])
-				&& self::$config['inkwell']['persistent_sessions']
-			) {
-				fSession::enablePersistence();
-				fSession::setLength($session_length, $session_length);
-			} else {
-				fSession::setLength($session_length);
+			fSession::setLength($session_length, $session_length);
+
+			if (isset(self::$config['inkwell']['persistent_session'])) {
+				if (self::$config['inkwell']['persistent_sessions']) {
+					fSession::enablePersistence();
+				}
 			}
+
 			fSession::open();
-
+			//
 			// Initialize the Databases
-
-			if (isset(self::$config['database']['disabled'])
+			//
+			$databases_enabled = (
+				isset(self::$config['database']['disabled'])
 				&& !self::$config['database']['disabled']
-				&& isset($config['database']['databases'])
-			)  {
+			);
+
+			if ($databases_enabled && isset(self::$config['database']['databases'])) {
 
 				if (!is_array(self::$config['database']['databases'])) {
 					throw new fProgrammerException (
@@ -499,7 +517,7 @@
 
 					if (is_array($database_hosts) && count($database_hosts)) {
 
-						$target = iw::makeTarget('iw', 'db_host['. $name . ']');
+						$target = self::makeTarget(__CLASS__, 'db_host['. $name . ']');
 
 						if (!($stored_host = fSession::get($target, NULL))) {
 
@@ -524,7 +542,7 @@
 						$database_port = NULL;
 					}
 
-					iw::addDatabase($db = new fDatabase(
+					self::addDatabase($db = new fDatabase(
 						$database_type,
 						$database_name,
 						$database_user,
@@ -536,20 +554,20 @@
 					fORMDatabase::attach($db, $database_entry, $database_role);
 				}
 			}
-
+			//
 			// Load the Scaffolder if we have a configuration for it
-
+			//
 			if (isset(self::$config['scaffolder'])) {
-				iw::loadClass('Scaffolder');
+				self::loadClass('Scaffolder');
 			}
-
+			//
 			// All other configurations have the following special properties
 			//
 			// 'class'          => Signifies which class the configuration maps to
 			// 'preload'        => Signifies that the class should be preloaded
 			// 'root_directory' => Used by the scaffolder and more
 			//
-
+			//
 			$preload_classes = array();
 
 			foreach (self::$config as $element => $config) {
@@ -564,7 +582,8 @@
 						//
 						// Default convention is upper camelcase
 						//
-						$class = self::$classTranslations[$element] = fGrammar::camelize($element, TRUE);
+						self::$classTranslations[$element] = fGrammar::camelize($element, TRUE);
+						$class                             = self::$classTranslations[$element];
 					}
 
 					if (isset($config['root_directory'])) {
@@ -584,7 +603,7 @@
 			}
 
 			foreach ($preload_classes as $class) {
-				iw::loadClass($class);
+				self::loadClass($class);
 			}
 
 			return self::$config;
@@ -604,9 +623,8 @@
 		}
 
 		/**
-		 * Returns a list of available interfaces.  Optionally this will exclude
-		 * any interfaces which were added by inKWell (i.e. which didn't exist)
-		 * in PHP itself.
+		 * Returns a list of available interfaces.  Optionally this will exclude any interfaces
+		 * which were added by inKWell (i.e. which didn't exist) in PHP itself.
 		 *
 		 * @param boolean $native Get only native interfaces, default is FALSE
 		 * @return array The list of interfaces
@@ -621,9 +639,9 @@
 		}
 
 		/**
-		 * Get configuration information. If no $element is specified
-		 * the full inKwell configuration is returned.  You can specify
-		 * multiple sub_elements as multiple parameters.
+		 * Get configuration information. If no $element is specified the full inKwell
+		 * configuration is returned.  You can specify multiple sub_elements as multiple
+		 * parameters.
 		 *
 		 * @static
 		 * @access public
@@ -660,9 +678,9 @@
 		}
 
 		/**
-		 * Get all the configurations matching a certain type.  If one or more
-		 * sub elements are defined as additional parameters the returned array
-		 * will contain only the specific information for each config element.
+		 * Get all the configurations matching a certain type.  If one or more sub elements are
+		 * defined as additional parameters the returned array will contain only the specific
+		 * information for each config element.
 		 *
 		 * @static
 		 * @access public
@@ -685,7 +703,7 @@
 						array_unshift($sub_elements, $element);
 
 						$configs[$element] = call_user_func_array(
-							'iw::getConfig',
+							self::makeTarget(__CLASS__, 'getConfig'),
 							$sub_elements
 						);
 					} else {
@@ -698,11 +716,21 @@
 		}
 
 		/**
-		 * Gets the requested write directory.  If the optional parameter is
-		 * entered it will attempt to get it as a sub directory of the overall
-		 * write directory.  If the child directory does not exist, if the sub
-		 * directory does not exist, it will create it with owner and group
-		 * writable permissions.
+		 * Gets the current execution mode for inkwell
+		 *
+		 * @static
+		 * @access public
+		 * @return string The current execution mode
+		 */
+		static public function getExecutionMode()
+		{
+			return self::$executionMode;
+		}
+
+		/**
+		 * Gets a write directory.  If the optional parameter is entered it will attempt to get it
+		 * as a sub directory of the overall write directory.  If the sub directory does not exist,
+		 * it will create it with owner and group writable permissions.
 		 *
 		 * @static
 		 * @access public
@@ -715,15 +743,11 @@
 
 				if ($sub_directory instanceof fDirectory) {
 					$sub_directory = $sub_directory->getPath();
-				} elseif (!is_string($sub_directory)) {
-					throw new fProgrammerException(
-						'Sub directory must be a string or fDirectory object'
-					);
 				}
-
+				//
 				// Prevent an absolute sub directory from repeating the
 				// base write directory
-
+				//
 				if (strpos($sub_directory, self::$writeDirectory) === 0) {
 					$offset        = strlen(self::$writeDirectory);
 					$sub_directory = substr($sub_directory, $offset);
@@ -738,30 +762,25 @@
 				$write_directory = self::$writeDirectory;
 			}
 
-			if(!is_writable($write_directory)) {
-				try {
-					fDirectory::create($write_directory);
-				} catch (fException $e) {
-					throw new fEnvironmentException(fText::compose(
-						'Directory "%s" is not writable or createable.',
-						$write_directory
-					));
-		 		}
-			}
-
-			return new fDirectory($write_directory);
+			return (!is_dir($write_directory))
+				? fDirectory::create($write_directory)
+				: new fDirectory($write_directory);
 		}
 
 		/**
-		 * Gets a configured root directory for the list of available roots
+		 * Gets a configured root directory from the list of available roots
 		 *
 		 * @static
 		 * @access public
 		 * @param string $element The class or configuration element
 		 * @return string A reference to the root directory for "live roots"
 		 */
-		static public function getRoot($element = 'inkwell')
+		static public function getRoot($element = NULL)
 		{
+			if ($element === NULL) {
+				return APPLICATION_ROOT;
+			}
+
 			$element = strtolower($element);
 
 			return (isset(self::$roots[$element]))
@@ -800,8 +819,8 @@
 		}
 
 		/**
-		 * Creates a target identifier from an entry and action.  If the entry
-		 * consists of the term 'link' then the action is treated as a URL.
+		 * Creates a target identifier from an entry and action.  If the entry consists of the
+		 * term 'link' then the action is treated as a URL.
 		 *
 		 * @static
 		 * @access public
@@ -829,15 +848,7 @@
 		 */
 		static public function makeLink($target, $query = array())
 		{
-			if (strpos($target, '*::') === 0) {
-				$target = Moor::getActiveClass() . substr($target, 1);
-			}
-
-			if (strpos($target, '*\\') === 0 || preg_match('/^\*_[A-Z][A-Za-z0-9]*::/', $target)) {
-				$target = Moor::getActiveNamespace() . substr($target, 1);
-			}
-
-			if (!is_callable($target)) {
+			if (!is_callable($target) && strpos($target, '*') !== 0) {
 
 				$query = (count($query))
 					? '?' . @http_build_query($query, '', '&', PHP_QUERY_RFC3986)
@@ -863,8 +874,7 @@
 		}
 
 		/**
-		 * Creates a unique failure token which can then be checked with
-		 * checkFailureToken().
+		 * Creates a unique failure token which can then be checked with checkFailureToken().
 		 *
 		 * @static
 		 * @access public
@@ -890,12 +900,12 @@
 		}
 
 		/**
-		 * Checks the SAPI name
+		 * Checks the current SAPI name
 		 *
 		 * @static
 		 * @access public
 		 * @param string $sapi The SAPI to verify running
-		 * @return bollean TRUE if the running SAPI matches, FALSE otherwise
+		 * @return boolean TRUE if the running SAPI matches, FALSE otherwise
 		 */
 		static public function checkSAPI($sapi)
 		{
@@ -903,8 +913,8 @@
 		}
 
 		/**
-		 * The inKWell conditional autoloader which allows for auto loading
-		 * based on dynamic class name matches.
+		 * The inKWell conditional autoloader which allows for auto loading based on dynamic class
+		 * name matches.
 		 *
 		 * @static
 		 * @access public
@@ -914,10 +924,12 @@
 		 */
 		static public function loadClass($class, array $loaders = array())
 		{
-			if (!count($loaders)) {
-				$loaders = self::$config['autoloaders'];
+			//
+			// If we're called manually, we want to make sure the class isn't already loaded
+			//
+			if (class_exists($class, FALSE)) {
+				return TRUE;
 			}
-
 
 			if (!count($loaders)) {
 				$loaders = self::$config['autoloaders'];
@@ -926,7 +938,7 @@
 			foreach ($loaders as $test => $target) {
 
 				if (strpos($test, '*') !== FALSE) {
-					$regex = str_replace('*', '(.*?)', $test);
+					$regex = str_replace('*', '(.*?)', str_replace('\\', '\\\\', $test));
 					$match = preg_match('/' . $regex . '/', $class);
 				} elseif (class_exists($test)) {
 					$test  = self::makeTarget($test, self::MATCH_CLASS_METHOD);
@@ -937,12 +949,19 @@
 					$match = TRUE;
 				}
 
-				if ($match !== FALSE) {
+				if ($match) {
 
 					$file = implode(DIRECTORY_SEPARATOR, array(
-						iw::getRoot(),
-						trim($target, '/\\'),        // Target directory
-						$class . '.php'              // Class name as PHP file
+						self::getRoot(),
+						//
+						// Trim leading or trailing directory separators from target
+						//
+						trim($target, '/\\' . DIRECTORY_SEPARATOR),
+						//
+						// Replace any backslashes in the class with directory separator
+						// to support Namespaces and trim the leading root namespace if present.
+						//
+						ltrim(str_replace('\\', DIRECTORY_SEPARATOR, $class), '\\') . '.php'
 					));
 
 					if (file_exists($file)) {
@@ -962,40 +981,36 @@
 		}
 
 		/**
-		 * Initializes a class by calling it's __init() method if it has one
-		 * and returning its return value.
+		 * Initializes a class by calling it's __init() method if it has one and returning its
+		 * return value.
 		 *
 		 * @static
 		 * @access protected
 		 * @param string $class The class to initialize
-		 * @return mixed The return value of the __init function, usually boolean
+		 * @return bool Whether or not the initialization was successful
 		 */
 		static protected function initializeClass($class)
 		{
-
+			//
 			// Classes cannot be initialized twice
+			//
 			if (in_array($class, self::$initializedClasses)) {
-
-				throw new fProgrammerException(
-					'The class %s has already been initialized.', $class
-				);
-
-			} else {
-
-				self::$initializedClasses[] = $class;
+				return TRUE;
 			}
 
 			$init_callback = array($class, self::INITIALIZATION_METHOD);
-
+			//
 			// If there's no __init we're done
+			//
 			if (!is_callable($init_callback)) {
 				return TRUE;
 			}
 
 			$method  = end($init_callback);
 			$rmethod = new ReflectionMethod($class, $method);
-
+			//
 			// If __init is not custom, we're done
+			//
 			if ($rmethod->getDeclaringClass()->getName() != $class) {
 				return TRUE;
 			}
@@ -1006,12 +1021,18 @@
 				? self::$config[$element]
 				: array();
 
-			return call_user_func($init_callback, $class_config, $element);
+			try {
+				if (call_user_func($init_callback, $class_config, $element)) {
+					self::$initializedClasses[] = $class;
+					return TRUE;
+				}
+			} catch (Exception $e) {}
+
+			return FALSE;
 		}
 
 		/**
-		 * Adds a database to the database index for retrieval with
-		 * getDatabase() method.
+		 * Adds a database to the database index for retrieval with getDatabase() method.
 		 *
 		 * @static
 		 * @access private

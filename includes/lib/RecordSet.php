@@ -4,14 +4,13 @@
 	 * RecordSet class for aggregated arrays of Active Records
 	 *
 	 * @author Matthew J. Sahagian [mjs] <gent@dotink.org>
-	 * @copyright Copyright (c) 2011, Matthew J. Sahagian
-	 * @license http://www.gnu.org/licenses/agpl.html GNU Affero General Public License
+	 * @copyright Copyright (c) 2012, Matthew J. Sahagian
+	 * @license Please reference the LICENSE.txt file at the root of this distribution
 	 *
 	 * @package inKWell
 	 */
 	abstract class RecordSet extends fRecordSet implements inkwell
 	{
-
 		/**
 		 * Matches whether or not a given class name is a potential
 		 * RecordSet
@@ -70,6 +69,17 @@
 			}
 
 			return FALSE;
+		}
+
+		/**
+		 * Preps the RecordSet for JSON Serialization
+		 *
+		 * @access public
+		 * @return array A JSON encodable array of all records in the set
+		 */
+		public function jsonSerialize()
+		{
+			return $this->getRecords();
 		}
 
 	}

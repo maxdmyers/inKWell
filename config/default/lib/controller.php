@@ -25,25 +25,13 @@
 			'application/xml'
 		),
 
-		// The default request format for standard browser based requests.
-
-		'default_request_format' => 'html',
-
-		// The default request format for AJAX/XHR browser based requests.
-
-		'default_ajax_request_format' => 'json',
-
 		// The sections array allows you to define any number of base URLs
-		// with separate page titles.  Each base URL will be detected
-		// and used as an additional directory for the PagesController to
-		// look for controllers and/or views.  The default section is always
-		// 'default' and it's assignment here simply allows you to customize
-		// the title easily.
+		// with different properties.  These properties will determine some
+		// default controller behavior.
 
-		'sections'        => array(
+		'sections' => array(
 
 			'default'     => array(
-				'title'   => 'inKWell Site',
 				'use_ssl' => FALSE
 			),
 		),
@@ -68,32 +56,38 @@
 
 			'not_authorized' => array(
 				'handler'    => NULL,
-				'header'     => 'HTTP/1.1 401 Not Authorized',
+				'header'     => $_SERVER['SERVER_PROTOCOL'] . ' 401 Not Authorized',
 				'message'    => 'The requested resource requires authorization'
 			),
 
 			'forbidden'      => array(
 				'handler'    => NULL,
-				'header'     => 'HTTP/1.1 403 Forbidden',
+				'header'     => $_SERVER['SERVER_PROTOCOL'] . ' 403 Forbidden',
 				'message'    => 'You do not have permission to view the requested resource'
 			),
 
 			'not_found'      => array(
 				'handler'    => NULL,
-				'header'     => 'HTTP/1.1 404 Not Found',
+				'header'     => $_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found',
 				'message'    => 'The requested resource could not be found'
 			),
 
 			'not_allowed'    => array(
 				'handler'    => NULL,
-				'header'     => 'HTTP/1.1 405 Method Not Allowed',
+				'header'     => $_SERVER['SERVER_PROTOCOL'] . ' 405 Method Not Allowed',
 				'message'    => 'The requested resource does not support this method'
 			),
 
 			'not_acceptable' => array(
 				'handler'    => NULL,
-				'header'     => 'HTTP/1.1 406 Not Acceptable',
-				'message'    => 'The requested resource is not available in your accepted parameters'
+				'header'     => $_SERVER['SERVER_PROTOCOL'] . ' 406 Not Acceptable',
+				'message'    => 'The requested resource is not available in the accepted parameters'
+			),
+
+			'unavailable'    => array(
+				'handler'    => NULL,
+				'header'     => $_SERVER['SERVER_PROTOCOL'] . ' 503 Service Unavailable',
+				'message'    => 'Service is temporarily unavailable due to heavily load or maintenance'
 			)
 		)
 	));
