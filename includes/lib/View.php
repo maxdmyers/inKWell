@@ -13,7 +13,7 @@
 	 *
 	 * @package inKWell
 	 */
-	class View extends fTemplating implements inkwell
+	class View extends fTemplating implements inkwell, JSONSerializable
 	{
 		const DEFAULT_VIEW_ROOT     = 'views';
 		const DEFAULT_CACHE_DIR     = 'cache';
@@ -246,6 +246,7 @@
 			}
 
 			$this->set(self::PRIMARY_VIEW_ELEMENT, $file);
+
 			return $this;
 		}
 
@@ -349,10 +350,12 @@
 		}
 
 		/**
-		 * Adds string content to a view element, such that when the element is placed the content
-		 * is directly outputted.  In short, this is for non-data elements which do not have
-		 * template files.  If the second parameter is NULL content will be loaded directly into
-		 * the view.
+		 * Adds string content to a view object as referenced by the element.
+		 *
+		 * When the element is placed the string content is directly outputted.  This is generally
+		 * only used in special circumstances where a placed element may be either a view template
+		 * file *or* a string.  In short, this is for non-data elements which do not have template
+		 * files.  If the second parameter is NULL content will be loaded directly into the view.
 		 *
 		 * @access public
 		 * @param string $element The name of the element, or content for primary element
@@ -375,8 +378,9 @@
 		}
 
 		/**
-		 * Pack's data into the view's data storage area destroying any existing keys which may be
-		 * in it's way
+		 * Pack's data into the view object's data referenced by the data set.
+		 *
+		 * This method destroys any existing data referenced by the data set.
 		 *
 		 * @access public
 		 * @param string|array $data_set A string indicating the data set to pack into
@@ -395,8 +399,9 @@
 		}
 
 		/**
-		 * Pushes data onto the end of the data storage arrays given keys. If an element is pushed
-		 * on which is not an array, it will become one.
+		 * Pushes data onto the end of the view object's data referenced by the data set.
+		 *
+		 * If an element is pushed onto data which is not an array, it will become one.
 		 *
 		 * @access public
 		 * @param string $data_set A string indicating the data set to push into
@@ -421,9 +426,10 @@
 		 }
 
 		/**
-		 * Pulls data referenced by a key from the view's data storage array.  Optionally the data
-		 * can be destroyed after being pulled and will no longer be accessible through future
-		 * calls.
+		 * Pulls data referenced by a key from the view object's data.
+		 *
+		 * Optionally the data can be destroyed after being pulled and will no longer be accessible
+		 * through future calls.
 		 *
 		 * @access public
 		 * @param string $key The key of the data to try an pull
@@ -453,9 +459,10 @@
 		}
 
 		/**
-		 * Peels data off the end of referenced data storage array.  Optionally the data can be
-		 * destroyed.  Please note, that if the data is not an array this becomes functionally
-		 * equivalent to pull.
+		 * Peels data off the end of the referenced view object's data.
+		 *
+		 * Optionally the data can be destroyed.  Please note, that if the data is not an array
+		 * this becomes functionally equivalent to pull.
 		 *
 		 * @access public
 		 * @param string $key The key of the data from which to pop a value
@@ -489,94 +496,118 @@
 		}
 
 		/**
-		 * Iterates over an element and outputs a provided partial or callable emitter for each
-		 * child element.  If the emitter is a callback it can accept up to two arguments, the
-		 * first being the child element during each call, and the second being the current view.
-		 * If the emitter is an array, the key is used as the child element variable within the
-		 * partial, while the value is the view partial.
+		 * Iterates over an element and outputs a partial or callable emitter for each member.
+		 *
+		 * If the emitter is a callback it can accept up to three arguments, the first being the
+		 * current value in the element stack, the second being it's index / key, and the third
+		 * being the current view object.  As of php 5.4 the third parameter is deprecated as the
+		 * view should be available as $this.
+		 *
+		 * If the emitter is an array, the current value in the element stack will be available
+		 * in the partial as the variable which matches the provided key in the array, the index
+		 * / key for the value will always be $i, and the view object is accessible through $this.
 		 *
 		 * Examples:
 		 *
 		 * $this->repeat('users', array('user' => 'partials/user.php'));
 		 *
-		 * $this->repeat('users', function($user, $this){
+		 * $this->repeat('users', function($user, $i, $this){
 		 *		echo $user->prepareName();
 		 * })
 		 *
+		 * The $key parameter can alternatively be an array to iterate over.
+		 *
 		 * @acces public
-		 * @param string $key The key of the data which to repeat
+		 * @param string|array $key The key of the view object data which to repeat, or an array
 		 * @param array|callback $emitter The function or partial which will be emitted
 		 * @return View The view object to allow for method chaining
 		 */
 		public function repeat($key, $emitter)
 		{
-			if (array_key_exists($key, $this->data)) {
-				if (
-					$this->data[$key] instanceof Traversable
-					|| is_array($this->data[$key])
-				) {
+			if (is_array($key) || is_object($key)) {
+				$data = $key;
+			} else {
+				$is_traversable = (
+					array_key_exists($key, $this->data) &&
+					(
+						$this->data[$key] instanceof Traversable ||
+						is_array($this->data[$key])              ||
+						is_object($this->data[$key])
+					)
+				);
 
-					if (is_callable($emitter)) {
+				if ($is_traversable) {
+					$data = $this->data[$key];
+				} else {
+					throw new fProgrammerException (
+						'Data referenced by %s does not exist or is not traversable.', $key
+					);
+				}
+			}
 
-						foreach ($this->data[$key] as $value) {
-							$emitter($value, $this);
-						}
+			if (is_callable($emitter)) {
 
-					} elseif (is_array($emitter)) {
+				foreach ($data as $i => $value) {
+					$emitter($value, $i, $this);
+				}
 
-						$element = key($emitter);
+			} elseif (is_array($emitter)) {
 
-						if (!preg_match(iw::REGEX_VARIABLE, $element)) {
-							throw new fProgrammerException (
-								'Array emitter key must be valid variable name.'
-							);
-						}
+				$element = key($emitter);
 
-						$partial = reset($emitter);
+				if (!preg_match(iw::REGEX_VARIABLE, $element)) {
+					throw new fProgrammerException (
+						'Array emitter key must be valid variable name.'
+					);
+				}
 
-						if (!self::exists($partial)) {
-							throw new fProgrammerException (
-								'The partial %s is unreadable',
-								$partial
-							);
-						}
+				$partial = reset($emitter);
 
-						foreach ($this->data[$key] as $$element) {
-							if (!preg_match(iw::REGEX_ABS_PATH, $partial)) {
-								include implode(DIRECTORY_SEPARATOR, array(
-									self::$viewRoot,
-									$partial
-								));
-							} else {
-								include $partial;
-							}
-						}
+				if (!self::exists($partial)) {
+					throw new fProgrammerException (
+						'The partial %s is unreadable',
+						$partial
+					);
+				}
 
+				foreach ($data as $i => $$element) {
+					if (!preg_match(iw::REGEX_ABS_PATH, $partial)) {
+						include implode(DIRECTORY_SEPARATOR, array(
+							self::$viewRoot,
+							$partial
+						));
 					} else {
-						throw new fProgrammerException (
-							'Invalid data type for emitter, must be %s',
-							fGrammar::joinArray(array(
-								'a callback',
-								'an array'
-							),  'or')
-						);
+						include $partial;
 					}
 				}
+
+			} else {
+				throw new fProgrammerException (
+					'Invalid data type for emitter, must be a callback or an array'
+				);
 			}
 		}
 
 		/**
-		 * Verifies/Checks view data.  View data is checked by ensuring that all elements
-		 * identified by the keys of $matches equal their respective value in $matches, or if the
-		 * value is an array, whether or not the value identified by the element/key is contained
-		 * in the array.
+		 * Verifies/Checks view data.
+		 *
+		 * View data is checked by ensuring that *all* elements identified by the keys of $matches
+		 * equal their respective value in the $matches array.  If the value is itself an array,
+		 * then the value of the provided key in the View object's data array is checked against
+		 * all values of the array, requiring only one match.  If $matches is not an array, but
+		 * a string, the method merely checks to see if that key exists in the View object's data
+		 * array (it says nothing about the value resolving to TRUE).
 		 *
 		 * @access public
-		 * @param array $matches An array of key (data element) to value (to match against) pairs.
+		 * @param array|string $matches An array of key (data element) / value (to match against) pairs or a key to check for.
 		 * @return boolean TRUE if the data element identified by the key matches or is contained in the value.
 		 */
-		public function check(array $matches)
+		public function check($matches)
 		{
+			if (!is_array($matches)) {
+				return array_key_exists($matches, $this->data) && $this->data[$matches];
+			}
+
 			foreach ($matches as $key => $active_value) {
 				$match = FALSE;
 				if (array_key_exists($key, $this->data)) {
@@ -592,99 +623,6 @@
 			}
 
 			return TRUE;
-		}
-
-		/**
-		 * Allows for 'selecting' in the view if all data identified by the keys of $matches
-		 * contains (if array) or is equal to their respective value in $matches.
-		 *
-		 * @access public
-		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
-		 * @param boolean $as_attribute How to return the resulting selected if all matches are valid
-		 * @return string 'selected' or 'selected="selected"' upon matching
-		 */
-		public function selectOn(array $matches, $as_attribute = FALSE)
-		{
-			if ($this->check($matches)) {
-				return ($as_attribute) ? 'selected="selected"' : 'selected';
-			} else {
-				return '';
-			}
-		}
-
-		/**
-		 * Allows for 'disabling' in the view if all data identified by the keys of $matches
-		 * contains (if array) or is equal to their respective value in $matches.
-		 *
-		 * @access public
-		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
-		 * @param boolean $as_attribute How to return the resulting disabled if all matches are valid
-		 * @return string 'disabled' or 'disabled="disabled"' upon matching
-		 */
-		public function disableOn(array $matches, $as_attribute = FALSE)
-		{
-			if ($this->check($matches)) {
-				return ($as_attribute) ? 'disabled="disabled"' : 'disabled';
-			} else {
-				return '';
-			}
-		}
-
-		/**
-		 * Allows for 'highlighting' in the view if all data identified by the keys of $matches
-		 * contains (if array) or is equal to their respective value in $matches.
-		 *
-		 * @access public
-		 * @param array $matches An array of key (key in data storage) to value (the value to match the data agains) pairs.
-		 * @return string 'highlighted' (for use as class) upon matching, an empty string if not
-		 */
-		public function highlightOn(array $matches)
-		{
-			if ($this->check($matches)) {
-				return 'highlighted';
-			} else {
-				return '';
-			}
-		}
-
-		/**
-		 * Determines position information about $current_value in the array or iterator identified
-		 * by $key in the data storage area.
-		 *
-		 * @access public
-		 * @param string $key The key of the iterator in the data storage area
-		 * @param mixed $current_value The the current value in the outter loop
-		 * @return string A space separated string of position information (first/last and even/odd)
-		 */
-		public function positionIn($key, $current_value)
-		{
-			$position_info = array();
-
-			if (array_key_exists($key, $this->data)) {
-				if (
-					$this->data[$key] instanceof Traversable
-					|| is_array($this->data[$key])
-				) {
-					foreach ($this->data[$key] as $index => $member) {
-						if ($current_value === $member) {
-							if ($index == 0) {
-								$position_info[] = 'first';
-							}
-							if (($index % 2) == 0) {
-								$position_info[] = 'even';
-							} else {
-								$position_info[] = 'odd';
-							}
-							if ($index == (sizeof($this->data[$key]) - 1)) {
-								$position_info[] = 'last';
-							}
-							break;
-						}
-					}
-				}
-			}
-
-			return implode(' ', $position_info);
 		}
 
 		/**

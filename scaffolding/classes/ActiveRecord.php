@@ -8,7 +8,6 @@
 	class <%= self::validateVariable($class) %> extends <%= self::validateVariable($build_class) %>
 
 	{
-
 		/**
 		 * Initializes all static class information for the <%= $class %> model
 		 *
@@ -60,19 +59,6 @@
 		static public function getRecordSet()
 		{
 			return parent::getRecordSet(__CLASS__);
-		}
-
-		/**
-		 * Gets the entry name for the <%= $class %> class
-		 *
-		 * @static
-		 * @access public
-		 * @param void
-		 * @return string The custom or default entry translation
-		 */
-		static public function getEntry()
-		{
-			return parent::getEntry(__CLASS__);
 		}
 
 		/**
@@ -131,5 +117,4 @@
 		{
 			return parent::createFromResourceKey(__CLASS__, $resource_key);
 		}
-
 	}

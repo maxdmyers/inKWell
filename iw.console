@@ -1,13 +1,15 @@
 #!/bin/sh
 
 BASEDIR=$(dirname $0)
+PHP_CMD="php"
+RLWRAP_CMD="rlwrap"
 
-if [ -n "`php -v 2> /dev/null`" ]; then
-	if [ -n "`rlwrap -v 2> /dev/null`" ]; then
+if [ -n "`$PHP_CMD -v 2> /dev/null`" ]; then
+	if [ -n "`$RLWRAP_CMD -v 2> /dev/null`" ]; then
 		HIST_FILE="$BASEDIR/.console.hist"
-		rlwrap -H $HIST_FILE php -q -d register_globals=0 -d magic_quotes_gpc=0 -d short_open_tag=0 -d asp_tags=1 -d display_errors=1 $BASEDIR/.console $1
+		$RLWRAP_CMD -H $HIST_FILE $PHP_CMD -q -d register_globals=0 -d magic_quotes_gpc=0 -d short_open_tag=0 -d asp_tags=1 -d display_errors=1 $BASEDIR/.console $1
 	else
-		php -q -d register_globals=0 -d magic_quotes_gpc=0 -d short_open_tag=0 -d asp_tags=1 -d display_errors=1 $BASEDIR/.console $1
+		$PHP_CMD -q -d register_globals=0 -d magic_quotes_gpc=0 -d short_open_tag=0 -d asp_tags=1 -d display_errors=1 $BASEDIR/.console $1
 	fi
 else
 	echo 'Please add the php binary to your path and restart.'

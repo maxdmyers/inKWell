@@ -924,13 +924,6 @@
 		 */
 		static public function loadClass($class, array $loaders = array())
 		{
-			//
-			// If we're called manually, we want to make sure the class isn't already loaded
-			//
-			if (class_exists($class, FALSE)) {
-				return TRUE;
-			}
-
 			if (!count($loaders)) {
 				$loaders = self::$config['autoloaders'];
 			}
@@ -949,8 +942,17 @@
 					$match = TRUE;
 				}
 
-				if ($match) {
+				if (class_exists($class, FALSE)) {
+					//
+					// Recursion may have loaded the class at this point, so we may not need to go
+					// any further.
+					//
+					return TRUE;
 
+				} elseif ($match) {
+					//
+					// But maybe we do...
+					//
 					$file = implode(DIRECTORY_SEPARATOR, array(
 						self::getRoot(),
 						//

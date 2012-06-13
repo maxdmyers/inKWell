@@ -72,7 +72,7 @@
 		 */
 		static public function show($source = NULL)
 		{
-			if (!$source && (fRequest::check('create') || fRequest::check('edit'))) {
+			if (!$source && (Request::check('create') || Request::check('edit'))) {
 				return self::edit();
 			}
 
@@ -87,11 +87,11 @@
 				}
 
 				return View::create('kwiki/default.php')
-					-> digest ('content',  $source)
-					-> set    ('comments', 'kwiki/comments.php')
-					-> pack   ('title', self::$title)
+					-> digest ('content',   $source)
+					-> set    ('comments',  'kwiki/comments.php')
+					-> pack   ('title',     self::$title)
 					-> pack   ('disqus_id', self::$disqusId)
-					-> pack   ('ga_ua_id', self::$gaUaId);
+					-> pack   ('ga_ua_id',  self::$gaUaId);
 
 			} catch (fValidationException $e) {
 				return self::notFound();
@@ -108,10 +108,10 @@
 		 */
 		static public function edit()
 		{
-			$source = fRequest::get('source', 'string', NULL);
+			$source = Request::get('source', 'string', NULL);
 
-			if (fRequest::isPost()) {
-				switch(fRequest::get('action', 'string', 'save')) {
+			if (Request::isPost()) {
+				switch(Request::get('action', 'string', 'save')) {
 					case 'preview':
 						return self::show($source);
 					case 'save':
@@ -136,10 +136,10 @@
 			}
 
 			return View::create('kwiki/default.php')
-				-> set  ('content', 'kwiki/edit.php')
-				-> pack ('title', self::$title)
+				-> set  ('content',  'kwiki/edit.php')
+				-> pack ('title',    self::$title)
 				-> pack ('ga_ua_id', self::$gaUaId)
-				-> pack ('source', $source);
+				-> pack ('source',   $source);
 		}
 
 		/**
@@ -154,8 +154,8 @@
 		{
 			header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found');
 			return View::create('kwiki/default.php')
-				-> set  ('content', 'kwiki/not_found.php')
-				-> pack ('title', self::$title . ' - Not Found')
+				-> set  ('content',  'kwiki/not_found.php')
+				-> pack ('title',    self::$title . ' - Not Found')
 				-> pack ('ga_ua_id', self::$gaUaId);
 
 		}
