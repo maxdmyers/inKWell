@@ -9,7 +9,7 @@
 	 *
 	 * @package inKWell
 	 */
-	abstract class RecordSet extends fRecordSet implements inkwell
+	abstract class RecordSet extends fRecordSet implements inkwell, JSONSerializable
 	{
 		/**
 		 * Matches whether or not a given class name is a potential
@@ -64,11 +64,27 @@
 				'active_record' => $record_class
 			), __CLASS__);
 
-			if (class_exists($record_set, FALSE)) {
+			if (self::classExists($record_set, FALSE)) {
 				return TRUE;
 			}
 
 			return FALSE;
+		}
+
+		/**
+		 * Determines if a Record Set class has been defined by ensuring the class exists
+		 * and it is a subclass of RecordSet.  This is, in part, a workaround for a PHP bug
+		 * #46753 where is_subclass_of() will not properly autoload certain classes in edge cases.
+		 * This behavior is fixed in 5.3+, but the method will probably remain as a nice shorthand.
+		 *
+		 * @static
+		 * @access public
+		 * @param string $record_class The Record Set class
+		 * @return boolean Whether or not the class is defined
+		 */
+		static public function classExists($record_set)
+		{
+			return (class_exists($record_set) && is_subclass_of($record_set, __CLASS__));
 		}
 
 		/**

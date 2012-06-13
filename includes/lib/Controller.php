@@ -621,20 +621,29 @@
 		}
 
 		/**
-		 * Triggers a standard error which will attempt to use whatever error handlers have been
-		 * assigned.  If the error is unknown an HTTP/1.0 500 Internal Server Error header will be
-		 * sent.  Otherwise headers will be matched against any set error headers or the defaults.
-		 * If no handler is set a hard error will be triggered.
+		 * Triggers an error.
+		 *
+		 * This will attempt to use whatever error handlers have been configured, however, if
+		 * no handler is available for the given error, it will result naturally in a hard error
+		 * attempting to attach the most suitable view.
+		 *
+		 * In all cases the method throws a MoorContinueException which should be caught simply as
+		 * an Exception.  The message provided on the exception will be the best available HTTP
+		 * response header.
+		 *
+		 * By default this will also set the header available in the exception as well as any other
+		 * headers provided in the $header argument as an array.  To disable sending headers simply
+		 * set $headers to FALSE.
 		 *
 		 * @static
 		 * @access protected
-		 * @param string $error The error to be triggered.
+		 * @param string $error The error to be triggered
+		 * @param boolean|array $headers Whether to and, optionally, which headers to set
 		 * @param string $message The message to be displayed
-		 * @param array  $added_headers Additional headers to output after the initial header
 		 * @throws MoorContinueException
 		 * @return void
 		 */
-		static protected function triggerError($error, $message = NULL, array $added_headers = array())
+		static public function triggerError($error, $headers = TRUE, $message = NULL)
 		{
 			$error_info = array(
 				'handler' => NULL,
@@ -645,7 +654,6 @@
 			);
 
 			if (isset(self::$errors[$error])) {
-
 				if (isset(self::$errors[$error]['handler'])) {
 					$error_info['handler'] = self::$errors[$error]['handler'];
 				}
@@ -657,71 +665,51 @@
 				if (isset(self::$errors[$error]['message']) && !$message) {
 					$error_info['message'] = self::$errors[$error]['message'];
 				}
+			}
 
-				@header($error_info['header']);
+			if ($error_info['handler']) {
+				$view = self::exec($error_info['handler'], $error_info['message']);
+			} else {
+				$view = View::create(NULL, array(
+					'id'      => $error,
+					'classes' => array(self::MSG_TYPE_ERROR),
+					'title'   => fGrammar::humanize($error),
+					'error'   => $error_info['message']
+				));
 
-				foreach ($added_headers as $header) {
-					@header($header);
-				}
+				$accept_types = Request::getFormat()
+					? Request::getFormatTypes(Request::getFormat())
+					: array();
 
-				if ($error_info['handler']) {
-					$view = self::exec($error_info['handler']);
-					View::attach($view);
-					return $view;
+				switch (Request::getBestAcceptType($accept_types)) {
+					case 'text/html':
+						$view = $view->load('html.php');
+						break;
+					case 'application/json':
+						$view = fJSON::encode($view);
+						break;
+					case 'application/xml':
+						$view = fXML::encode($view);
+						break;
+					default:
+						$view = $error_info['message'];
+						break;
 				}
 			}
 
-			return self::triggerHardError($error, $error_info['message']);
-		}
+			if ($headers) {
+				@header($error_info['header']);
 
-		/**
-		 * Triggers a hard error doing little more than outputting the message on the screen, this
-		 * should not be called except by extended error handlers or by Controller::triggerError()
-		 *
-		 * @static
-		 * @access protected
-		 * @param string $error The error being sent.
-		 * @param string $message The message to output with it.
-		 * @return void The function exits the script.
-		 */
-		static protected function triggerHardError($error, $message)
-		{
-			$title   = fText::compose(fGrammar::humanize($error));
-			$message = fText::compose($message);
-			$data    = array(
-				'id'      => $error,
-				'classes' => array(self::MSG_TYPE_ERROR),
-				'title'   => $title
-			);
-
-			$accept_types = self::getRequestFormat()
-				? self::getFormatTypes(self::getRequestFormat())
-				: array();
-
-			switch (fRequest::getBestAcceptType($accept_types)) {
-				case 'text/html':
-					$view = View::create('html.php', $data)
-						->digest('contents', $message);
-					break;
-				case 'application/json':
-					$view = fJSON::encode(array_merge(
-						$data,
-						array('contents' => $message)
-					));
-					break;
-				case 'application/xml':
-					$view = fXML::encode(array_merge(
-						$data, array('contents' => $message)
-					));
-					break;
-				default:
-					$view = $message;
-					break;
+				if (is_array($headers)) {
+					foreach ($headers as $header) {
+						@header($header);
+					}
+				}
 			}
 
 			View::attach($view);
 
-			return $view;
+			throw new MoorContinueException($error_info['header']);
 		}
 
 		/**

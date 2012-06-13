@@ -61,15 +61,6 @@
 		static private $setTranslations = array();
 
 		/**
-		 * Cached entry translations for record classes
-		 *
-		 * @static
-		 * @access private
-		 * @var array
-		 */
-		static private $entryTranslations = array();
-
-		/**
 		 * The slug field separator, default is a dash
 		 *
 		 * @static
@@ -122,10 +113,9 @@
 		private $resourceKey = NULL;
 
 		/**
-		 * Matches whether or not a given class name is a potential
-		 * ActiveRecord by looking for an available matching ActiveRecord
-		 * configuration or the tablized form in the list of the default
-		 * database tables.
+		 * Matches whether or not a given class name is a potential ActiveRecord by looking for an
+		 * available matching ActiveRecord configuration or the tablized form in the list of the
+		 * default database tables.
 		 *
 		 * @static
 		 * @access public
@@ -149,8 +139,7 @@
 		}
 
 		/**
-		 * Initializses the ActiveRecord class or a child class to be used
-		 * as an active record.
+		 * Initializses the ActiveRecord class or a child class to be used as an active record.
 		 *
 		 * @static
 		 * @access public
@@ -160,7 +149,7 @@
 		 */
 		static public function __init(array $config = array(), $element = NULL)
 		{
-			if ($element == 'active_record') {
+			if (iw::classize($element) == __CLASS__) {
 
 				self::$imageUploadDirectory = iw::getWriteDirectory('images');
 				self::$fileUploadDirectory  = iw::getWriteDirectory('files');
@@ -173,9 +162,10 @@
 					? $config['word_separator']
 					: self::DEFAULT_WORD_SEPARATOR;
 
+				//
 				// Configure active records
-
-				$ar_configs = iw::getConfigsByType('ActiveRecord');
+				//
+				$ar_configs = iw::getConfigsByType(__CLASS__);
 
 				foreach ($ar_configs as $config_element => $config) {
 
@@ -183,7 +173,6 @@
 					$database     = NULL;
 					$table        = NULL;
 					$name         = NULL;
-					$entry        = NULL; // TODO: Should not be on ActiveRecord
 
 					extract($config);
 
@@ -201,15 +190,6 @@
 					if (isset($name)) {
 						self::$nameTranslations[$record_class]  = $name;
 					}
-
-					// TODO: Entries and entry translations should not be a
-					// TODO: function of the model by the controller... this
-					// TODO: needs to be cleaned up.
-
-					if (isset($entry)) {
-						self::$entryTranslations[$record_class] = $entry;
-					}
-
 				}
 
 				fORM::registerHookCallback(
@@ -220,53 +200,45 @@
 
 				return TRUE;
 
-		} else {
-			$record_class = iw::classize($element);
+			} else {
+				$record_class = iw::classize($element);
 
-			if (!is_subclass_of($record_class, __CLASS__)) {
-				return FALSE;
+				if (!is_subclass_of($record_class, __CLASS__)) {
+					return FALSE;
+				}
 			}
-		}
 
 			$schema = fORMSchema::retrieve($record_class);
 			$table  = fORM::tablize($record_class);
+			$ukeys  = $schema->getKeys($table, 'unique');
 
-			// Default and Configurable Values
+			//
+			// Set Configuration Defaults
+			//
+			self::$info[$record_class]['id_column'] = NULL;
+			self::$info[$record_class]['order']     = array();
 
-			if (isset($config['id_column'])) {
-				if (empty($config['id_column'])) {
-					throw new fProgrammerException (
-						'ID column cannot be configured as an empty string'
-					);
-				}
+			//
+			// Set an explicit ID column or attempt to find a natural one
+			//
+			if (isset($config['id_column']) && !empty($config['id_column'])) {
 				self::$info[$record_class]['id_column'] = $config['id_column'];
 			} else {
-				$ukeys = $schema->getKeys($table, 'unique');
 				if (sizeof($ukeys) == 1 && sizeof($ukeys[0]) == 1) {
 					self::$info[$record_class]['id_column'] = $ukeys[0][0];
-				} else {
-					self::$info[$record_class]['id_column'] = NULL;
 				}
 			}
 
+			//
+			// If we have a slug column make sure it's unique
+			//
 			if (isset($config['slug_column'])) {
-
-				if (!isset($config['id_column'])) {
-					throw new fProgrammerException (
-						'Enabling a slug column requires an ID column'
-					);
-				}
-
 				$valid_slug_column = FALSE;
 				$slug_column       = $config['slug_column'];
 
-				if (!isset($ukeys)) {
-					$ukeys = $schema->getKeys($table, 'unique');
-				}
-
 				foreach ($ukeys as $ukey) {
 					if (count($ukey) == 1 && $ukey[0] == $slug_column) {
-						$valid_slug_column = $slug_column;
+						$valid_slug_column = TRUE;
 					}
 				}
 
@@ -285,15 +257,11 @@
 				self::$info[$record_class]['slug_column'] = $slug_column;
 			}
 
-			if (isset($config['order'])) {
-				if (!is_array($config['order'])) {
-					throw new fProgrammerException (
-						'Order configuration is expected to be an array.'
-					);
-				}
+			//
+			// Set any explicitly configure order
+			//
+			if (isset($config['order']) && is_array($config['order'])) {
 				self::$info[$record_class]['order'] = $config['order'];
-			} else {
-				self::$info[$record_class]['order'] = array();
 			}
 
 			$column_configs = array(
@@ -311,31 +279,21 @@
 
 				self::$info[$record_class][$column_config] = array();
 
-				if (!isset($config[$column_config])) {
+				if (!isset($config[$column_config]) || !is_array($config[$column_config])) {
 					continue;
 				}
 
-				// Make sure the user has configured an array
-
-				if (!is_array($config[$column_config])) {
-					throw new fProgrammerException (
-						'%s must be configured as an array.',
-						fGrammar::humanize($column_config)
-					);
-				}
-
-				// If so, add each column respectively and run any
-				// special configuration depending on the
-				// $column_config
-
+				//
+				// Add each specially configured column's ORM mappings and callback
+				//
 				foreach ($config[$column_config] as $key => $column) {
 
 					self::$info[$record_class][$column_config][$key] = $column;
 
 					switch ($column_config) {
-
+						//
 						// Special handling of image columns
-
+						//
 						case 'image_columns':
 							fORMFile::configureImageUploadColumn(
 								$record_class,
@@ -349,9 +307,9 @@
 								)
 							);
 							break;
-
+						//
 						// Special handling of file columns
-
+						//
 						case 'file_columns':
 							fORMFile::configureFileUploadColumn(
 								$record_class,
@@ -365,9 +323,9 @@
 								)
 							);
 							break;
-
+						//
 						// Special handling for order columns
-
+						//
 						case 'order_columns':
 							fORMOrdering::configureOrderingColumn(
 								$record_class,
@@ -380,27 +338,27 @@
 							}
 
 							break;
-
+						//
 						// Special handling for URL columns
-
+						//
 						case 'url_columns':
 							fORMColumn::configureLinkColumn(
 								$record_class,
 								$column
 							);
 							break;
-
+						//
 						// Special handling for e-mail columns
-
+						//
 						case 'email_columns':
 							fORMColumn::configureEmailColumn(
 								$record_class,
 								$column
 							);
 							break;
-
+						//
 						// Special handling for money columns
-
+						//
 						case 'money_columns':
 							fORMMoney::configureMoneyColumn(
 								$record_class,
@@ -412,8 +370,9 @@
 				}
 			}
 
-			// If there are password columns, handle them properly
-
+			//
+			// If any password columns wer configured/set above, add our custom hook
+			//
 			if (count(self::$info[$record_class]['password_columns'])) {
 				fORM::registerHookCallback(
 					$record_class,
@@ -422,8 +381,9 @@
 				);
 			}
 
-			// Set all non-configurable information
-
+			//
+			// Set all non-configurable / schema-provided information
+			//
 			self::$info[$record_class]['columns']        = array();
 			self::$info[$record_class]['pkey_columns']   = array();
 			self::$info[$record_class]['pkey_methods']   = array();
@@ -487,7 +447,7 @@
 				'class' => $record_class
 			), __CLASS__);
 
-			if (class_exists($record_class, FALSE)) {
+			if (self::classExists($record_class, FALSE)) {
 				return TRUE;
 			}
 
@@ -495,7 +455,10 @@
 		}
 
 		/**
-		 * Determines if an Active Record class has been defined.
+		 * Determines if an Active Record class has been defined by ensuring the class exists
+		 * and it is a subclass of ActiveRecord.  This is, in part, a workaround for a PHP bug
+		 * #46753 where is_subclass_of() will not properly autoload certain classes in edge cases.
+		 * This behavior is fixed in 5.3+, but the method will probably remain as a nice shorthand.
 		 *
 		 * @static
 		 * @access public
@@ -504,20 +467,12 @@
 		 */
 		static public function classExists($record_class)
 		{
-			return (
-				// The class_exists() is a workaround for PHP bug #46753
-				// it should not be required as is_subclass_of should
-				// properly trigger autoload.  This behavior is fixed
-				// in PHP 5.3+
-				class_exists($record_class) &&
-				is_subclass_of($record_class, __CLASS__)
-			);
+			return (class_exists($record_class) && is_subclass_of($record_class, __CLASS__));
 		}
 
 		/**
-		 * Inspects a column on a particular record class.  If this is called
-		 * using the inspectColumn() method on an active record it will add
-		 * enhanced information.
+		 * Inspects a column on a particular record class.  If this is called using the
+		 * inspectColumn() method on an active record it will add enhanced information.
 		 *
 		 * @static
 		 * @access public
@@ -536,14 +491,16 @@
 			$schema = fORMSchema::retrieve($record_class);
 			$table  = self::getRecordTable($record_class);
 
+			//
 			// Populate basic information if it is not provided
-
+			//
 			if (!count($info)) {
 				$info = $schema->getColumnInfo($record_class, $column);
 			}
 
+			//
 			// Populate advanced foreign key information
-
+			//
 			$fkey_info       = array();
 			$info['is_fkey'] = FALSE;
 
@@ -555,8 +512,9 @@
 				}
 			}
 
+			//
 			// Determine any special formatting for the column
-
+			//
 			$image_columns = self::getInfo($record_class, 'image_columns');
 			$file_columns  = self::getInfo($record_class, 'file_columns');
 			$pass_columns  = self::getInfo($record_class, 'password_columns');
@@ -564,30 +522,21 @@
 			$url_columns   = self::getInfo($record_class, 'url_columns');
 			$email_columns = self::getInfo($record_class, 'email_columns');
 
-
 			if ($column == self::getInfo($record_class, 'slug_column')) {
 				$info['format'] = 'slug';
-
 			} elseif (in_array($column, $order_columns)) {
 				$info['format'] = 'ordering';
-
 			} elseif (in_array($column, $image_columns)) {
 				$info['format'] = 'image';
-
 			} elseif (in_array($column, $file_columns)) {
 				$info['format'] = 'file';
-
 			} elseif (in_array($column, $pass_columns)) {
 				$info['format'] = 'password';
-
 			} elseif (in_array($column, $url_columns)) {
 				$info['format'] = 'url';
-
 			} elseif (in_array($column, $email_columns)) {
 				$info['format'] = 'email';
-
 			} elseif ($info['is_fkey']) {
-
 				$relationships = $schema->getRelationships($table);
 
 				foreach ($relationships as $type => $relationship) {
@@ -595,29 +544,28 @@
 						if ($relation_info['column'] == $column) {
 							switch ($type) {
 								case 'one-to-many':
-									$info['format'] = 'records';
+									$info['format'] = 'recordset_reference';
 									break;
 								case 'one-to-one':
 								case 'many-to-one':
-									$info['format'] = 'record';
+									$info['format'] = 'record_reference';
 									break;
 							}
 						}
 					}
 				}
-
 			}
 
+			//
 			// Last ditch attempt to get a usable format
-
+			//
 			if (!isset($info['format'])) {
-
 				switch ($info['type']) {
 					case 'varchar':
 						$info['format'] = 'string';
 						break;
 					case 'boolean':
-						$info['format'] = 'checkbox';
+						$info['format'] = 'switch';
 						break;
 					default:
 						$info['format'] = $info['type'];
@@ -625,8 +573,9 @@
 				}
 			}
 
+			//
 			// Determine additional properties
-
+			//
 			$fixed_columns  = self::getInfo($record_class, 'fixed_columns');
 			$serial_columns = self::getInfo($record_class, 'serial_columns');
 			$info['serial'] = FALSE;
@@ -649,8 +598,8 @@
 		}
 
 		/**
-		 * Converts a record name into a class name, for example: user to
-		 * User or user_photograph to UserPhotograph
+		 * Converts a record name into a class name, for example: user to User or user_photograph
+		 * to UserPhotograph
 		 *
 		 * @static
 		 * @access public
@@ -673,8 +622,7 @@
 		}
 
 		/**
-		 * Converts a table name into an active record class name, for example:
-		 * users to User
+		 * Converts a table name into an active record class name, for example: users to User
 		 *
 		 * @static
 		 * @access public
@@ -697,8 +645,8 @@
 		}
 
 		/**
-		 * Converts a record set class name into an active record class name,
-		 * for example: Users to User
+		 * Converts a record set class name into an active record class name, for example: Users to
+		 * User
 		 *
 		 * @static
 		 * @access public
@@ -717,31 +665,6 @@
 			}
 
 			return array_search($record_set, self::$setTranslations);
-		}
-
-		/**
-		 * Converts an entry name into an active record class name, for example:
-		 * users to User or user_photographs to UserPhotograph
-		 *
-		 * @static
-		 * @access public
-		 * @param string $entry The entry name to convert
-		 * @return string|NULL The class name of the active record or NULL if it does not exist
-		 */
-		static public function classFromEntry($entry)
-		{
-			if (!in_array($entry, self::$entryTranslations)) {
-				try {
-					$singularized = fGrammar::singularize($entry);
-					$record_class = iw::classize($singularized);
-
-					if (self::classExists($record_class)){
-						self::$entryTranslations[$record_class] = $entry;
-					}
-				} catch (fProgrammerException $e) {}
-			}
-
-			return array_search($entry, self::$entryTranslations);
 		}
 
 		/**
@@ -796,24 +719,6 @@
 		}
 
 		/**
-		 * Gets the entry name for an Active Record class
-		 *
-		 * @static
-		 * @access public
-		 * @param string $record_class The Active Record class name
-		 * @return string The custom or default entry translation
-		 */
-		static public function getEntry($record_class)
-		{
-			if (isset(self::$entryTranslations[$record_class])) {
-				return self::$entryTranslations[$record_class];
-			} else {
-				$record_set = self::getRecordSet($record_class);
-				return fGrammar::underscorize($record_set);
-			}
-		}
-
-		/**
 		 * Gets the the ordering of the Active Record class
 		 *
 		 * @static
@@ -827,8 +732,8 @@
 		}
 
 		/**
-		 * Determines whether the class only serves as a relationship, i.e.
-		 * a record in a many to many table.
+		 * Determines whether the class only serves as a relationship, i.e. a record in a many to
+		 * many table.
 		 *
 		 * @static
 		 * @access public
@@ -841,9 +746,8 @@
 		}
 
 		/**
-		 * Resets some cached information such as the slug and resource keys
-		 * in the event related information such as primary key values has
-		 * changed.
+		 * Resets some cached information such as the slug and resource keys in the event related
+		 * information such as primary key values has changed.
 		 *
 		 * @static
 		 * @access public
@@ -874,8 +778,8 @@
 		}
 
 		/**
-		 * A validation hook for the slug column.  This ensures that the slug
-		 * contains only URL safe characters without requiring encoding.
+		 * A validation hook for the slug column.  This ensures that the slug contains only URL
+		 * safe characters without requiring encoding.
 		 *
 		 * @static
 		 * @access public
@@ -891,12 +795,14 @@
 		{
 			$record_class = get_class($object);
 			$slug_column  = self::getInfo($record_class, 'slug_column');
+			$id_column    = self::getInfo($record_class, 'id_column');
 
+			//
 			// If no value is set for the slug column, try to generate it
 			// based on the ID column.
+			//
+			if (!$values[$slug_column] && isset($id_column)) {
 
-			if (!$values[$slug_column]) {
-				$id_column = self::getInfo($record_class, 'id_column');
 				$id_value  = $values[$id_column];
 
 				try {
@@ -923,49 +829,56 @@
 				}
 			}
 
-			// Validation based on comparing the differences between the
-			// slug column value and the fURL::makeFriendly version of it.
-
-			$url_friendly = fURL::makeFriendly(
-				$values[$slug_column],
-				NULL,
-				self::$wordSeparator
-			);
-
-			if ($values[$slug_column] != $url_friendly) {
-				$invalid_characters = array_diff(
-					str_split(strtolower($values[$slug_column])),
-					str_split($url_friendly)
+			//
+			// If the value of the slug column is still empty, add a validation, otherwise ensure
+			// that it is fURL::makeFriendly() compatible.
+			//
+			if (empty($values[$slug_column])) {
+				$validation_messages[] = fText::compose(
+					'%s: Must have a value',
+					fGrammar::humanize($slug_column)
+				);
+			} else {
+				$url_friendly = fURL::makeFriendly(
+					$values[$slug_column],
+					NULL,
+					self::$wordSeparator
 				);
 
-				if (($i = array_search(' ', $invalid_characters)) !== FALSE) {
-					$invalid_characters   = array_diff(
-						$invalid_characters,
-						array(' ')
+				if ($values[$slug_column] != $url_friendly) {
+					$invalid_characters = array_diff(
+						str_split(strtolower($values[$slug_column])),
+						str_split($url_friendly)
 					);
-					$invalid_characters[] = 'spaces';
+
+					if (($i = array_search(' ', $invalid_characters)) !== FALSE) {
+						$invalid_characters   = array_diff(
+							$invalid_characters,
+							array(' ')
+						);
+						$invalid_characters[] = 'spaces';
+					}
+
+					if(count($invalid_characters)) {
+						$validation_messages[] = fText::compose(
+							'%s: Cannot contain %s',
+							fGrammar::humanize($slug_column),
+							fGrammar::joinArray($invalid_characters, 'or')
+						);
+					}
 				}
 
-				if(count($invalid_characters)) {
-					$message  = fGrammar::humanize($slug_column) . ': ';
-					$message .= 'Cannot contain ' . fGrammar::joinArray(
-						$invalid_characters,
-						'or'
-					);
-					$validation_messages[] = $message;
-				}
 			}
 
 			return;
 		}
 
 		/**
-		 * A validation hook for password columns. If any columns are set as
-		 * password columns, this method will be registered to ensure that a
-		 * password confirmation field matches the original field when storing
-		 * the record or that if a password is already set, an empty value will
-		 * result in no change.  In addition, this method ensures the password
-		 * is hashed.
+		 * A validation hook for password columns. If any columns are set as password columns, this
+		 * method will be registered to ensure that a password confirmation field matches the
+		 * original field when storing the record or that if a password is already set, an empty
+		 * value will result in no change.  In addition, this method ensures the password is
+		 * hashed.
 		 *
 		 * @static
 		 * @access public
@@ -989,7 +902,7 @@
 					!empty($old_values[$password_column])
 				) {
 
-					$confirmation = fRequest::get(implode('-', array(
+					$confirmation = Request::get(implode('-', array(
 						'confirm',
 						$password_column
 					)));
@@ -1036,29 +949,24 @@
 
 			if (!self::classExists($record_class)) {
 				throw new fProgrammerException(
-					'Cannot create record of type %s, missing class',
+					'Cannot create record of type %s, class does not exist',
 					$record_class
 				);
-
-			} elseif (empty($resource_key)) {
-				return new $record_class();
 			}
 
 			$resource_key = fJSON::decode($resource_key, TRUE);
 			$pkey         = $resource_key['primary_key'];
 			$record       = new $record_class($pkey);
-			$identifier   = (isset($resource_key['identifier']))
-				? $resource_key['identifier']
+			$friendly_id  = (isset($resource_key['friendly_id']))
+				? $resource_key['friendly_id']
 				: NULL;
 
-
-			if ($identifier !== NULL) {
-
+			if ($friendly_id !== NULL) {
 				$match_id = $record->__toString();
 
-				if ($identifier != $match_id) {
+				if ($friendly_id != $match_id) {
 					throw new fValidationException(
-						'Provided identifier does not match.'
+						'Provided friendly_id does not match.'
 					);
 				}
 			}
@@ -1067,47 +975,45 @@
 		}
 
 		/**
-		 * Creates a record from a provided class, slug, and identifier.  The
-		 * identifier is optional, but if is provided acts as an additional
-		 * check against the validity of the record.
+		 * Creates a record from a provided class, slug, and friendly_id.  The friendly_id is
+		 * optional, but if is provided acts as an additional check against the validity of the
+		 * record.  In short, a slug can either be a friendly slug 'such_as_this' using a slug
+		 * column, or it can be a non-friendly numeric id.  If you are using numeric IDs for
+		 * URLs like '/articles/1/the_time_i_ate_a_cheeseburger' without a slug column you can
+		 * use a route such as the following: '/articles/:id/:friendly_id'.  If the 'friendly_id'
+		 * is passed to this method, it will have to match the fURL::makeFriendly() version of
+		 * the id_column, ensuring the non-canonical url '/articles/1/whatever' is not available.
+		 *
+		 * PLEASE NOTE: When a slug is created using the makeSlug() method, each of the primary
+		 * key values is passed through fURL::makeFriendly().  In order for this method to work
+		 * properly your primary key values must not change to be made friendly, i.e., they must
+		 * be URL friendly/safe to begin with.
 		 *
 		 * @static
 		 * @access public
 		 * @param string $record_class The Active Record class
 		 * @param string $slug A URL-friendly primary key string representation of the record
-		 * @param string $identifier An optional identifier to check the validity
+		 * @param string $friendly_id An optional URL friendly identifier to check the validity
 		 * @return fActiveRecord The active record matching the slug
 		 */
-		static public function createFromSlug($record_class, $slug, $identifier = NULL)
+		static public function createFromSlug($record_class, $slug, $friendly_id = NULL)
 		{
-
 			if (!self::classExists($record_class)) {
 				throw new fProgrammerException(
-					'Cannot create record of type %s, missing class',
+					'Cannot create record of type %s, class does not exist.',
 					$record_class
 				);
-
-			} elseif (empty($slug)) {
-				return new $record_class();
-
 			} elseif ($column = self::getInfo($record_class, 'slug_column')) {
-				return new $record_class(array(
-					$column => $slug
-				));
+				return new $record_class(array($column => $slug));
 			}
 
 			$columns = self::getInfo($record_class, 'pkey_columns');
 			$data    = explode(self::$fieldSeparator, $slug, count($columns));
 
 			if (sizeof($data) < sizeof($columns)) {
-				throw new fProgrammerException(
-					'Malformed slug for class %s, check the primary key.',
-					$record_class
-				);
-
+				throw new fNotFoundException('Malformed slug for class %s.', $record_class);
 			} elseif (count($columns) == 1) {
 				$pkey = $data[0];
-
 			} else {
 				foreach ($columns as $column) {
 					$pkey[$column] = array_shift($data);
@@ -1116,18 +1022,11 @@
 
 			$record = new $record_class($pkey);
 
-			if ($identifier !== NULL) {
+			if ($friendly_id !== NULL) {
+				$match_id = fURL::makeFriendly($record->__toString(), NULL, self::$wordSeparator);
 
-				$match_id = fURL::makeFriendly(
-					$record->__toString(),
-					NULL,
-					self::$wordSeparator
-				);
-
-				if ($identifier != $match_id) {
-					throw new fValidationException(
-						'Provided identifier does not match.'
-					);
+				if ($friendly_id != $match_id) {
+					throw new fNotFoundException('Provided friendly_id does not match.');
 				}
 			}
 
@@ -1162,9 +1061,8 @@
 		}
 
 		/**
-		 * Represents the object as a string using the value of a configured
-		 * or natural id_column.  If no such column exists, it uses the
-		 * human version of the record class.
+		 * Represents the object as a string using the value of a configured or natural id_column.
+		 * If no such column exists, it uses the human version of the record class.
 		 *
 		 * @access public
 		 * @return string The string representation of the object
@@ -1173,31 +1071,34 @@
 		{
 			$record_class = get_class($this);
 
-			if (($id_column = self::getInfo($record_class, 'id_column'))) {
-				return self::encode($id_column);
+			if ($id_column = self::getInfo($record_class, 'id_column')) {
+				$method = fGrammar::camelize($id_column, TRUE);
+				return $this->$method();
 			}
 
 			return fGrammar::humanize($record_class);
 		}
 
 		/**
-		 * Default method for converting active record objects to JSON.  This
-		 * will make all properties, normally private, publically available
-		 * and return the object.
+		 * Default method for converting active record objects to JSON.  This will make all
+		 * properties, normally private, publically available and return the object.
 		 *
 		 * @access public
 		 * @return string The JSON encodable object with public properties
 		 */
 		public function jsonSerialize()
 		{
-			$record_class = get_class($this);
-			$schema       = fORMSchema::retrieve($record_class);
-			$record_table = fORM::tablize($record_class);
-			$columns      = array_keys($schema->getColumnInfo($record_table));
-			$object       = new StdClass();
+			$record_class   = get_class($this);
+			$schema         = fORMSchema::retrieve($record_class);
+			$record_table   = fORM::tablize($record_class);
+			$object         = new StdClass();
+			$column_methods = array();
 
-			foreach ($columns as $column) {
-				$method          = 'get' . fGrammar::camelize($column, TRUE);
+			foreach (array_keys($schema->getColumnInfo($record_table)) as $column) {
+				$column_methods[$column] = 'get' . fGrammar::camelize($column, TRUE);
+			}
+
+			foreach ($column_methods as $column => $method) {
 				$object->$column = $this->$method();
 			}
 
@@ -1237,33 +1138,30 @@
 		}
 
 		/**
-		 * Creates an identifying slug which can be comprised ultimately of a
-		 * URL friendly string representation of the primary key and optionally
-		 * the value of the record's configured id_column. The slug is HTML
-		 * friendly by nature, although it is not independently HTML encoded.
+		 * Creates a url friendly identifying slug.  If a slug_column is configured on the record
+		 * it will use this value.  Otherwise it will be the primary key values, made friendly
+		 * and separated by the field separator.  If the optional and default friendly_id is set
+		 * to true, it will additionally add a friendly version of the id_column as an appended
+		 * URL segment.
 		 *
 		 * @access public
-		 * @param string $identify Whether or not to append an identifier
+		 * @param string $friendly_id Whether or not to append a human friendly identifier
 		 * @return string The slug representation of the active record.
 		 */
-		public function makeSlug($identify = TRUE)
+		public function makeSlug($friendly_id = TRUE)
 		{
-
-			// The cached slug will be reset to NULL via the ::resetCache()
-			// callback in the event any of the values comprising the slug
-			// have changed.
-
+			//
+			// The cached slug will be reset to NULL via the ::resetCache() callback in the event
+			// any of the values comprising the slug or primary key have changed.
+			//
 			if (!$this->slug) {
-
 				$record_class = get_class($this);
 				$slug_column  = self::getInfo($record_class, 'slug_column');
 
 				if ($slug_column) {
 					$method = 'get' . fGrammar::camelize($slug_column, TRUE);
 					$slug   = $this->$method();
-
 				} else {
-
 					if (!is_array($pkey = $this->getPrimaryKey())) {
 						$pkey = array($pkey);
 					}
@@ -1277,58 +1175,47 @@
 					}
 
 					$slug = implode(self::$fieldSeparator, $pkey);
-
 				}
 
 				$this->slug = $slug;
 			}
 
-			if ($identify === TRUE) {
-				return implode('/', array(
-					$this->slug,
-					fURL::makeFriendly(
-						$this->__toString(),
-						NULL,
-						self::$wordSeparator
-					)
-				));
+			if ($friendly_id === TRUE) {
+				return implode('/', array($this->slug, fURL::makeFriendly(
+					$this->__toString(),
+					NULL,
+					self::$wordSeparator
+				)));
 			}
 
 			return $this->slug;
 		}
 
 		/**
-		 * Creates a resource key which can be comprised ultimately of the
-		 * JSON serialized primary key and optionally the identifier.  The
-		 * returned value is not necessarily HTML safe and should be encoded
-		 * if embedded in HTML.
+		 * Creates a resource key which can be comprised ultimately of the JSON serialized primary
+		 * key and optionally a friendly identifier.  The returned value is not necessarily HTML
+		 * safe and should be encoded if embedded in HTML.
 		 *
 		 * @access public
-		 * @param boolean $identify Whether or not to append an identifiier
+		 * @param boolean $friendly_id Whether or not to append a human friendly identifier
 		 * @return string The JSON serialized resource key
 		 */
-		public function makeResourceKey($identify = TRUE)
+		public function makeResourceKey($friendly_id = TRUE)
 		{
-
-			// The cached resource key will be reset to NULL via the
-			// ::resetCache() callback in the event any of the values
-			// comprising the slug have changed.
-
+			//
+			// The cached resource key will be reset to NULL via the ::resetCache() callback in the
+			// event any of the values comprising the primary key have changed.
+			//
 			if (!$this->resourceKey) {
-
-				$record_class = get_class($this);
-
-				$resource_key = array(
-					'primary_key' => $this->getPrimaryKey()
-				);
-
+				$record_class      = get_class($this);
+				$resource_key      = array('primary_key' => $this->getPrimaryKey());
 				$this->resourceKey = $resource_key;
 			}
 
-			if ($identify === TRUE) {
+			if ($friendly_id === TRUE) {
 				return fJSON::encode(array_merge(
 					$this->resourceKey,
-					array('identifier' => (string) $this)
+					array('friendly_id' => (string) $this)
 				));
 			}
 
