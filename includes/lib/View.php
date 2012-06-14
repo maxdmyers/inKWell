@@ -87,7 +87,7 @@
 				iw::getRoot(),
 				($root_directory = iw::getRoot($element))
 					? $root_directory
-					: self::DEFAULT_SCAFFOLDING_ROOT
+					: self::DEFAULT_VIEW_ROOT
 			));
 
 			self::$viewRoot       = new fDirectory(self::$viewRoot);
@@ -155,16 +155,8 @@
 		 */
 		static public function exists($view_file)
 		{
-			if (preg_match(iw::REGEX_ABS_PATH, $view_file)) {
-				$view_file = implode(DIRECTORY_SEPARATOR, array(
-					self::$viewRoot,
-					$view_file
-				));
-			} else {
-				$view_file = implode(DIRECTORY_SEPARATOR, array(
-					$_SERVER['DOCUMENT_ROOT'],
-					$view_file
-				));
+			if (!preg_match(iw::REGEX_ABSOLUTE_PATH, $view_file)) {
+				$view_file = self::$viewRoot . $view_file;
 			}
 
 			return is_readable($view_file);
@@ -563,6 +555,10 @@
 
 				$partial = reset($emitter);
 
+				if (!preg_match(iw::REGEX_ABSOLUTE_PATH, $partial)) {
+					$partial = self::$viewRoot . $partial;
+				}
+
 				if (!self::exists($partial)) {
 					throw new fProgrammerException (
 						'The partial %s is unreadable',
@@ -571,14 +567,7 @@
 				}
 
 				foreach ($data as $i => $$element) {
-					if (!preg_match(iw::REGEX_ABS_PATH, $partial)) {
-						include implode(DIRECTORY_SEPARATOR, array(
-							self::$viewRoot,
-							$partial
-						));
-					} else {
-						include $partial;
-					}
+					include $partial;
 				}
 
 			} else {
