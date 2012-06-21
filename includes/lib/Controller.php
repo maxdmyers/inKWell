@@ -96,7 +96,7 @@
 		 * @return boolean TRUE if it matches, FALSE otherwise
 		 */
 		static public function __match($class) {
-			return preg_match('/(.*)Controller/', $class);
+			return preg_match('/(.*)' . self::SUFFIX . '/', $class);
 		}
 
 		/**
@@ -371,36 +371,136 @@
 		}
 
 		/**
-		 * Sends the appropriate headers.  Headers will be determined by the use of the
-		 * acceptTypes() method.  If it has not been run prior to this method, it will be run with
-		 * configured default accept types.
+		 * Determines the base URL from the server's request URI
 		 *
 		 * @static
 		 * @access protected
-		 * @param array $headers Additional headers aside from content type to send
-		 * @param boolean $send_content_type Whether or not we should send the content type header
+		 * @param void
+		 * @return string The Base URL
+		 */
+		static protected function getBaseURL()
+		{
+			if (self::$baseURL == NULL) {
+				self::$baseURL  = self::DEFAULT_SITE_SECTION;
+				$request_info   = parse_url(Moor::getRequestPath());
+				$request_path   = ltrim($request_info['path'], '/');
+				$request_parts  = explode('/', $request_path);
+				$site_sections  = array_keys(self::$siteSections);
+
+				// If the request meets these conditions it will overwrite the
+				// base URL.
+
+				$has_base_url   = (in_array($request_parts[0], $site_sections));
+				$is_not_default = ($request_parts[0] != self::$baseURL);
+				$is_sub_request = (count($request_parts) > 1);
+
+				if ($has_base_url && $is_not_default && $is_sub_request) {
+					self::$baseURL = array_shift($request_parts);
+				}
+			}
+
+			return self::$baseURL;
+		}
+
+		/**
+		 * A quick way to check against the current base URL.
+		 *
+		 * @static
+		 * @access protected
+		 * @param string $base_url The base URL to check against
+		 * @return boolean TRUE if the base URL matched the current base URL, FALSE otherwise
+		 */
+		static protected function checkBaseURL($base_url)
+		{
+			return (self::getBaseURL() == $base_url);
+		}
+
+		/**
+		 * Gets the current directly accessed entry
+		 *
+		 * @static
+		 * @access protected
+		 * @param void
+		 * @return string The current directly accessed entry
+		 */
+		static protected function getEntry()
+		{
+			return Moor::getActiveShortClass();
+		}
+
+		/**
+		 * Determines whether or not a particular class is the entry class being used by the
+		 * router.
+		 *
+		 * @static
+		 * @access protected
+		 * @param string $class The class to check against the router
 		 * @return void
 		 */
-		static protected function sendHeader($headers = array(), $send_content_type = TRUE)
+		static protected function checkEntry($class)
 		{
-			if (!self::$typeHeadersSent && $send_content_type) {
+			return (self::getEntry() == $class);
+		}
 
-				if (!self::$contentType) {
-					//
-					// If the contentType is not set then acceptTypes was never called.
-					// we can call it now with the default accept types which will set
-					// both the request format and the contentType.
-					//
-					self::acceptTypes();
-				}
+		/**
+		 * Gets the current directly accessed action.
+		 *
+		 * @static
+		 * @access protected
+		 * @param void
+		 * @return string The current directly accessed action
+		 */
+		static protected function getAction()
+		{
+			return Moor::getActiveShortMethod();
+		}
 
-				header('Content-Type: ' . self::$contentType);
-				self::$typeHeadersSent = TRUE;
+		/**
+		 * Determines whether or not a particular method is the action being used by the router.
+		 *
+		 * @static
+		 * @access protected
+		 * @param string $method The method name to check against the router
+		 * @return void
+		 */
+		static protected function checkAction($method)
+		{
+			return (self::getAction() == $method);
+		}
+
+		/**
+		 * Determines whether or not a particular class and method is the entry and action for the
+		 * router.
+		 *
+		 * @static
+		 * @access protected
+		 * @param string $class The class to check against the router
+		 * @param string $method The method name to check against the router
+		 * @return void
+		 */
+		static protected function checkEntryAction($class, $method) {
+			return (self::checkEntry($class) && self::checkAction($method));
+		}
+
+		/**
+		 * Attempts to execute a target within the context of of Controller.  By default the
+		 * execution of the target is optional, meaning the target need not exist.  You can wrap
+		 * this function in Controller::demand() in order to require it.
+		 *
+		 * @static
+		 * @access protected
+		 * @param string $target An inKWell target to execute
+		 * @param mixed Additional parameters to pass to the callback
+		 * @return mixed The return of the callback, if valid, an inKWell failure token otherwise.
+		 */
+		static protected function exec($target)
+		{
+			if (is_callable($target)) {
+				$params = array_slice(func_get_args(), 1);
+				return call_user_func_array($target, $params);
 			}
 
-			foreach ($headers as $header => $value) {
-				header($header . ': ' . $value);
-			}
+			self::triggerError('not_found');
 		}
 
 		/**
@@ -449,175 +549,36 @@
 		}
 
 		/**
-		 * Trigger an error if a function fails uniquely.
+		 * Sends the appropriate headers.  Headers will be determined by the use of the
+		 * acceptTypes() method.  If it has not been run prior to this method, it will be run
+		 * with configured default accept types.
 		 *
 		 * @static
 		 * @access protected
-		 * @param mixed $action The to demand be completed.  The action should return iw::makeFailureToken() upon failing.
-		 * @param string $error The name of the error to trigger upon failure, defaults to 'not_found'
-		 * @return mixed The original value upon success
+		 * @param array $headers Additional headers aside from content type to send
+		 * @param boolean $send_content_type Whether or not we should send the content type header
+		 * @return void
 		 */
-		static protected function demand($action, $error = 'not_found')
+		static protected function sendHeader($headers = array(), $send_content_type = TRUE)
 		{
-			return (iw::checkFailureToken($action))
-				? self::triggerError($error)
-				: $action;
-		}
+			if (!self::$typeHeadersSent && $send_content_type) {
 
-		/**
-		 * Attempts to execute a target within the context of of Controller.  By default the
-		 * execution of the target is optional, meaning the target need not exist.  You can wrap
-		 * this function in Controller::demand() in order to require it.
-		 *
-		 * @static
-		 * @access protected
-		 * @param string $target An inKWell target to execute
-		 * @param mixed Additional parameters to pass to the callback
-		 * @return mixed The return of the callback, if valid, an inKWell failure token otherwise.
-		 */
-		static protected function exec($target)
-		{
-			if (is_callable($target)) {
-				$params = array_slice(func_get_args(), 1);
-				return call_user_func_array($target, $params);
+				if (!self::$contentType) {
+					//
+					// If the contentType is not set then acceptTypes was never called.
+					// we can call it now with the default accept types which will set
+					// both the request format and the contentType.
+					//
+					self::acceptTypes();
+				}
+
+				header('Content-Type: ' . self::$contentType);
+				self::$typeHeadersSent = TRUE;
 			}
 
-			return iw::makeFailureToken();
-		}
-
-		/**
-		 * Attempts to delegate control to a file within the context of Controller.
-		 *
-		 * By default the delegation is optional, meaning the file need not exist.  You can wrap
-		 * this function in Controller::demand() in order to require it.
-		 *
-		 * @static
-		 * @access protected
-		 * @param string|fFile $file The file to delegate control to
-		 * @return mixed The return of the included file, if accessible, an inKWell failure token otherwise
-		 */
-		static protected function delegate($file)
-		{
-			try {
-				if (!($file instanceof fFile)) {
-					$file = new fFile($file);
-				}
-				return include $file->getPath();
-			} catch (fValidationException $e) {}
-
-			return iw::makeFailureToken();
-		}
-
-		/**
-		 * Gets the current directly accessed action.
-		 *
-		 * @static
-		 * @access protected
-		 * @param void
-		 * @return string The current directly accessed action
-		 */
-		static protected function getAction()
-		{
-			return Moor::getActiveShortMethod();
-		}
-
-		/**
-		 * Determines the base URL from the server's request URI
-		 *
-		 * @static
-		 * @access protected
-		 * @param void
-		 * @return string The Base URL
-		 */
-		static protected function getBaseURL()
-		{
-			if (self::$baseURL == NULL) {
-				self::$baseURL  = self::DEFAULT_SITE_SECTION;
-				$request_info   = parse_url(Moor::getRequestPath());
-				$request_path   = ltrim($request_info['path'], '/');
-				$request_parts  = explode('/', $request_path);
-				$site_sections  = array_keys(self::$siteSections);
-
-				// If the request meets these conditions it will overwrite the
-				// base URL.
-
-				$has_base_url   = (in_array($request_parts[0], $site_sections));
-				$is_not_default = ($request_parts[0] != self::$baseURL);
-				$is_sub_request = (count($request_parts) > 1);
-
-				if ($has_base_url && $is_not_default && $is_sub_request) {
-					self::$baseURL = array_shift($request_parts);
-				}
+			foreach ($headers as $header => $value) {
+				header($header . ': ' . $value);
 			}
-
-			return self::$baseURL;
-		}
-
-		/**
-		 * Gets the current directly accessed entry
-		 *
-		 * @static
-		 * @access protected
-		 * @param void
-		 * @return string The current directly accessed entry
-		 */
-		static protected function getEntry()
-		{
-			return Moor::getActiveShortClass();
-		}
-
-		/**
-		 * Determines whether or not a particular class is the entry class being used by the
-		 * router.
-		 *
-		 * @static
-		 * @access protected
-		 * @param string $class The class to check against the router
-		 * @return void
-		 */
-		static protected function checkEntry($class)
-		{
-			return (self::getEntry() == $class);
-		}
-
-		/**
-		 * A quick way to check against the current base URL.
-		 *
-		 * @static
-		 * @access protected
-		 * @param string $base_url The base URL to check against
-		 * @return boolean TRUE if the base URL matched the current base URL, FALSE otherwise
-		 */
-		static protected function checkBaseURL($base_url)
-		{
-			return (self::getBaseURL() == $base_url);
-		}
-
-		/**
-		 * Determines whether or not a particular method is the action being used by the router.
-		 *
-		 * @static
-		 * @access protected
-		 * @param string $method The method name to check against the router
-		 * @return void
-		 */
-		static protected function checkAction($method)
-		{
-			return (self::getAction() == $method);
-		}
-
-		/**
-		 * Determines whether or not a particular class and method is the entry and action for the
-		 * router.
-		 *
-		 * @static
-		 * @access protected
-		 * @param string $class The class to check against the router
-		 * @param string $method The method name to check against the router
-		 * @return void
-		 */
-		static protected function checkEntryAction($class, $method) {
-			return (self::checkEntry($class) && self::checkAction($method));
 		}
 
 		/**
@@ -627,9 +588,8 @@
 		 * no handler is available for the given error, it will result naturally in a hard error
 		 * attempting to attach the most suitable view.
 		 *
-		 * In all cases the method throws a MoorContinueException which should be caught simply as
-		 * an Exception.  The message provided on the exception will be the best available HTTP
-		 * response header.
+		 * In all cases the method throws an Exception.  The message provided on the exception will
+		 * be the best available HTTP response header.
 		 *
 		 * By default this will also set the header available in the exception as well as any other
 		 * headers provided in the $header argument as an array.  To disable sending headers simply
@@ -709,7 +669,17 @@
 
 			View::attach($view);
 
-			throw new MoorContinueException($error_info['header']);
+			self::yield($error_info['header']);
+		}
+
+		/**
+		 * Causes the current controller action to end before finishing.
+		 *
+		 * This method triggers a MoorContinueException.
+		 */
+		static protected function yield($message = NULL)
+		{
+			throw new MoorContinueException($message);
 		}
 
 		/**
