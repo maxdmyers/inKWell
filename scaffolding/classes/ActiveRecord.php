@@ -75,20 +75,6 @@
 		}
 
 		/**
-		 * Determines whether the record class only serves as a relationship,
-		 * i.e. a many to many table.
-		 *
-		 * @static
-		 * @access public
-		 * @param void
-		 * @return boolean TRUE if it is a relationship, FALSE otherwise
-		 */
-		static public function isRelationship()
-		{
-			return parent::isRelationship(__CLASS__);
-		}
-
-		/**
 		 * Creates a new <%= $class %> from a slug and identifier.  The
 		 * identifier is optional, but if is provided acts as an additional
 		 * check against the validity of the record.

@@ -56,14 +56,6 @@
 		private $data = array();
 
 		/**
-		 * A list of callbacks to call when render() is called
-		 *
-		 * @access private
-		 * @var array
-		 */
-		private $renderCallbacks = array();
-
-		/**
 		 * If the template represents string content
 		 *
 		 * @access private
@@ -87,7 +79,7 @@
 				iw::getRoot(),
 				($root_directory = iw::getRoot($element))
 					? $root_directory
-					: self::DEFAULT_SCAFFOLDING_ROOT
+					: self::DEFAULT_VIEW_ROOT
 			));
 
 			self::$viewRoot       = new fDirectory(self::$viewRoot);
@@ -155,16 +147,8 @@
 		 */
 		static public function exists($view_file)
 		{
-			if (preg_match(iw::REGEX_ABS_PATH, $view_file)) {
-				$view_file = implode(DIRECTORY_SEPARATOR, array(
-					self::$viewRoot,
-					$view_file
-				));
-			} else {
-				$view_file = implode(DIRECTORY_SEPARATOR, array(
-					$_SERVER['DOCUMENT_ROOT'],
-					$view_file
-				));
+			if (!preg_match(iw::REGEX_ABSOLUTE_PATH, $view_file)) {
+				$view_file = self::$viewRoot . $view_file;
 			}
 
 			return is_readable($view_file);
@@ -251,23 +235,17 @@
 		}
 
 		/**
-		 * Gets the output of the view or a particular view element. allowing for filters to be
-		 * applied.
+		 * Gets the output of the view or a particular view element.
 		 *
 		 * @param string $element An optional name of an element to output
-		 * @param array $filters A list of callbacks to filter the rendered view through
 		 * @return string The output of the view
 		 */
-		public function make($element = NULL, $filters = array())
+		public function make($element = NULL)
 		{
 			try {
 				ob_start();
 				$this->place($element);
 				$content = ob_get_clean();
-
-				foreach ($filters as $filter) {
-					$content = call_user_func($filter, $content);
-				}
 
 				return $content;
 			} catch (fException $e) {
@@ -277,55 +255,15 @@
 		}
 
 		/**
-		 * Outputs the view or a particular view element to the screen, calling all
-		 * onRender callbacks prior to outputting and allowing for filters to be
-		 * applied.
+		 * Outputs the view or a particular view element to the screen.
 		 *
 		 * @access public
 		 * @param string $element An optional name of an element to output
-		 * @param array $filters A list of callbacks to filter the rendered view through
 		 * @return void
 		 */
-		public function render($element = NULL, $filters = array())
+		public function render($element = NULL)
 		{
-			foreach ($this->renderCallbacks as $callback_info) {
-				if (count($callback_info['arguments'])) {
-					call_user_func_array(
-						$callback_info['method'],
-						$callback_info['arguments']
-					);
-				} else {
-					call_user_func($callback_info['method']);
-				}
-			}
-
-			echo $this->make($element, $filters);
-		}
-
-		/**
-		 * Adds a callback to be triggered when the render() method is called.
-		 * Keep in mind that rendering has to be done explicitely and that
-		 * embedded views are not "rendered", but placed in other views.
-		 *
-		 * @access public
-		 * @param callback $callback The callback to be registered
-		 * @param mixed $args Each additional parameter is an additional argument for the callback
-		 * @return void
-		 */
-		public function onRender($callback)
-		{
-			if (is_callable($callback)) {
-				$this->renderCallbacks[] = array(
-					'method'    => $callback,
-					'arguments' => array_slice(func_get_args(), 1)
-				);
-
-				return $this;
-			} else {
-				throw new fProgrammerException (
-					'Callback must be public or accessible by view.'
-				);
-			}
+			echo $this->make($element);
 		}
 
 		/**
@@ -563,6 +501,10 @@
 
 				$partial = reset($emitter);
 
+				if (!preg_match(iw::REGEX_ABSOLUTE_PATH, $partial)) {
+					$partial = self::$viewRoot . $partial;
+				}
+
 				if (!self::exists($partial)) {
 					throw new fProgrammerException (
 						'The partial %s is unreadable',
@@ -571,14 +513,7 @@
 				}
 
 				foreach ($data as $i => $$element) {
-					if (!preg_match(iw::REGEX_ABS_PATH, $partial)) {
-						include implode(DIRECTORY_SEPARATOR, array(
-							self::$viewRoot,
-							$partial
-						));
-					} else {
-						include $partial;
-					}
+					include $partial;
 				}
 
 			} else {

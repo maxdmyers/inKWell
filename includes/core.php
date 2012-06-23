@@ -125,33 +125,6 @@
 		static private $roots = array();
 
 		/**
-		 * Construction not possible
-		 *
-		 * @final
-		 * @access private
-		 * @param void
-		 * @return void
-		 */
-		final private function __construct()
-		{
-		}
-
-		/**
-		 * Creates a configuration array, and sets the config type element to match the specified
-		 * $type provided by the user for later use with ::getConfigsByType()
-		 *
-		 * @static
-		 * @access public
-		 * @param string $type The configuration type
-		 * @return array The configuration array
-		 */
-		static public function createConfig($type, $config)
-		{
-			$config[self::CONFIG_TYPE_ELEMENT] = strtolower($type);
-			return $config;
-		}
-
-		/**
 		 * Builds a configuration from a series of separate configuration files loaded from a
 		 * single directory.  Each configuration key in the final $config array is named after the
 		 * file from which it is loaded.  Configuration files should be valid PHP scripts which
@@ -230,36 +203,18 @@
 		}
 
 		/**
-		 * Writes a full configuration array out to a particular file.
+		 * Creates a configuration array, and sets the config type element to match the specified
+		 * $type provided by the user for later use with ::getConfigsByType()
 		 *
 		 * @static
 		 * @access public
-		 * @param array $config The configuration array
-		 * @param string $file The file to write to, optional if overwriting the default config
-		 * @param boolean $quiet Whether or not to output information, defaulted to FALSE
-		 * @return mixed Number of bytes written to file or FALSE on failure
+		 * @param string $type The configuration type
+		 * @return array The configuration array
 		 */
-		static public function writeConfig(array $config, $file = NULL, $quiet = FALSE)
+		static public function createConfig($type, $config)
 		{
-			if (!$file) {
-				$file = '.' . self::DEFAULT_CONFIG;
-			}
-
-			if (!preg_match(self::REGEX_ABSOLUTE_PATH, $file)) {
-				$file = realpath(self::getRoot('config') . DIRECTORY_SEPARATOR . $file);
-			}
-
-			if (!$quiet) {
-				echo "Writing configuration file...";
-			}
-
-			$result = file_put_contents($file, serialize($config));
-
-			if (!$quiet) {
-				echo ($result) ? 'Sucess!' : 'Failure';
-			}
-
-			return $result;
+			$config[self::CONFIG_TYPE_ELEMENT] = strtolower($type);
+			return $config;
 		}
 
 		/**
@@ -275,6 +230,228 @@
 			} else {
 				return fGrammar::camelize($element, TRUE);
 			}
+		}
+
+		/**
+		 * Checks the current SAPI name
+		 *
+		 * @static
+		 * @access public
+		 * @param string $sapi The SAPI to verify running
+		 * @return boolean TRUE if the running SAPI matches, FALSE otherwise
+		 */
+		static public function checkSAPI($sapi)
+		{
+			return (strtolower(php_sapi_name()) == strtolower($sapi));
+		}
+
+		/**
+		 * Returns the active domain for inkwell
+		 *
+		 * @static
+		 * @access public
+		 * @param void
+		 * @return string The Active domain for inkwell
+		 */
+		static public function getActiveDomain()
+		{
+			return self::$activeDomain;
+		}
+
+		/**
+		 * Get configuration information. If no $element is specified the full inKwell
+		 * configuration is returned.  You can specify multiple sub_elements as multiple
+		 * parameters.
+		 *
+		 * @static
+		 * @access public
+		 * @param string $element The configuration element to get
+		 * @param string $sub_element The sub element to get
+		 * @param array The configuration array for the requested element
+		 */
+		static public function getConfig($element = NULL, $sub_element = NULL)
+		{
+			$config = self::$config;
+
+			if ($element !== NULL) {
+
+				$element = strtolower($element);
+
+				if (isset($config[$element])) {
+					$config = $config[$element];
+					$params = func_get_args();
+
+					foreach (array_slice($params, 1) as $sub_element) {
+						if (isset($config[$sub_element])) {
+							$config = $config[$sub_element];
+						} else {
+							return NULL;
+						}
+					}
+
+				} else {
+					$config = array();
+				}
+			}
+
+			return $config;
+		}
+
+		/**
+		 * Get all the configurations matching a certain type.  If one or more sub elements are
+		 * defined as additional parameters the returned array will contain only the specific
+		 * information for each config element.
+		 *
+		 * @static
+		 * @access public
+		 * @param string $type The configuration type
+		 * @param string $sub_element The sub element to get
+		 * @return array An array of all the configurations matching the type
+		 */
+		static public function getConfigsByType($type, $sub_element = NULL)
+		{
+			$type    = strtolower($type);
+			$configs = array();
+
+			if (isset(self::$config['__types'][$type])) {
+				foreach (self::$config['__types'][$type] as $element) {
+					if ($sub_element !== NULL) {
+
+						$params       = func_get_args();
+						$sub_elements = array_slice($params, 1);
+
+						array_unshift($sub_elements, $element);
+
+						$configs[$element] = call_user_func_array(
+							self::makeTarget(__CLASS__, 'getConfig'),
+							$sub_elements
+						);
+					} else {
+						$configs[$element] = self::$config[$element];
+					}
+				}
+			}
+
+			return $configs;
+		}
+
+		/**
+		 * Gets a database from the stored index of databases.
+		 *
+		 * @static
+		 * @access public
+		 * @param string $database_name The database name
+		 * @param string $database_role The database role, default 'either'
+		 * @return fDatabase The database matching the name and role
+		 */
+		static public function getDatabase($database_name, $database_role = 'either')
+		{
+			if ($database_role == 'either' || $database_role == 'write') {
+				if (isset(self::$databases[$database_name]['write'])) {
+					return self::$databases[$database_name]['write'];
+				}
+			}
+
+			if ($database_role == 'either' || $database_role == 'read') {
+				if (isset(self::$databases[$database_name]['read'])) {
+					return self::$databases[$database_name]['read'];
+				}
+			}
+
+			throw new fNotFoundException (
+				'Could not find database %s with role %s',
+				$database_name,
+				$database_role
+			);
+		}
+
+		/**
+		 * Gets the current execution mode for inkwell
+		 *
+		 * @static
+		 * @access public
+		 * @return string The current execution mode
+		 */
+		static public function getExecutionMode()
+		{
+			return self::$executionMode;
+		}
+
+		/**
+		 * Returns a list of available interfaces.  Optionally this will exclude any interfaces
+		 * which were added by inKWell (i.e. which didn't exist) in PHP itself.
+		 *
+		 * @param boolean $native Get only native interfaces, default is FALSE
+		 * @return array The list of interfaces
+		 */
+		static public function getInterfaces($native = FALSE)
+		{
+			$interfaces = get_declared_interfaces();
+
+			return ($native)
+				? array_diff($interfaces, self::$loadedInterfaces)
+				: $interfaces;
+		}
+
+		/**
+		 * Gets a configured root directory from the list of available roots
+		 *
+		 * @static
+		 * @access public
+		 * @param string $element The class or configuration element
+		 * @return string A reference to the root directory for "live roots"
+		 */
+		static public function getRoot($element = NULL)
+		{
+			if ($element === NULL) {
+				return APPLICATION_ROOT;
+			}
+
+			$element = strtolower($element);
+
+			return (isset(self::$roots[$element]))
+				? self::$roots[$element]
+				: NULL;
+		}
+
+		/**
+		 * Gets a write directory.  If the optional parameter is entered it will attempt to get it
+		 * as a sub directory of the overall write directory.  If the sub directory does not exist,
+		 * it will create it with owner and group writable permissions.
+		 *
+		 * @static
+		 * @access public
+		 * @param string|fDirectory $sub_directory The optional sub directory to return.
+		 * @return fDirectory The writable directory object
+		 */
+		static public function getWriteDirectory($sub_directory = NULL)
+		{
+			if ($sub_directory) {
+
+				if ($sub_directory instanceof fDirectory) {
+					$sub_directory = $sub_directory->getPath();
+				}
+				//
+				// Prevent an absolute sub directory from repeating the
+				// base write directory
+				//
+				if (strpos($sub_directory, self::$writeDirectory) === 0) {
+					$offset        = strlen(self::$writeDirectory);
+					$sub_directory = substr($sub_directory, $offset);
+				}
+
+				$write_directory = implode(DIRECTORY_SEPARATOR, array(
+					self::$writeDirectory,
+					trim($sub_directory, '/\\' . DIRECTORY_SEPARATOR)
+				));
+
+			} else {
+				$write_directory = self::$writeDirectory;
+			}
+
+			return (!is_dir($write_directory))
+				? fDirectory::create($write_directory)
+				: new fDirectory($write_directory);
 		}
 
 		/**
@@ -517,7 +694,7 @@
 
 					if (is_array($database_hosts) && count($database_hosts)) {
 
-						$target = self::makeTarget(__CLASS__, 'db_host['. $name . ']');
+						$target = self::makeTarget(__CLASS__, 'database_host['. $name . ']');
 
 						if (!($stored_host = fSession::get($target, NULL))) {
 
@@ -542,14 +719,30 @@
 						$database_port = NULL;
 					}
 
-					self::addDatabase($db = new fDatabase(
+					$db = new fDatabase(
 						$database_type,
 						$database_name,
 						$database_user,
 						$database_password,
 						$database_host,
 						$database_port
-					), $database_entry, $database_role);
+					);
+
+					if (!in_array($database_role, array('read', 'write', 'both'))) {
+						throw new fProgrammerException (
+							'Cannot add database %s, invalid role %s',
+							$database_name,
+							$databaseb_role
+						);
+					}
+
+					if ($database_role == 'read'  || $database_role == 'both') {
+						self::$databases[$database_name]['read'] = $db;
+					}
+
+					if ($database_role == 'write' || $database_role == 'both') {
+						self::$databases[$database_name]['write'] = $db;
+					}
 
 					fORMDatabase::attach($db, $database_entry, $database_role);
 				}
@@ -610,306 +803,54 @@
 		}
 
 		/**
-		 * Returns the active domain for inkwell
+		 * Initializes a class by calling it's __init() method if it has one and returning its
+		 * return value.
 		 *
 		 * @static
-		 * @access public
-		 * @param void
-		 * @return string The Active domain for inkwell
+		 * @access protected
+		 * @param string $class The class to initialize
+		 * @return bool Whether or not the initialization was successful
 		 */
-		static public function getActiveDomain()
+		static protected function initializeClass($class)
 		{
-			return self::$activeDomain;
-		}
+			//
+			// Classes cannot be initialized twice
+			//
+			if (in_array($class, self::$initializedClasses)) {
+				return TRUE;
+			}
 
-		/**
-		 * Returns a list of available interfaces.  Optionally this will exclude any interfaces
-		 * which were added by inKWell (i.e. which didn't exist) in PHP itself.
-		 *
-		 * @param boolean $native Get only native interfaces, default is FALSE
-		 * @return array The list of interfaces
-		 */
-		static public function getInterfaces($native = FALSE)
-		{
-			$interfaces = get_declared_interfaces();
+			$init_callback = array($class, self::INITIALIZATION_METHOD);
+			//
+			// If there's no __init we're done
+			//
+			if (!is_callable($init_callback)) {
+				return TRUE;
+			}
 
-			return ($native)
-				? array_diff($interfaces, self::$loadedInterfaces)
-				: $interfaces;
-		}
+			$method  = end($init_callback);
+			$rmethod = new ReflectionMethod($class, $method);
+			//
+			// If __init is not custom, we're done
+			//
+			if ($rmethod->getDeclaringClass()->getName() != $class) {
+				return TRUE;
+			}
 
-		/**
-		 * Get configuration information. If no $element is specified the full inKwell
-		 * configuration is returned.  You can specify multiple sub_elements as multiple
-		 * parameters.
-		 *
-		 * @static
-		 * @access public
-		 * @param string $element The configuration element to get
-		 * @param string $sub_element The sub element to get
-		 * @param array The configuration array for the requested element
-		 */
-		static public function getConfig($element = NULL, $sub_element = NULL)
-		{
-			$config = self::$config;
+			// Determine class configuration and call __init with it
+			$element      = fGrammar::underscorize($class);
+			$class_config = (isset(self::$config[$element]))
+				? self::$config[$element]
+				: array();
 
-			if ($element !== NULL) {
-
-				$element = strtolower($element);
-
-				if (isset($config[$element])) {
-					$config = $config[$element];
-					$params = func_get_args();
-
-					foreach (array_slice($params, 1) as $sub_element) {
-						if (isset($config[$sub_element])) {
-							$config = $config[$sub_element];
-						} else {
-							return NULL;
-						}
-					}
-
-				} else {
-					$config = array();
+			try {
+				if (call_user_func($init_callback, $class_config, $element)) {
+					self::$initializedClasses[] = $class;
+					return TRUE;
 				}
-			}
+			} catch (Exception $e) {}
 
-			return $config;
-		}
-
-		/**
-		 * Get all the configurations matching a certain type.  If one or more sub elements are
-		 * defined as additional parameters the returned array will contain only the specific
-		 * information for each config element.
-		 *
-		 * @static
-		 * @access public
-		 * @param string $type The configuration type
-		 * @param string $sub_element The sub element to get
-		 * @return array An array of all the configurations matching the type
-		 */
-		static public function getConfigsByType($type, $sub_element = NULL)
-		{
-			$type    = strtolower($type);
-			$configs = array();
-
-			if (isset(self::$config['__types'][$type])) {
-				foreach (self::$config['__types'][$type] as $element) {
-					if ($sub_element !== NULL) {
-
-						$params       = func_get_args();
-						$sub_elements = array_slice($params, 1);
-
-						array_unshift($sub_elements, $element);
-
-						$configs[$element] = call_user_func_array(
-							self::makeTarget(__CLASS__, 'getConfig'),
-							$sub_elements
-						);
-					} else {
-						$configs[$element] = self::$config[$element];
-					}
-				}
-			}
-
-			return $configs;
-		}
-
-		/**
-		 * Gets the current execution mode for inkwell
-		 *
-		 * @static
-		 * @access public
-		 * @return string The current execution mode
-		 */
-		static public function getExecutionMode()
-		{
-			return self::$executionMode;
-		}
-
-		/**
-		 * Gets a write directory.  If the optional parameter is entered it will attempt to get it
-		 * as a sub directory of the overall write directory.  If the sub directory does not exist,
-		 * it will create it with owner and group writable permissions.
-		 *
-		 * @static
-		 * @access public
-		 * @param string|fDirectory $sub_directory The optional sub directory to return.
-		 * @return fDirectory The writable directory object
-		 */
-		static public function getWriteDirectory($sub_directory = NULL)
-		{
-			if ($sub_directory) {
-
-				if ($sub_directory instanceof fDirectory) {
-					$sub_directory = $sub_directory->getPath();
-				}
-				//
-				// Prevent an absolute sub directory from repeating the
-				// base write directory
-				//
-				if (strpos($sub_directory, self::$writeDirectory) === 0) {
-					$offset        = strlen(self::$writeDirectory);
-					$sub_directory = substr($sub_directory, $offset);
-				}
-
-				$write_directory = implode(DIRECTORY_SEPARATOR, array(
-					self::$writeDirectory,
-					trim($sub_directory, '/\\' . DIRECTORY_SEPARATOR)
-				));
-
-			} else {
-				$write_directory = self::$writeDirectory;
-			}
-
-			return (!is_dir($write_directory))
-				? fDirectory::create($write_directory)
-				: new fDirectory($write_directory);
-		}
-
-		/**
-		 * Gets a configured root directory from the list of available roots
-		 *
-		 * @static
-		 * @access public
-		 * @param string $element The class or configuration element
-		 * @return string A reference to the root directory for "live roots"
-		 */
-		static public function getRoot($element = NULL)
-		{
-			if ($element === NULL) {
-				return APPLICATION_ROOT;
-			}
-
-			$element = strtolower($element);
-
-			return (isset(self::$roots[$element]))
-				? self::$roots[$element]
-				: NULL;
-		}
-
-		/**
-		 * Gets a database from the stored index of databases.
-		 *
-		 * @static
-		 * @access public
-		 * @param string $db_name The database name
-		 * @param string $db_role The database role, default 'either'
-		 * @return fDatabase The database matching the name and role
-		 */
-		static public function getDatabase($db_name, $db_role = 'either')
-		{
-			if ($db_role == 'either' || $db_role == 'write') {
-				if (isset(self::$databases[$db_name]['write'])) {
-					return self::$databases[$db_name]['write'];
-				}
-			}
-
-			if ($db_role == 'either' || $db_role == 'read') {
-				if (isset(self::$databases[$db_name]['read'])) {
-					return self::$databases[$db_name]['read'];
-				}
-			}
-
-			throw new fNotFoundException (
-				'Could not find database %s with role %s',
-				$db_name,
-				$db_role
-			);
-		}
-
-		/**
-		 * Creates a target identifier from an entry and action.  If the entry consists of the
-		 * term 'link' then the action is treated as a URL.
-		 *
-		 * @static
-		 * @access public
-		 * @param string $entry A string representation of an entry type
-		 * @param string $action A string representation of an action supported by the entry
-		 * @return string An inKWell target
-		 */
-		static public function makeTarget($entry, $action)
-		{
-			if ($entry == 'link') {
-				return $action;
-			}
-
-			return implode('::', array($entry, $action));
-		}
-
-		/**
-		 * Get a link to to a controller target
-		 *
-		 * @static
-		 * @access public
-		 * @param string $target an inKWell target to redirect to
-		 * @param array $query an associative array containing parameters => values
-		 * @return string The appropriate URL for the provided parameters
-		 */
-		static public function makeLink($target, $query = array())
-		{
-			if (!is_callable($target) && strpos($target, '*') !== 0) {
-
-				$query = (count($query))
-					? '?' . @http_build_query($query, '', '&', PHP_QUERY_RFC3986)
-					: NULL;
-
-				if (strpos($target, '/') === 0 && Moor::getActiveProxyURI()) {
-					return Moor::getActiveProxyURI() . $target . $query;
-				}
-
-				return $target . $query;
-			}
-
-			$params = array_keys($query);
-
-			$target = (array_unshift($params, $target) == 1)
-				? $target
-				: implode(' ', $params);
-
-			return call_user_func_array(
-				'Moor::linkTo',
-				array_merge(array($target), $query)
-			);
-		}
-
-		/**
-		 * Creates a unique failure token which can then be checked with checkFailureToken().
-		 *
-		 * @static
-		 * @access public
-		 * @param void
-		 * @return string A unique failure token for immediate use
-		 */
-		static public function makeFailureToken()
-		{
-			return (self::$failureToken = fCryptography::randomString(8));
-		}
-
-		/**
-		 * Checks the unique failure token against the stored value
-		 *
-		 * @static
-		 * @access public
-		 * @param string $failure_token The failure token to check
-		 * @return boolean TRUE if the failure token matches, FALSE otherwise
-		 */
-		static public function checkFailureToken($failure_token)
-		{
-			return (self::$failureToken === $failure_token);
-		}
-
-		/**
-		 * Checks the current SAPI name
-		 *
-		 * @static
-		 * @access public
-		 * @param string $sapi The SAPI to verify running
-		 * @return boolean TRUE if the running SAPI matches, FALSE otherwise
-		 */
-		static public function checkSAPI($sapi)
-		{
-			return (strtolower(php_sapi_name()) == strtolower($sapi));
+			return FALSE;
 		}
 
 		/**
@@ -983,82 +924,100 @@
 		}
 
 		/**
-		 * Initializes a class by calling it's __init() method if it has one and returning its
-		 * return value.
+		 * Creates a target identifier from an entry and action.  If the entry consists of the
+		 * term 'link' then the action is treated as a URL.
 		 *
 		 * @static
-		 * @access protected
-		 * @param string $class The class to initialize
-		 * @return bool Whether or not the initialization was successful
+		 * @access public
+		 * @param string $entry A string representation of an entry type
+		 * @param string $action A string representation of an action supported by the entry
+		 * @return string An inKWell target
 		 */
-		static protected function initializeClass($class)
+		static public function makeTarget($entry, $action)
 		{
-			//
-			// Classes cannot be initialized twice
-			//
-			if (in_array($class, self::$initializedClasses)) {
-				return TRUE;
+			if ($entry == 'link') {
+				return $action;
 			}
 
-			$init_callback = array($class, self::INITIALIZATION_METHOD);
-			//
-			// If there's no __init we're done
-			//
-			if (!is_callable($init_callback)) {
-				return TRUE;
-			}
-
-			$method  = end($init_callback);
-			$rmethod = new ReflectionMethod($class, $method);
-			//
-			// If __init is not custom, we're done
-			//
-			if ($rmethod->getDeclaringClass()->getName() != $class) {
-				return TRUE;
-			}
-
-			// Determine class configuration and call __init with it
-			$element      = fGrammar::underscorize($class);
-			$class_config = (isset(self::$config[$element]))
-				? self::$config[$element]
-				: array();
-
-			try {
-				if (call_user_func($init_callback, $class_config, $element)) {
-					self::$initializedClasses[] = $class;
-					return TRUE;
-				}
-			} catch (Exception $e) {}
-
-			return FALSE;
+			return implode('::', array($entry, $action));
 		}
 
 		/**
-		 * Adds a database to the database index for retrieval with getDatabase() method.
+		 * Get a link to to a controller target
 		 *
 		 * @static
+		 * @access public
+		 * @param string $target an inKWell target to redirect to
+		 * @param array $query an associative array containing parameters => values
+		 * @return string The appropriate URL for the provided parameters
+		 */
+		static public function makeLink($target, $query = array())
+		{
+			if (!is_callable($target) && strpos($target, '*') !== 0) {
+
+				$query = (count($query))
+					? '?' . @http_build_query($query, '', '&', PHP_QUERY_RFC3986)
+					: NULL;
+
+				if (strpos($target, '/') === 0 && Moor::getActiveProxyURI()) {
+					return Moor::getActiveProxyURI() . $target . $query;
+				}
+
+				return $target . $query;
+			}
+
+			$params = array_keys($query);
+
+			$target = (array_unshift($params, $target) == 1)
+				? $target
+				: implode(' ', $params);
+
+			return call_user_func_array(
+				'Moor::linkTo',
+				array_merge(array($target), $query)
+			);
+		}
+
+		/**
+		 * Writes a full configuration array out to a particular file.
+		 *
+		 * @static
+		 * @access public
+		 * @param array $config The configuration array
+		 * @param string $file The file to write to, optional if overwriting the default config
+		 * @param boolean $quiet Whether or not to output information, defaulted to FALSE
+		 * @return mixed Number of bytes written to file or FALSE on failure
+		 */
+		static public function writeConfig(array $config, $file = NULL, $quiet = FALSE)
+		{
+			if (!$file) {
+				$file = '.' . self::DEFAULT_CONFIG;
+			}
+
+			if (!preg_match(self::REGEX_ABSOLUTE_PATH, $file)) {
+				$file = realpath(self::getRoot('config') . DIRECTORY_SEPARATOR . $file);
+			}
+
+			if (!$quiet) {
+				echo "Writing configuration file...";
+			}
+
+			$result = file_put_contents($file, serialize($config));
+
+			if (!$quiet) {
+				echo ($result) ? 'Sucess!' : 'Failure';
+			}
+
+			return $result;
+		}
+
+		/**
+		 * Construction not possible
+		 *
+		 * @final
 		 * @access private
-		 * @param fDatabase $db The database object
-		 * @param string $db_name The name of the database
-		 * @param string $db_role The role of the database
+		 * @param void
 		 * @return void
 		 */
-		static private function addDatabase(fDatabase $db, $db_name, $db_role)
-		{
-			if (!in_array($db_role, array('read', 'write', 'both'))) {
-				throw new fProgrammerException (
-					'Cannot add database %s, invalid role %s',
-					$db_name,
-					$db_role
-				);
-			}
-
-			if ($db_role == 'read' || $db_role == 'both') {
-				self::$databases[$db_name]['read'] = $db;
-			}
-
-			if ($db_role == 'write' || $db_role == 'both') {
-				self::$databases[$db_name]['write'] = $db;
-			}
-		}
+		final private function __construct() {}
 	}
