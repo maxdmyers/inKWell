@@ -4,11 +4,15 @@
 
 		// The directory relative to the inKWell root directory in which views
 		// are stored.  Using the set() or add() method on a view will prepend
-		// this directory.
+		// this directory if your view does not begin with a slash.
 		//
-		// Example :
-		// Code    : $controller->view->add('content', 'pages/home.html')
-		// Loads   : <inkwell root>/<root_directory>/pages/home.html
+		// Example:
+		//
+		// View::create('html.php');
+		//
+		// Resolves load the view:
+		//
+		// <inkwell_application_root>/<view_root>/html.php
 
 		'root_directory' => 'user/views',
 
@@ -26,7 +30,7 @@
 		'minification_mode' => NULL,
 
 		// The cache directory is relative to the global write directory,
-		// default APPLICATION_ROOT/writable and is used to store
+		// defined in the inkwell.php core config file and is used to store
 		// cached versions of minified Javascript and CSS.
 
 		'cache_directory' => 'cache'
