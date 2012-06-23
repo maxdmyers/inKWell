@@ -3,7 +3,9 @@
 ## Preamble 
 
 inKWell is currently beta software, we will answer any questions you might have
-directly.  Feel free to message us on GitHub, username: dotink. 
+directly.  E-mail info@dotink.org.  Please check out our more extensive
+documentation on http://inkwell.dotink.org and feel free to leave comments or
+questions in-page using Disqus.
 
 ## Licensing
 
@@ -30,19 +32,32 @@ extremely lightweight and flexible.  Unlike other frameworks nearly every aspect
 of it is designed to allow for easy overrides, including scaffolding.
 
 The core framework follows a "KISS" philosophy.  We begin by keeping core
-concepts and API to a minimum, providing only six classes in that comprise
-the base framework, while everything else is an extension.
+concepts and API to a minimum, providing only a handful of classes in that
+comprise the base framework and the 90% use case.
 
 If you'd like to learn how to  use inKWell or a bit more about its design, you
-can visit our wiki pages here: http://github.com/dotink/inKWell/wiki
+can visit our documentation site at http://inkwell.dotink.org
 
 ## Installation
 
-Installing inKWell should be pretty straightfoward, begin by unzipping or
-cloning all the files and folders at the base of its directory structure into
-your `DOCUMENT_ROOT`.
+Installing inKWell should be pretty straightfoward.  Git is the recommended
+installation medium.  To install using Git simply type the following.
 
-Once extracted you may wish to rename or move a few files as need be.
+```
+git clone --recursive git://github.com/dotink/inKWell.git <path_to_inkwell>
+```
+
+If you absolutely are unable to install via git, you can download requisite
+zip files from GitHub.  You will need to download the following three
+repositories as zip files:
+
+[1] http://github.com/dotink/inkwell
+[2] http://github.com/dotink/flourish
+[3] http://github.com/dotink/moor
+
+Extract [1] into your desired installation path.  Extract [2] into
+`includes/lib/flourish` inside the installation path.  Extract [3] into
+`incluces/lib/moor` inside the installation path.
 
 ### Apache with mod_rewrite
 
