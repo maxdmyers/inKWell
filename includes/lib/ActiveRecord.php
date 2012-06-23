@@ -124,10 +124,8 @@
 		 */
 		static public function __match($class)
 		{
-			foreach (array_keys(iw::getConfigsByType('ActiveRecord')) as $key) {
-				if (iw::classize($key) == $class) {
-					return TRUE;
-				}
+			if (in_array($class, iw::getConfigsByType('ActiveRecord', 'class'))) {
+				return TRUE;
 			}
 
 			try {
