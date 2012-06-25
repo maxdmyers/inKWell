@@ -1,4 +1,4 @@
-# inKWell (MVC Framework and CMS)
+# inKWell (MVC Framework)
 
 ## Preamble 
 
