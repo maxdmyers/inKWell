@@ -114,6 +114,12 @@
 					self::$minificationMode = iw::getExecutionMode();
 				}
 			}
+
+			//
+			// Attaching a NULL view as the default prevents exceptions in the event of
+			// no views being attached later.
+			//
+			self::attach(NULL);
 		}
 
 		/**

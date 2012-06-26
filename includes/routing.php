@@ -40,20 +40,17 @@
 		Moor::enableRestlessURLs();
 	}
 	//
+	// Set Moor's not found callback to NULL so it doesn't handle not founds
+	//
+	Moor::setNotFoundCallback(NULL);
+	//
+	//
 	// Set the Request Param Pattern
 	//
 	Moor::setRequestParamPattern(iw::getConfig('inkwell', 'request_param_pattern')
 		? iw::getConfig('inkwell', 'request_param_pattern')
 		: '[A-Za-z0-9_-]+'
 	);
-	//
-	// See if we have a custom not_found handler
-	//
-	if (is_callable(iw::getConfig('controller', 'errors', 'not_found', 'handler'))) {
-		Moor::setNotFoundCallback(
-			iw::getConfig('controller', 'errors', 'not_found', 'handler')
-		);
-	}
 	//
 	// Register all of our global priority routes first
 	//

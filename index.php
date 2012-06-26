@@ -28,7 +28,12 @@
 		//
 		// Boostrap!
 		//
-		require $include_directory . DIRECTORY_SEPARATOR . 'init.php';
+		if (!is_readable($include_directory . DIRECTORY_SEPARATOR . 'init.php')) {
+			throw new Exception('Unable to include inititialization file.');
+		}
+
+		include $include_directory . DIRECTORY_SEPARATOR . 'init.php';
+
 		//
 		// Check for and include maintenance file if it exists
 		//
@@ -36,16 +41,24 @@
 			include MAINTENANCE_FILE;
 			exit(-1);
 		}
+
 		//
 		// Include our routing logic and run the router.
 		//
-		require $include_directory . DIRECTORY_SEPARATOR . 'routing.php';
+		if (!is_readable($include_directory . DIRECTORY_SEPARATOR . 'routing.php')) {
+			throw new Exception('Unable to include routing file.');
+		}
+
+		include $include_directory . DIRECTORY_SEPARATOR . 'routing.php';
+
 		//
 		// Run the router and get the returned view
 		//
 		$data = NULL;
 		$data = ($data !== NULL) ? $data : Moor::run();
 		$data = ($data !== NULL) ? $data : View::retrieve();
+		$data = ($data !== NULL) ? $data : Controller::__error();
+
 		//
 		// Handle outputting of non-object data
 		//
@@ -53,6 +66,7 @@
 			echo $data;
 			exit(1);
 		}
+
 		//
 		// Output different objects differently
 		//
@@ -68,6 +82,7 @@
 				echo serialize($data);
 				exit(1);
 		}
+
 	} catch (Exception $e) {
 		//
 		// Panic here, attempt to determine what state we're in, see if some
