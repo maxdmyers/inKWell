@@ -8,7 +8,6 @@
 	class <%= self::validateVariable($class) %> extends <%= self::validateVariable($build_class) %>
 
 	{
-
 		/**
 		 * Initializes all static class information for the <%= $class %> model
 		 *
@@ -63,19 +62,6 @@
 		}
 
 		/**
-		 * Gets the entry name for the <%= $class %> class
-		 *
-		 * @static
-		 * @access public
-		 * @param void
-		 * @return string The custom or default entry translation
-		 */
-		static public function getEntry()
-		{
-			return parent::getEntry(__CLASS__);
-		}
-
-		/**
 		 * Gets the order for the <%= $class %> class
 		 *
 		 * @static
@@ -86,20 +72,6 @@
 		static public function getOrder()
 		{
 			return parent::getOrder(__CLASS__);
-		}
-
-		/**
-		 * Determines whether the record class only serves as a relationship,
-		 * i.e. a many to many table.
-		 *
-		 * @static
-		 * @access public
-		 * @param void
-		 * @return boolean TRUE if it is a relationship, FALSE otherwise
-		 */
-		static public function isRelationship()
-		{
-			return parent::isRelationship(__CLASS__);
 		}
 
 		/**
@@ -131,5 +103,4 @@
 		{
 			return parent::createFromResourceKey(__CLASS__, $resource_key);
 		}
-
 	}

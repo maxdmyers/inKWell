@@ -11,9 +11,17 @@
 		<% $this->place('styles');  %>
 		<% $this->place('scripts'); %>
 	</head>
+
 	<body id="<%= $this->pull('id') %>" class="<%= $this->combine('classes', ' ') %>">
 		<% $this->place('header'); %>
 		<div class="torso">
+
+			<% if ($this->check('error')) { %>
+				<div class="error">
+					<%= $this->pull('error') %>
+				</div>
+			<% } %>
+
 			<% $this->place('contents')   %>
 		</div>
 		<% $this->place('footer'); %>

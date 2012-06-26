@@ -8,7 +8,6 @@
 	class <%= self::validateVariable($class) %> extends <%= self::validateVariable($build_class) %>
 
 	{
-
 		/**
 		 * Initializes the <%= $class %> Record Set
 		 *
@@ -38,12 +37,15 @@
 		 */
 		static public function build(array $wheres = array(), array $ordering = array(), $limit = NULL, $page = NULL)
 		{
-			if (!sizeof($ordering)) {
-				try {
-					$ordering = <%= self::validateVariable($active_record) %>::getOrder();
-				} catch (fProgrammerException $e) {}
-			}
-			return parent::build('<%= $active_record %>', $wheres, $ordering, $limit, $page);
+			return parent::build(
+				'<%= ActiveRecord::classFromRecordSet($class) %>',
+				$wheres,
+				count($ordering)
+					? $ordering
+					: <%= ActiveRecord::classFromRecordSet($class) %>::getOrder(),
+				$limit,
+				$page
+			);
 		}
 
 		/**
@@ -58,7 +60,10 @@
 		 */
 		static public function buildFromSQL($sql, $no_limit_sql)
 		{
-			return parent::build('<%= $active_record %>', $sql, $no_limit_sql);
+			return parent::build(
+				'<%= ActiveRecord::classFromRecordSet($class) %>',
+				$sql,
+				$no_limit_sql
+			);
 		}
-
 	}

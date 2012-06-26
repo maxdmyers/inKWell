@@ -16,7 +16,7 @@
 		'execution_mode' => 'development',
 
 		// This is the writable directory where caches, file uploads, images,
-		// etc. can be stored.  getWriteDirectory() will supply this, or a
+		// etc. can be stored.  iw::getWriteDirectory() will supply this, or a
 		// sub-directory of this.
 
 		'write_directory' => 'assets',
@@ -33,8 +33,8 @@
 		// Enabling persistent sessions will cause the user's session to stay
 		// alive even after they close the browser.  This is not recommended
 		// sitewide, but is an available option, if you would like to enable
-		// a persistent session depending on some kind of logic, see the
-		// documentation for Controller::persistSession();
+		// a persistent session depending on some kind of logic, see:
+		// http://flourishlib.com/docs/fSession
 
 		'persistent_sessions' => FALSE,
 		'session_length'      => '1 day',
