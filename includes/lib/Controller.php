@@ -111,6 +111,10 @@
 		 */
 		static public function __init(array $config = array(), $element = NULL)
 		{
+			if (iw::classize($element) != __CLASS__) {
+				return TRUE;
+			}
+
 			//
 			// Build our site sections
 			//
@@ -236,11 +240,31 @@
 		}
 
 		/**
+		 * Triggers the default error and returns the view
+		 *
+		 * This is the last ditch attempt to retrieve an error view / response by the
+		 * Controller system.
+		 *
+		 * @static
+		 * @access public
+		 * @param void
+		 * @return View The default attached view after running the default error
+		 */
+		static public function __error()
+		{
+			try {
+				self::triggerError();
+			} catch (MoorContinueException $e) {
+				return View::retrieve();
+			}
+		}
+
+		/**
 		 * Determines whether or not we should accept the request based on the mime type accepted
 		 * by the user agent.  If no array or an empty array is passed the configured default
 		 * accept types will be used.  If the request::format is provided in the request and the
 		 * list of acceptable types does not support the provided accept headers a not_found error
-		 * will be triggerd.  If no request::format is provided in the request and the list of
+		 * will be triggered.  If no request::format is provided in the request and the list of
 		 * acceptable types does not support the provided accept headers the method will trigger
 		 * a 'not_acceptable' error.
 		 *
@@ -603,7 +627,7 @@
 		 * @throws MoorContinueException
 		 * @return void
 		 */
-		static public function triggerError($error, $headers = TRUE, $message = NULL)
+		static protected function triggerError($error = 'not_found', $headers = TRUE, $message = NULL)
 		{
 			$error_info = array(
 				'handler' => NULL,

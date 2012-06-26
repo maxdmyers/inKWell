@@ -30,7 +30,6 @@
 		// default controller behavior.
 
 		'sections' => array(
-
 			'default'     => array(
 				'use_ssl' => FALSE
 			),
