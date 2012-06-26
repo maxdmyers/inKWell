@@ -170,8 +170,4 @@
 			fMessaging::create($message_type, $self, $message);
 			return self::exec(self::$host, self::checkEntryAction(__CLASS__, __FUNCTION__));
 		}
-
-		static public function error() {
-			self::triggerError('forbidden');
-		}
 	}

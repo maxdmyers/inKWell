@@ -22,6 +22,5 @@
 		'routes' => array(
 			'/login'  => 'AuthController::login',
 			'/logout' => 'AuthController::logout',
-			'/test'   => 'AuthController::error'
 		)
 	));
