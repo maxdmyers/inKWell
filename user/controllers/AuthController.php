@@ -9,13 +9,9 @@
 	abstract class AuthController extends Controller
 	{
 
-		const LOGOUT_SUCCESS_MSG      = 'You have successfully logged out';
-		const NOT_LOGGED_IN_MSG       = 'You are not logged in silly!';
-		
-		const DEFAULT_LOGIN_VIEW      = 'pages/login.php';
-
-		const DEFAULT_HOST_CONTROLLER = 'PagesController';
-		const DEFAULT_HOST_METHOD     = 'notAuthorized';
+		const LOGOUT_SUCCESS_MSG = 'You have successfully logged out';
+		const NOT_LOGGED_IN_MSG  = 'You are not logged in silly!';
+		const DEFAULT_HOST       = NULL;
 
 		// Information about the controller state
 
@@ -37,34 +33,15 @@
 		 * @var string
 		 */
 		static private $loginSuccessURL = NULL;
-		
+
 		/**
-		 * The view to use for non HTTP authorization logins.  This is
-		 * expected to be HTML
+		 * The host target action
 		 *
 		 * @static
 		 * @access private
 		 * @var string
 		 */
-		static private $loginView = NULL;
-		
-		/**
-		 * The host controller class
-		 *
-		 * @static
-		 * @access private
-		 * @var string
-		 */
-		static private $hostController = NULL;
-		
-		/**
-		 * The host controller method
-		 *
-		 * @static
-		 * @access private
-		 * @var string
-		 */
-		static private $hostMethod = NULL;
+		static private $host = NULL;
 
 		/**
 		 * Initializes the AuthController.  The primary tasks involved here are
@@ -76,33 +53,19 @@
 		 * @param void
 		 * @return void
 		 */
-		static public function __init($config)
+		static public function __init(array $config = array(), $element = NULL)
 		{
-			parent::__init($config);
-		
 			self::$loginSuccessURL = isset($config['login_success_url'])
 				? $config['login_success_url']
 				: '/';
 
-			$request_format = self::getRequestFormat();
+			self::$usingHTTPAuth = isset($config['non_http_auth_formats'])
+				? !in_array(Request::getFormat(), $config['non_http_auth_formats'])
+				: TRUE;
 
-			if (isset($config['http_auth_formats'])) {
-				self::$usingHTTPAuth = is_array($config['http_auth_formats'])
-					? in_array($request_format, $config['http_auth_formats'])
-					: ($request_format == $config['http_auth_formats']);
-			}
-
-			self::$loginView = isset($config['login_view'])
-				? $config['login_view']
-				: self::DEFAULT_LOGIN_VIEW;
-				
-			self::$hostController = isset($config['host_controller'])
-				? $config['host_controller']
-				: self::DEFAULT_HOST_CONTROLLER;
-				
-			self::$hostMethod = isset($config['host_method'])
-				? $config['host_method']
-				: self::DEFAULT_HOST_METHOD;
+			self::$host = isset($config['host'])
+				? $config['host']
+				: self::DEFAULT_HOST;
 
 			return TRUE;
 		}
@@ -121,20 +84,16 @@
 
 			if (User::retrieveLoggedIn()) {
 				User::deAuthorize();
-				fMessaging::create(
-					self::MSG_TYPE_SUCCESS,
-					$target,
-					self::LOGOUT_SUCCESS_MSG
-				);
+
+				$message      = fText::compose(self::LOGOUT_SUCCESS_MSG);
+				$message_type = self::MSG_TYPE_SUCCESS;
 			} else {
-				fMessaging::create(
-					self::MSG_TYPE_ERROR,
-					$target,
-					self::NOT_LOGGED_IN_MSG
-				);
+				$message      = fText::compose(self::NOT_LOGGED_IN_MSG);
+				$message_type = self::MST_TYPE_ERROR;
 			}
 
-			fURL::redirect(Moor::LinkTo(iw::makeTarget(__CLASS__, 'login')));
+			fMessaging::create($message_type, $target, $message);
+			self::redirect(iw::makeTarget(__CLASS__, 'login'));
 		}
 
 		/**
@@ -148,24 +107,22 @@
 		 */
 		static public function login()
 		{
-			$is_entry_point = self::checkEntryAction(__CLASS__, __FUNCTION__);
-			$target         = iw::makeTarget(__CLASS__, __FUNCTION__);
+			$self         = iw::makeTarget(__CLASS__, __FUNCTION__);
+			$message_type = self::MSG_TYPE_ERROR;
+			$message      = fMessaging::retrieve($message_type, $self);
 
-			// Receive any original messages
-
-			$message_type   = self::MSG_TYPE_ERROR;
-			$message        = fMessaging::retrieve($message_type, $target);
-
-			if (!$is_entry_point) {
+			if (!self::checkEntryAction(__CLASS__, __FUNCTION__)) {
 
 				fAuthorization::setRequestedURL(fURL::getWithQueryString());
 
 				if (self::$usingHTTPAuth) {
-
+					//
+					// We're going to handle authorization via HTTP protocol if it's enabled
+					//
 					header(implode(' ', array(
-						'WWW-Authenticate:',             // Header
-						'Basic',                         // Authentication Type
-						'realm="inKWell Control Panel"', // Realm
+						'WWW-Authenticate:',          // Header
+						'Basic',                      // Authentication Type
+						'realm="Site Authorization"', // Realm
 					)));
 
 					if (isset($_SERVER['PHP_AUTH_USER'])) {
@@ -180,64 +137,41 @@
 						$username    = $login_info[0];
 						$password    = $login_info[1];
 					}
-
 				} else {
-
-					fMessaging::create($message_type, $target, $message);
-					fURL::redirect(Moor::linkTo($target));
+					//
+					// Otherwise we'll redirect to our login route
+					//
+					fMessaging::create($message_type, $self, $message);
+					self::redirect($self);
 				}
 
-			} elseif (fRequest::isPost()) {
-
-				$username = fRequest::get('username', 'string', NULL);
-				$password = fRequest::get('password', 'string', NULL);
+			} elseif (Request::checkMethod('post')) {
+				$username = Request::get('username', 'string', NULL);
+				$password = Request::get('password', 'string', NULL);
 			}
-
+			//
 			// If we have been provided a username, try to login
-
+			//
 			if (isset($username)) {
 				try {
-
-					User::authorize($username, $password);
-
-					$redirect_url = fAuthorization::getRequestedURL(TRUE);
-					if (empty($redirect_url)) {
-						$redirect_url = self::$loginSuccessURL;
-					}
-
-					fURL::redirect($redirect_url);
-
+					// User::authorize($username, $password);
+					throw new fExpectedException('wtf');
+					self::redirect(
+						($url = fAuthorization::getRequestURLs(TRUE))
+							? $url
+							: self::$loginSuccessURL
+					);
 				} catch (fExpectedException $e) {
 					$message_type = self::MSG_TYPE_ERROR;
 					$message      = $e->getMessage();
 				}
 			}
 
-			// Take different courses of action depending on if we're the entry
-			// point, either re-route the request or handle it.
+			fMessaging::create($message_type, $self, $message);
+			return self::exec(self::$host, self::checkEntryAction(__CLASS__, __FUNCTION__));
+		}
 
-			if (!$is_entry_point) {
-
-				$route = iw::makeTarget(
-					self::$hostController,
-					self::$hostMethod
-				);
-
-				fMessaging::create($message_type, $route, $message);
-
-				self::exec($route);
-
-			} else {
-
-				fMessaging::create($message_type, $target, $message);
-
-				$host = new self::$hostController();
-
-				$host -> view
-					  -> add    ('contents', self::$loginView)
-					  -> pack   ('id',       'login')
-					  -> push   ('title',    'Login')
-					  -> render ();
-			}
+		static public function error() {
+			self::triggerError('forbidden');
 		}
 	}

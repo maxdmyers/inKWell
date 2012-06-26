@@ -592,7 +592,7 @@
 			self::rebuildACL($this);
 			$this->__call(__FUNCTION__, func_get_args());
 		}
-		
+
 		/**
 		 * Checks whether or not a user belongs to a certain role.  This can
 		 * be used instead of more advanced ACLs for simple checks.
@@ -601,7 +601,7 @@
 		 * @param string $role The role to check membership in
 		 * @return boolean TRUE if the user has that role, FALSE otherwise
 		 */
-		public function checkRole($role)
+		public function hasRole($role)
 		{
 			$roles = $this->buildRoles()->call('getName');
 			return in_array($role, $roles);
